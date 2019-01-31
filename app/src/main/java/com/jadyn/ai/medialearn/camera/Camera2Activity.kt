@@ -10,7 +10,7 @@ import android.util.Size
 import android.view.Surface
 import android.view.TextureView
 import com.jadyn.ai.medialearn.R
-import com.jadyn.ai.medialearn.camera.codec.AiLoiVideoEncoder
+import com.jadyn.ai.medialearn.codec.AiLoiVideoEncoder
 import com.jadyn.ai.medialearn.permissions.RxPermissions
 import kotlinx.android.synthetic.main.activity_camera2.*
 
@@ -29,7 +29,9 @@ class Camera2Activity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_camera2)
         tv_record.setOnClickListener {
-            camera2Ops?.toggleRecord(aiLoiVideoEncoder)
+            RxPermissions(this).request(Manifest.permission.RECORD_AUDIO).doOnNext {
+                camera2Ops?.toggleRecord(aiLoiVideoEncoder)
+            }.subscribe()
         }
         RxPermissions(this).request(
                 Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -53,6 +55,7 @@ class Camera2Activity : AppCompatActivity() {
 
                                 // 2019/1/2-17:38 竖屏视频使用高作宽，宽作高
                                 aiLoiVideoEncoder = AiLoiVideoEncoder(s.height, s.width, 6000000)
+                                this@Camera2Activity.texture_view.setAspectRatio(s.height, s.width)
                                 c.openCamera(Surface(texture_view.surfaceTexture.apply {
                                     setDefaultBufferSize(s.height, s.width)
                                 }))

@@ -3,6 +3,7 @@
     package="com.jadyn.ai.medialearn">
 
     <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
@@ -29,6 +30,7 @@
         <activity android:name=".camera.CameraActivity"
             android:hardwareAccelerated="true"
             />
+        <activity android:name=".decode.DecodeActivity"/>
     </application>
 
 </manifest>

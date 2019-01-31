@@ -1,4 +1,4 @@
-package com.jadyn.ai.medialearn.camera.codec
+package com.jadyn.ai.medialearn.codec
 
 import android.annotation.SuppressLint
 import android.graphics.SurfaceTexture

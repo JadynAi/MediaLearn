@@ -11,7 +11,7 @@ import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.util.Size
 import android.view.Surface
-import com.jadyn.ai.medialearn.camera.codec.AiLoiVideoEncoder
+import com.jadyn.ai.medialearn.codec.AiLoiVideoEncoder
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -180,7 +180,7 @@ class Camera2Ops(val activity: AppCompatActivity, val size: Size,
                     builder?.addTarget(this)
                 }
                 builder?.addTarget(encoderSurface)
-                list.add(encoderSurface)
+                list.add(encoderSurface) 
                 createCaptureSession(list, object : CameraCaptureSession.StateCallback() {
                     override fun onConfigureFailed(session: CameraCaptureSession?) {
                         Log.d(TAG, "onConfigureFailed:")

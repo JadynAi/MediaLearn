@@ -1,4 +1,4 @@
-package com.jadyn.ai.medialearn.camera.codec
+package com.jadyn.ai.medialearn.codec
 
 import android.graphics.SurfaceTexture
 import android.media.MediaCodec
@@ -8,6 +8,7 @@ import android.media.MediaMuxer
 import android.os.Environment
 import android.util.Log
 import android.view.Surface
+import com.jadyn.ai.medialearn.camera.audio.AiLoiAudioEncoder
 import java.io.File
 import java.io.IOException
 import java.util.*
@@ -55,7 +56,6 @@ class AiLoiVideoEncoder(private val width: Int, private val height: Int,
         }
 
     init {
-
         try {
             encoder = MediaCodec.createEncoderByType(MIME_TYPE)
         } catch (e: IOException) {
@@ -116,6 +116,8 @@ class AiLoiVideoEncoder(private val width: Int, private val height: Int,
         }
         isStart = true
         encoder.start()
+        // 2019/1/5-15:28 录音启动
+        audioEncoder?.start()
         Log.d(TAG, "codec started thread${Thread.currentThread().name}")
 
         val surfaceTexture = stMgr!!.surfaceTexture
@@ -130,6 +132,11 @@ class AiLoiVideoEncoder(private val width: Int, private val height: Int,
             Log.d(TAG, "present: " + (surfaceTexture!!.timestamp - startWhen) / 1000000.0 + "ms")
             inputSurface.setPresentationTime(surfaceTexture.timestamp)
             inputSurface.swapBuffers()
+
+            // 2019/1/5-15:29 读取音频数据
+            if (muxerStarted) {
+                audioEncoder?.startMuxer(mediaMuxer!!)
+            }
         }
         drainEncoder(true)
         stopEncoder()
@@ -208,5 +215,12 @@ class AiLoiVideoEncoder(private val width: Int, private val height: Int,
     fun release() {
         encoder.release()
         mediaMuxer?.release()
+    }
+
+    //-----录音管理-----
+    private var audioEncoder: AiLoiAudioEncoder? = null
+
+    fun bindAudioEncoder(aiLoiAudioEncoder: AiLoiAudioEncoder) {
+        audioEncoder = aiLoiAudioEncoder
     }
 }

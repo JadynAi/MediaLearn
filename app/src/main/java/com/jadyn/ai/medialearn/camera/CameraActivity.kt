@@ -9,7 +9,7 @@ import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.TextureView
 import com.jadyn.ai.medialearn.R
-import com.jadyn.ai.medialearn.camera.codec.AiLoiVideoEncoder
+import com.jadyn.ai.medialearn.codec.AiLoiVideoEncoder
 import com.jadyn.ai.medialearn.permissions.RxPermissions
 import kotlinx.android.synthetic.main.activity_camera.*
 

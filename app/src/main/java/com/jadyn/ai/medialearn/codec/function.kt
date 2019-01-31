@@ -1,4 +1,4 @@
-package com.jadyn.ai.medialearn.camera.codec
+package com.jadyn.ai.medialearn.codec
 
 import android.opengl.EGL14
 import android.opengl.GLES20
