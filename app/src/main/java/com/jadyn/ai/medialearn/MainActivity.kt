@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import com.jadyn.ai.medialearn.camera.Camera2Activity
 import com.jadyn.ai.medialearn.camera.CameraActivity
+import com.jadyn.ai.medialearn.decode.DecodeActivity
 import com.jadyn.ai.medialearn.permissions.RxPermissions
 import com.jadyn.ai.medialearn.utils.start
 import kotlinx.android.synthetic.main.activity_main.*
@@ -33,6 +34,10 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     .subscribe()
+        }
+        
+        tv_decode.setOnClickListener { 
+            start<DecodeActivity>()
         }
     }
 }
