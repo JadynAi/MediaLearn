@@ -145,7 +145,7 @@ fun Image.getDataByte(colorForamt: ColorFormat = ColorFormat.NV21): ByteArray {
         val buffer = planes[i].buffer
         // 2019/2/11-23:17 这一行的byte数，像素数
         val rowStride = planes[i].rowStride
-        // 2019/2/11-23:17 行内颜色值间隔，真是间隔值为此值减一
+        // 2019/2/11-23:17 行内颜色值间隔，真实间隔值为此值减一
         val pixelStride = planes[i].pixelStride
 
         val TAG = "getDataByte"

@@ -2,14 +2,13 @@ package com.jadyn.ai.medialearn.decode
 
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
-import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.os.Environment
 import android.util.Log
-import android.util.Size
 import com.jadyn.ai.medialearn.codec.debugShowSupportColorFormat
 import com.jadyn.ai.medialearn.codec.isSupportColorFormat
-import com.jadyn.ai.medialearn.codec.selectVideoTrack
+import com.jadyn.ai.medialearn.utils.disposeOutput
+import com.jadyn.ai.medialearn.utils.mime
 import io.reactivex.Observable
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
@@ -26,8 +25,8 @@ class VideoDecoder private constructor(file: File) {
 
     private val TAG = this.javaClass.name
 
-    private val extractor by lazy {
-        MediaExtractor()
+    private val videoAnalyze by lazy {
+        VideoAnalyze(file.toString())
     }
 
     private var decoder: MediaCodec
@@ -36,24 +35,14 @@ class VideoDecoder private constructor(file: File) {
 
     private val DEF_TIME_OUT = 10000L
 
-    private var size: Size
-
     var outputFormat = DecoderFormat.JPG
 
     private var outputDirectory: String = Environment.getExternalStorageDirectory().path + "/"
 
     init {
-        extractor.setDataSource(file.toString())
-        val trackIndex = extractor.selectVideoTrack()
-        if (trackIndex < 0) {
-            throw RuntimeException("can not find video track in $file")
-        }
-        extractor.selectTrack(trackIndex)
-        val mediaFormat = extractor.getTrackFormat(trackIndex)
-        val mime = mediaFormat.getString(MediaFormat.KEY_MIME)
-        // 2019/2/8-16:21 视频宽高
-        size = Size(mediaFormat.getInteger(MediaFormat.KEY_WIDTH),
-                mediaFormat.getInteger(MediaFormat.KEY_HEIGHT))
+        val mediaFormat = videoAnalyze.mediaFormat
+        val mime = mediaFormat.mime
+
         decoder = MediaCodec.createDecoderByType(mime)
         debugShowSupportColorFormat(decoder.codecInfo.getCapabilitiesForType(mime))
 
@@ -111,7 +100,7 @@ class VideoDecoder private constructor(file: File) {
                     // 2019/2/9-21:38 获得可使用缓冲区位置索引
                     val inputBuffer = decoder.getInputBuffer(inputBufferId)
                     // 2019/2/8-22:14 检索当前编码的样本，并存储到inputBuffer
-                    val sampleSize = extractor.readSampleData(inputBuffer, 0)
+                    val sampleSize = videoAnalyze.mediaExtractor.readSampleData(inputBuffer, 0)
                     if (sampleSize < 0) {
                         // 2019/2/8-19:15 没有数据
                         decoder.queueInputBuffer(inputBufferId, 0, 0, 0L,
@@ -119,34 +108,28 @@ class VideoDecoder private constructor(file: File) {
                         sawInputEOS = true
                     } else {
                         // 2019/2/9-21:46 将数据压入到输入队列
-                        val presentationTimeUs = extractor.sampleTime
+                        val presentationTimeUs = videoAnalyze.mediaExtractor.sampleTime
                         decoder.queueInputBuffer(inputBufferId, 0,
                                 sampleSize, presentationTimeUs, 0)
-                        extractor.advance()
+                        videoAnalyze.mediaExtractor.advance()
                     }
                 }
             }
 
             // 2019/2/9-22:20 获取可用的输出缓存队列
-            val outputBufferId = decoder.dequeueOutputBuffer(bufferInfo, DEF_TIME_OUT)
-            if (outputBufferId >= 0) {
-                if ((bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                    sawOutputEOS = true
+            decoder.disposeOutput(bufferInfo, DEF_TIME_OUT, {
+                sawOutputEOS = true
+            }) {
+                outputFrameCount++
+                val image = decoder.getOutputImage(it)
+                if (outputFrameCount <= 3) {
+                    Log.d(TAG, "output Image format ${image.format}: ")
                 }
-                val doRender = bufferInfo.size != 0
-                if (doRender) {
-                    outputFrameCount++
-                    val image = decoder.getOutputImage(outputBufferId)
-                    if (outputFrameCount <= 3) {
-                        Log.d(TAG, "output Image format ${image.format}: ")
-                    }
-                    
-                    val fileName = outputFormat.outputFrameFileName(outputDirectory, outputFrameCount)
-                    outputFormat.compressCorrespondingFile(fileName, image)
 
-                    image.close()
-                    decoder.releaseOutputBuffer(outputBufferId, true)
-                }
+                val fileName = outputFormat.outputFrameFileName(outputDirectory,
+                        outputFrameCount)
+                outputFormat.compressCorrespondingFile(fileName, image)
+                image.close() 
             }
         }
         Log.d(TAG, "decode frames end ${(System.currentTimeMillis() - startTime) / 1000}")
