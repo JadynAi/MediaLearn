@@ -4,7 +4,10 @@ import android.os.Bundle
 import android.os.Environment
 import android.support.v7.app.AppCompatActivity
 import android.text.TextUtils
+import androidx.core.widget.toast
 import com.jadyn.ai.medialearn.R
+import kotlinx.android.synthetic.main.activity_decode.*
+import java.io.File
 
 /**
  *@version:
@@ -18,20 +21,108 @@ class DecodeActivity : AppCompatActivity() {
     private val decodeMP4Path = TextUtils.concat(Environment.getExternalStorageDirectory().path,
             "/yazi.mp4").toString()
 
-    private val videoDecoder by lazy {
-        VideoDecoder.DecoderBuilder().makeFile(decodeMP4Path).saveDirectory(Environment.getExternalStorageDirectory().path
-                + "/yaziWebpBitmap").build()
+    private val videoDecoderBuilder by lazy {
+        VideoDecoder.DecoderBuilder()
     }
+
+    private var videoDecoder: VideoDecoder? = null
+
+    private var filePath = ""
+
+    private var outputPath = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_decode)
 
-        videoDecoder.start()
+        // 2019/2/14-16:25 设置一个默认的测试视频地址
+        file_et.setText(decodeMP4Path)
+        resetOutputEt()
+
+        sure_file_tv.setOnClickListener {
+            checkFile()
+        }
+
+        sure_output_tv.setOnClickListener {
+            checkOutputPath()
+        }
+
+
+        switch_iv.setOnClickListener {
+            if (videoDecoder != null) {
+                toast("正在解码中")
+                return@setOnClickListener
+            }
+
+            switch_iv.isSelected = !switch_iv.isSelected
+            switch_iv.setImageResource(if (switch_iv.isSelected) R.drawable.c else R.drawable.p)
+        }
+
+        start_tv.setOnClickListener {
+            checkFile()
+            checkOutputPath()
+            if (videoDecoder != null) {
+                toast("正在解码中")
+                return@setOnClickListener
+            }
+            videoDecoder = videoDecoderBuilder.makeFile(filePath)
+                    .saveDirectory(outputPath)
+                    .setUseSurfaceOutput(switch_iv.isSelected)
+                    .build()
+
+            videoDecoder!!.decoding = {
+                this@DecodeActivity.runOnUiThread {
+                    output_loading_tv.text = "解码中，第${it}张"
+                }
+            }
+
+            videoDecoder!!.start({
+                videoDecoder = null
+            })
+        }
+    }
+
+    private fun checkOutputPath() {
+        val f = output_et.text.toString()
+        if (f.isBlank()) {
+            toast("不能为空")
+            return
+        }
+        val file = File(f)
+        if (!file.exists()) {
+            file.mkdirs()
+        }
+        if (!file.isDirectory) {
+            toast("必须为文件夹")
+            resetOutputEt()
+            return
+        }
+        outputPath = f
+    }
+
+    private fun checkFile() {
+        val f = file_et.text.toString()
+        if (f.isBlank()) {
+            toast("不能为空")
+            return
+        }
+        val file = File(f)
+        if (!file.exists() || !file.isFile) {
+            toast("文件错误")
+            file_et.setText("")
+            return
+        }
+        filePath = f
+    }
+
+    private fun resetOutputEt() {
+        output_et.setText(TextUtils.concat(Environment.getExternalStorageDirectory().path, "/"))
+        output_et.setSelection(output_et.text.toString().length)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        videoDecoder.stop()
+        videoDecoder?.stop()
+        videoDecoder?.release()
     }
 }

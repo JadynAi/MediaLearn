@@ -71,11 +71,14 @@ class STextureRender {
         Matrix.setIdentityM(mSTMatrix, 0)
     }
 
-    fun drawFrame(st: SurfaceTexture) {
+    fun drawFrame(st: SurfaceTexture, invert: Boolean = false) {
         checkGlError("onDrawFrame start")
         st.getTransformMatrix(mSTMatrix)
+        if (invert) {
+            mSTMatrix[5] = -mSTMatrix[5]
+            mSTMatrix[13] = 1.0f - mSTMatrix[13]
+        }
 
-        // (optional) clear to green so we can see if we're failing to set pixels
         GLES20.glClearColor(0.0f, 1.0f, 0.0f, 1.0f)
         GLES20.glClear(GLES20.GL_DEPTH_BUFFER_BIT or GLES20.GL_COLOR_BUFFER_BIT)
 
@@ -106,10 +109,6 @@ class STextureRender {
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
         checkGlError("glDrawArrays")
 
-        // IMPORTANT: on some devices, if you are sharing the external texture between two
-        // contexts, one context may not see updates to the texture unless you un-bind and
-        // re-bind it.  If you're not using shared EGL contexts, you don't need to bind
-        // texture 0 here.
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0)
     }
 

@@ -3,8 +3,6 @@ package com.jadyn.ai.medialearn
 import android.Manifest
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import com.jadyn.ai.medialearn.camera.Camera2Activity
-import com.jadyn.ai.medialearn.camera.CameraActivity
 import com.jadyn.ai.medialearn.decode.DecodeActivity
 import com.jadyn.ai.medialearn.permissions.RxPermissions
 import com.jadyn.ai.medialearn.utils.start
@@ -22,22 +20,30 @@ class MainActivity : AppCompatActivity() {
                 }
 
         tv_go_camera.setOnClickListener {
-            start<CameraActivity>()
+//            start<CameraActivity>()
         }
 
         tv_go_camera2.setOnClickListener {
+//            RxPermissions(this).request(
+//                    Manifest.permission.READ_EXTERNAL_STORAGE)
+//                    .doOnNext {
+//                        if (it) {
+//                            start<Camera2Activity>()
+//                        }
+//                    }
+//                    .subscribe()
+        }
+        
+        tv_decode.setOnClickListener {
             RxPermissions(this).request(
                     Manifest.permission.READ_EXTERNAL_STORAGE)
                     .doOnNext {
                         if (it) {
-                            start<Camera2Activity>()
+                            start<DecodeActivity>()
                         }
                     }
                     .subscribe()
-        }
-        
-        tv_decode.setOnClickListener { 
-            start<DecodeActivity>()
+            
         }
     }
 }

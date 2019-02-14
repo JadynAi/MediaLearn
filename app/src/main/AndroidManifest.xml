@@ -30,7 +30,9 @@
         <activity android:name=".camera.CameraActivity"
             android:hardwareAccelerated="true"
             />
-        <activity android:name=".decode.DecodeActivity"/>
+        <activity android:name=".decode.DecodeActivity"
+            android:screenOrientation="portrait"
+            />
     </application>
 
 </manifest>

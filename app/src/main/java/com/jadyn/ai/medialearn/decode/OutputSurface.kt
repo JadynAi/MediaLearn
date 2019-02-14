@@ -1,13 +1,20 @@
 package com.jadyn.ai.medialearn.decode
 
+import android.graphics.Bitmap
 import android.graphics.SurfaceTexture
 import android.opengl.EGL14
+import android.opengl.EGLConfig
+import android.opengl.GLES20
 import android.util.Log
+import android.util.Size
 import android.view.Surface
 import com.jadyn.ai.medialearn.codec.checkEglError
 import com.jadyn.ai.medialearn.codec.checkGlError
 import com.jadyn.ai.medialearn.gl.STextureRender
-import javax.microedition.khronos.egl.*
+import java.io.BufferedOutputStream
+import java.io.FileOutputStream
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 /**
  *@version:
@@ -16,138 +23,117 @@ import javax.microedition.khronos.egl.*
  *@Since:2019/2/12
  *@ChangeList:
  */
-internal class OutputSurface(width: Int = 0, height: Int = 0) : SurfaceTexture.OnFrameAvailableListener {
+class OutputSurface(private val width: Int, private val height: Int) : SurfaceTexture.OnFrameAvailableListener {
+
+    constructor(size: Size) : this(size.width, size.height)
 
     private val TAG = "OutputSurface"
-    private val VERBOSE = false
-    private val EGL_OPENGL_ES2_BIT = 4
+    private val VERBOSE = true
 
-    private var mEGL: EGL10? = null
-    private var mEGLDisplay: EGLDisplay? = null
-    private var mEGLContext: EGLContext? = null
-    private var mEGLSurface: EGLSurface? = null
-    private var surfaceTexture: SurfaceTexture? = null
+    private var mEGLDisplay = EGL14.EGL_NO_DISPLAY
+    private var mEGLContext = EGL14.EGL_NO_CONTEXT
+    private var mEGLSurface = EGL14.EGL_NO_SURFACE
 
+    private lateinit var surfaceTexture: SurfaceTexture
 
-    var surface: Surface? = null
-        private set
+    val surface by lazy {
+        Surface(surfaceTexture)
+    }
 
     private val frameSyncObject = java.lang.Object()
     private var frameAvailable: Boolean = false
-    private var mTextureRender: STextureRender? = null
+
+    private lateinit var textureRender: STextureRender
+
+    private var pixelBuf: ByteBuffer
 
     init {
         if (width <= 0 || height <= 0) {
-            setup()
-        } else {
-            eglSetup(width, height)
-            makeCurrent()
-            setup()
+            throw IllegalArgumentException("width and height must not zero")
         }
+
+        eglSetup()
+        makeCurrent()
+        setup()
+        pixelBuf = ByteBuffer.allocate(width * height * 4)
+        pixelBuf.order(ByteOrder.LITTLE_ENDIAN)
     }
 
     private fun setup() {
-        mTextureRender = STextureRender()
-        mTextureRender!!.surfaceCreated()
-        
-        if (VERBOSE) Log.d(TAG, "textureID=" + mTextureRender!!.textureId)
-        surfaceTexture = SurfaceTexture(mTextureRender!!.textureId)
-        
-        surfaceTexture!!.setOnFrameAvailableListener(this)
-        surface = Surface(surfaceTexture)
+        textureRender = STextureRender()
+        textureRender.surfaceCreated()
+
+        if (VERBOSE) Log.d(TAG, "textureID=" + textureRender.textureId)
+        surfaceTexture = SurfaceTexture(textureRender.textureId)
+
+        surfaceTexture.setOnFrameAvailableListener(this)
     }
 
-    /**
-     * Prepares EGL.  We want a GLES 2.0 context and a surface that supports pbuffer.
-     */
-    private fun eglSetup(width: Int, height: Int) {
-        mEGL = EGLContext.getEGL() as EGL10
-        mEGLDisplay = mEGL!!.eglGetDisplay(EGL10.EGL_DEFAULT_DISPLAY)
-        if (!mEGL!!.eglInitialize(mEGLDisplay, null)) {
-            throw RuntimeException("unable to initialize EGL10")
+    private fun eglSetup() {
+        mEGLDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
+        if (mEGLDisplay === EGL14.EGL_NO_DISPLAY) {
+            throw RuntimeException("unable to get EGL14 display")
         }
-        // Configure EGL for pbuffer and OpenGL ES 2.0.  We want enough RGB bits
-        // to be able to tell if the frame is reasonable.
-        val attribList = intArrayOf(EGL10.EGL_RED_SIZE, 8, EGL10.EGL_GREEN_SIZE, 8, EGL10.EGL_BLUE_SIZE, 8, EGL10.EGL_SURFACE_TYPE, EGL10.EGL_PBUFFER_BIT, EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT, EGL10.EGL_NONE)
+        val version = IntArray(2)
+        if (!EGL14.eglInitialize(mEGLDisplay, version, 0, version, 1)) {
+            mEGLDisplay = null
+            throw RuntimeException("unable to initialize EGL14")
+        }
+
+        val attributeList = intArrayOf(EGL14.EGL_RED_SIZE, 8, EGL14.EGL_GREEN_SIZE, 8, EGL14.EGL_BLUE_SIZE, 8, EGL14.EGL_ALPHA_SIZE, 8, EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT, EGL14.EGL_SURFACE_TYPE, EGL14.EGL_PBUFFER_BIT, EGL14.EGL_NONE)
         val configs = arrayOfNulls<EGLConfig>(1)
         val numConfigs = IntArray(1)
-        if (!mEGL!!.eglChooseConfig(mEGLDisplay, attribList, configs, 1, numConfigs)) {
-            throw RuntimeException("unable to find RGB888+pbuffer EGL config")
+        if (!EGL14.eglChooseConfig(mEGLDisplay, attributeList, 0, configs, 0, configs.size,
+                        numConfigs, 0)) {
+            throw RuntimeException("unable to find RGB888+recordable ES2 EGL config")
         }
+
         // Configure context for OpenGL ES 2.0.
-        val attrib_list = intArrayOf(EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL10.EGL_NONE)
-        mEGLContext = mEGL!!.eglCreateContext(mEGLDisplay, configs[0], EGL10.EGL_NO_CONTEXT,
-                attrib_list)
+        val attribute_list = intArrayOf(EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE)
+        mEGLContext = EGL14.eglCreateContext(mEGLDisplay, configs[0], EGL14.EGL_NO_CONTEXT,
+                attribute_list, 0)
         checkEglError("eglCreateContext")
         if (mEGLContext == null) {
             throw RuntimeException("null context")
         }
-        // Create a pbuffer surface.  By using this for output, we can use glReadPixels
-        // to test values in the output.
-        val surfaceAttribs = intArrayOf(EGL10.EGL_WIDTH, width, EGL10.EGL_HEIGHT, height, EGL10.EGL_NONE)
-        mEGLSurface = mEGL!!.eglCreatePbufferSurface(mEGLDisplay, configs[0], surfaceAttribs)
+
+        // Create a pbuffer surface.
+        val surfaceAttribs = intArrayOf(EGL14.EGL_WIDTH, width, EGL14.EGL_HEIGHT,
+                height, EGL14.EGL_NONE)
+        mEGLSurface = EGL14.eglCreatePbufferSurface(mEGLDisplay, configs[0], surfaceAttribs, 0)
         checkEglError("eglCreatePbufferSurface")
         if (mEGLSurface == null) {
             throw RuntimeException("surface was null")
         }
     }
 
-    /**
-     * Discard all resources held by this class, notably the EGL context.
-     */
     fun release() {
-        if (mEGL != null) {
-            if (mEGL!!.eglGetCurrentContext() == mEGLContext) {
-                // Clear the current context and surface to ensure they are discarded immediately.
-                mEGL!!.eglMakeCurrent(mEGLDisplay, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE,
-                        EGL10.EGL_NO_CONTEXT)
-            }
-            mEGL!!.eglDestroySurface(mEGLDisplay, mEGLSurface)
-            mEGL!!.eglDestroyContext(mEGLDisplay, mEGLContext)
-            //mEGL.eglTerminate(mEGLDisplay);
+        if (mEGLDisplay !== EGL14.EGL_NO_DISPLAY) {
+            EGL14.eglDestroySurface(mEGLDisplay, mEGLSurface)
+            EGL14.eglDestroyContext(mEGLDisplay, mEGLContext)
+            EGL14.eglReleaseThread()
+            EGL14.eglTerminate(mEGLDisplay)
         }
-        surface!!.release()
-        mEGLDisplay = null
-        mEGLContext = null
-        mEGLSurface = null
-        mEGL = null
-        mTextureRender = null
-        surface = null
-        surfaceTexture = null
+        mEGLDisplay = EGL14.EGL_NO_DISPLAY
+        mEGLContext = EGL14.EGL_NO_CONTEXT
+        mEGLSurface = EGL14.EGL_NO_SURFACE
+
+        surface.release()
     }
 
-    /**
-     * Makes our EGL context and surface current.
-     */
     fun makeCurrent() {
-        if (mEGL == null) {
-            throw RuntimeException("not configured for makeCurrent")
-        }
-        checkEglError("before makeCurrent")
-        if (!mEGL!!.eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext)) {
+        if (!EGL14.eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext)) {
             throw RuntimeException("eglMakeCurrent failed")
         }
     }
 
-    /**
-     * Replaces the fragment shader.
-     */
-    fun changeFragmentShader(fragmentShader: String) {
-        mTextureRender!!.changeFragmentShader(fragmentShader)
-    }
-
-    /**
-     * Latches the next buffer into the texture.  Must be called from the thread that created
-     * the OutputSurface object, after the onFrameAvailable callback has signaled that new
-     * data is available.
-     */
     fun awaitNewImage() {
-        val TIMEOUT_MS = 500L
-        
+        val timeout_ms = 2500L
+
         synchronized(frameSyncObject) {
             while (!frameAvailable) {
                 try {
-                    frameSyncObject.wait(TIMEOUT_MS)
+                    frameSyncObject.wait(timeout_ms)
                     if (!frameAvailable) {
                         throw RuntimeException("Camera frame wait timed out")
                     }
@@ -158,14 +144,14 @@ internal class OutputSurface(width: Int = 0, height: Int = 0) : SurfaceTexture.O
             frameAvailable = false
         }
         checkGlError("before updateTexImage")
-        surfaceTexture!!.updateTexImage()
+        surfaceTexture.updateTexImage()
     }
 
     /**
      * Draws the data from SurfaceTexture onto the current EGL surface.
      */
-    fun drawImage() {
-        mTextureRender!!.drawFrame(surfaceTexture!!)
+    fun drawImage(invert: Boolean = false) {
+        textureRender.drawFrame(surfaceTexture, invert)
     }
 
     override fun onFrameAvailable(st: SurfaceTexture) {
@@ -176,6 +162,22 @@ internal class OutputSurface(width: Int = 0, height: Int = 0) : SurfaceTexture.O
             }
             frameAvailable = true
             frameSyncObject.notifyAll()
+        }
+    }
+
+    fun saveFrame(fileName: String) {
+        pixelBuf.rewind()
+        GLES20.glReadPixels(0, 0, width, height, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, pixelBuf)
+        var bos: BufferedOutputStream? = null
+        try {
+            bos = BufferedOutputStream(FileOutputStream(fileName))
+            val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            pixelBuf.rewind()
+            bmp.copyPixelsFromBuffer(pixelBuf)
+            bmp.compress(Bitmap.CompressFormat.JPEG, 100, bos)
+            bmp.recycle()
+        } finally {
+            bos?.close()
         }
     }
 
