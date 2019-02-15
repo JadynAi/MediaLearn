@@ -84,13 +84,6 @@ fun compressToJpeg(fileName: String, image: Image) {
     val yuvImage = YuvImage(image.getDataByte(), ImageFormat.NV21, rect.width(), rect.height(), null)
     yuvImage.compressToJpeg(rect, 100, fileOutputStream)
     fileOutputStream.close()
-
-//    val bitmap = Bitmap.createBitmap(rect.width(), rect.height(), Bitmap.Config.ARGB_8888)
-//    val wrap = ByteBuffer.wrap(image.getDataByte())
-//    bitmap.copyPixelsFromBuffer(wrap)
-//    bitmap.compress(Bitmap.CompressFormat.WEBP, 90, fileOutputStream)
-//    bitmap.recycle()
-//    fileOutputStream.close()
 }
 
 fun Image.isSupportFormat(): Boolean {

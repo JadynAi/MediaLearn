@@ -110,9 +110,9 @@ class VideoDecoder private constructor(file: File, private val isSurface: Boolea
             if (!inputEnd) {
                 val inputBufferId = decoder.dequeueInputBuffer(DEF_TIME_OUT)
                 if (inputBufferId >= 0) {
-                    // 2019/2/9-21:38 获得可使用缓冲区位置索引
+                    // 获得一个可写的输入缓存对象
                     val inputBuffer = decoder.getInputBuffer(inputBufferId)
-                    // 2019/2/8-22:14 检索当前编码的样本，并存储到inputBuffer
+                    // 使用MediaExtractor读取数据
                     val sampleSize = videoAnalyze.mediaExtractor.readSampleData(inputBuffer, 0)
                     if (sampleSize < 0) {
                         // 2019/2/8-19:15 没有数据
@@ -149,12 +149,11 @@ class VideoDecoder private constructor(file: File, private val isSurface: Boolea
                     }
                 } else {
                     if (bufferInfo.size != 0) {
-                        // 2019/2/13-14:17 YUV输出JPEG。使用Image时，先拿到image数据再releaseOutputBuffer
+                        // YUV输出JPEG。使用Image时，先拿到image数据再releaseOutputBuffer
                         val image = decoder.getOutputImage(it)
-                        if (outputFrameCount <= 3) {
+                        if (outputFrameCount <= 1) {
                             Log.d(TAG, "output Image format ${image.format}: ")
                         }
-
                         val fileName = DecoderFormat.JPG.outputFrameFileName(outputDirectory,
                                 outputFrameCount)
                         DecoderFormat.JPG.compressCorrespondingFile(fileName, image)

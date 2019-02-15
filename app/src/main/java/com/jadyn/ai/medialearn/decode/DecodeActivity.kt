@@ -55,7 +55,7 @@ class DecodeActivity : AppCompatActivity() {
             }
 
             switch_iv.isSelected = !switch_iv.isSelected
-            switch_iv.setImageResource(if (switch_iv.isSelected) R.drawable.c else R.drawable.p)
+            switch_iv.setImageResource(if (switch_iv.isSelected) R.drawable.p else R.drawable.c)
         }
 
         start_tv.setOnClickListener {
@@ -72,7 +72,8 @@ class DecodeActivity : AppCompatActivity() {
 
             videoDecoder!!.decoding = {
                 this@DecodeActivity.runOnUiThread {
-                    output_loading_tv.text = "解码中，第${it}张"
+                    val s = if (switch_iv.isSelected) "OpenGL渲染" else "YUV存储"
+                    output_loading_tv.text = TextUtils.concat(s, "解码中，第${it}张")
                 }
             }
 
