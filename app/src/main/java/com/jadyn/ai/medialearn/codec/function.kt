@@ -125,7 +125,7 @@ fun Image.getDataByte(): ByteArray {
 
         // 此时得到的ByteBuffer的position指向末端
         val buffer = planes[i].buffer
-        //  这一行的byte数，像素数
+        //  行跨距
         val rowStride = planes[i].rowStride
         // 行内颜色值间隔，真实间隔值为此值减一
         val pixelStride = planes[i].pixelStride
