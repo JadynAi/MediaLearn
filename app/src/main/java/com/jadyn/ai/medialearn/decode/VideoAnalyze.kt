@@ -23,6 +23,7 @@ class VideoAnalyze(dataSource: String) {
 
     init {
         mediaExtractor.setDataSource(dataSource)
+        // 查看是否含有视频轨
         val trackIndex = mediaExtractor.selectVideoTrack()
         if (trackIndex < 0) {
             throw RuntimeException("this data source not video")

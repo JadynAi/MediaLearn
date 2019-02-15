@@ -26,7 +26,7 @@ enum class ColorFormat {
 * */
 fun DecoderFormat.outputFrameFileName(parentDir: String, frame: Int): String {
     return when {
-        this == DecoderFormat.JPG -> parentDir + String.format("frame_%05d.jpg", frame)
+        this == DecoderFormat.JPG -> parentDir + String.format("frame-%02d.jpg", frame)
         this == DecoderFormat.I420 -> ""
         else -> ""
     }

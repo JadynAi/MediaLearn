@@ -70,6 +70,7 @@ class VideoDecoder private constructor(file: File, private val isSurface: Boolea
             decoderDisposable?.dispose()
             success.invoke()
         }, {
+            Log.d(TAG, "decode failed :${it.message} ")
             decoderDisposable?.dispose()
             failed.invoke()
         })
@@ -101,7 +102,9 @@ class VideoDecoder private constructor(file: File, private val isSurface: Boolea
         Log.d(TAG, "start decode frames")
         isStart = true
         val bufferInfo = MediaCodec.BufferInfo()
+        // 是否输入完毕
         var inputEnd = false
+        // 是否输出完毕
         var outputEnd = false
         decoder.start()
         var outputFrameCount = 0
@@ -120,7 +123,7 @@ class VideoDecoder private constructor(file: File, private val isSurface: Boolea
                                 MediaCodec.BUFFER_FLAG_END_OF_STREAM)
                         inputEnd = true
                     } else {
-                        // 2019/2/9-21:46 将数据压入到输入队列
+                        // 将数据压入到输入队列
                         val presentationTimeUs = videoAnalyze.mediaExtractor.sampleTime
                         decoder.queueInputBuffer(inputBufferId, 0,
                                 sampleSize, presentationTimeUs, 0)
@@ -137,6 +140,7 @@ class VideoDecoder private constructor(file: File, private val isSurface: Boolea
 
                 if (outputSurface != null) {
                     val doRender = bufferInfo.size != 0
+                    // CodeC搭配输出Surface时，调用此方法将数据及时渲染到Surface上
                     decoder.releaseOutputBuffer(it, doRender)
                     if (doRender) {
                         // 2019/2/14-15:24 必须和surface创建时保持统一线程

@@ -9,7 +9,6 @@ import android.media.MediaFormat
 import android.opengl.EGL14
 import android.opengl.GLES20
 import android.util.Log
-import com.jadyn.ai.medialearn.decode.ColorFormat
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.nio.ByteBuffer
@@ -93,12 +92,12 @@ fun Image.isSupportFormat(): Boolean {
     }
 }
 
-fun Image.getDataByte(colorForamt: ColorFormat = ColorFormat.NV21): ByteArray {
+fun Image.getDataByte(): ByteArray {
     val format = format
     if (!isSupportFormat()) {
         throw RuntimeException("image can not support format is $format")
     }
-    // 2019/2/10-15:40 指定了图片的有效区域，只有这个Rect内的像素才是有效的
+    // 指定了图片的有效区域，只有这个Rect内的像素才是有效的
     val rect = cropRect
     val width = rect.width()
     val height = rect.height()
@@ -115,30 +114,20 @@ fun Image.getDataByte(colorForamt: ColorFormat = ColorFormat.NV21): ByteArray {
                 outputStride = 1
             }
             1 -> {
-                if (colorForamt == ColorFormat.I420) {
-                    channelOffset = width * height
-                    outputStride = 1
-                } else if (colorForamt == ColorFormat.NV21) {
-                    channelOffset = width * height + 1
-                    outputStride = 2
-                }
+                channelOffset = width * height + 1
+                outputStride = 2
             }
             2 -> {
-                if (colorForamt == ColorFormat.I420) {
-                    channelOffset = (width * height * 1.25f).toInt()
-                    outputStride = 1
-                } else if (colorForamt == ColorFormat.NV21) {
-                    channelOffset = width * height
-                    outputStride = 2
-                }
+                channelOffset = width * height
+                outputStride = 2
             }
         }
 
-        // 2019/2/11-23:14 此时得到的ByteBuffer的position指向末端
+        // 此时得到的ByteBuffer的position指向末端
         val buffer = planes[i].buffer
-        // 2019/2/11-23:17 这一行的byte数，像素数
+        //  这一行的byte数，像素数
         val rowStride = planes[i].rowStride
-        // 2019/2/11-23:17 行内颜色值间隔，真实间隔值为此值减一
+        // 行内颜色值间隔，真实间隔值为此值减一
         val pixelStride = planes[i].pixelStride
 
         val TAG = "getDataByte"
