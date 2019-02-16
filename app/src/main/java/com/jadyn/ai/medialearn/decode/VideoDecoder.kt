@@ -83,6 +83,7 @@ class VideoDecoder private constructor(file: File, private val isSurface: Boolea
     fun release() {
         stop()
         decoderDisposable?.dispose()
+        videoAnalyze.release()
         outputSurface?.release()
     }
 

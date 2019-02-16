@@ -40,4 +40,8 @@ class VideoAnalyze(dataSource: String) {
         return ((mediaFormat.duration.toFloat() / 1000000f) * mediaFormat.fps).toInt()
     }
 
+    fun release() {
+        mediaExtractor.release()
+    }
+
 }
