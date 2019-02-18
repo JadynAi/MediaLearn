@@ -9,6 +9,7 @@ import android.os.Environment
 import android.util.Log
 import android.view.Surface
 import com.jadyn.ai.medialearn.camera.audio.AiLoiAudioEncoder
+import com.jadyn.mediakit.gl.CodecInputSurface
 import java.io.File
 import java.io.IOException
 import java.util.*

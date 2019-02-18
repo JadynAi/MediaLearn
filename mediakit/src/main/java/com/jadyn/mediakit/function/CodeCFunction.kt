@@ -2,6 +2,7 @@ package com.jadyn.mediakit.function
 
 import android.media.MediaCodec
 import android.util.Log
+import java.nio.ByteBuffer
 
 /**
  *@version:
@@ -16,7 +17,7 @@ import android.util.Log
 * */
 fun MediaCodec.disposeOutput(bufferInfo: MediaCodec.BufferInfo, defTimeOut: Long,
                              endStream: () -> Unit = {},
-                             render: (Int) -> Unit) {
+                             render: (outputBufferId: Int) -> Unit) {
     // 2019/2/9-22:20 获取可用的输出缓存队列
     val outputBufferId = dequeueOutputBuffer(bufferInfo, defTimeOut)
     Log.d("disposeOutput", "output buffer id : $outputBufferId ")
@@ -28,4 +29,16 @@ fun MediaCodec.disposeOutput(bufferInfo: MediaCodec.BufferInfo, defTimeOut: Long
         }
         render.invoke(outputBufferId)
     }
+}
+
+/*
+* 硬编码获得可用的输入队列
+* */
+fun MediaCodec.dequeueValidInputBuffer(timeOutUs: Long, input: (inputBufferId: Int, inputBuffer: ByteBuffer) -> Unit): Boolean {
+    val inputBufferId = dequeueInputBuffer(timeOutUs)
+    if (inputBufferId >= 0) {
+        input.invoke(inputBufferId, getInputBuffer(inputBufferId))
+        return true
+    }
+    return false
 }

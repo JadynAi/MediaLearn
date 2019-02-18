@@ -1,4 +1,4 @@
-package com.jadyn.mediakit.video.decode
+package com.jadyn.mediakit.gl
 
 import android.graphics.Bitmap
 import android.graphics.SurfaceTexture
@@ -10,7 +10,6 @@ import android.util.Size
 import android.view.Surface
 import com.jadyn.mediakit.function.checkEglError
 import com.jadyn.mediakit.function.checkGlError
-import com.jadyn.mediakit.gl.STextureRender
 import java.io.BufferedOutputStream
 import java.io.FileOutputStream
 import java.nio.ByteBuffer
@@ -23,7 +22,7 @@ import java.nio.ByteOrder
  *@Since:2019/2/12
  *@ChangeList:
  */
-class OutputSurface(private val width: Int, private val height: Int) : SurfaceTexture.OnFrameAvailableListener {
+class OutputSurface(private val width: Int, private val height: Int){
 
     constructor(size: Size) : this(size.width, size.height)
 
@@ -66,7 +65,16 @@ class OutputSurface(private val width: Int, private val height: Int) : SurfaceTe
         if (VERBOSE) Log.d(TAG, "textureID=" + textureRender.textureId)
         surfaceTexture = SurfaceTexture(textureRender.textureId)
 
-        surfaceTexture.setOnFrameAvailableListener(this)
+        surfaceTexture.setOnFrameAvailableListener {
+            if (VERBOSE) Log.d(TAG, "new frame available")
+            synchronized(frameSyncObject) {
+                if (frameAvailable) {
+                    throw RuntimeException("mFrameAvailable already set, frame could be dropped")
+                }
+                frameAvailable = true
+                frameSyncObject.notifyAll()
+            }
+        }
     }
 
     private fun eglSetup() {
@@ -80,10 +88,18 @@ class OutputSurface(private val width: Int, private val height: Int) : SurfaceTe
             throw RuntimeException("unable to initialize EGL14")
         }
 
-        val attributeList = intArrayOf(EGL14.EGL_RED_SIZE, 8, EGL14.EGL_GREEN_SIZE, 8, EGL14.EGL_BLUE_SIZE, 8, EGL14.EGL_ALPHA_SIZE, 8, EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT, EGL14.EGL_SURFACE_TYPE, EGL14.EGL_PBUFFER_BIT, EGL14.EGL_NONE)
+        val attributeList = intArrayOf(EGL14.EGL_RED_SIZE, 8, 
+                EGL14.EGL_GREEN_SIZE, 8, 
+                EGL14.EGL_BLUE_SIZE, 8,
+                EGL14.EGL_ALPHA_SIZE, 8,
+                EGL14.EGL_RENDERABLE_TYPE, 
+                EGL14.EGL_OPENGL_ES2_BIT,
+                EGL14.EGL_SURFACE_TYPE, 
+                EGL14.EGL_PBUFFER_BIT, EGL14.EGL_NONE)
         val configs = arrayOfNulls<EGLConfig>(1)
         val numConfigs = IntArray(1)
-        if (!EGL14.eglChooseConfig(mEGLDisplay, attributeList, 0, configs, 0, configs.size,
+        if (!EGL14.eglChooseConfig(mEGLDisplay, attributeList, 0,
+                        configs, 0, configs.size,
                         numConfigs, 0)) {
             throw RuntimeException("unable to find RGB888+recordable ES2 EGL config")
         }
@@ -117,8 +133,9 @@ class OutputSurface(private val width: Int, private val height: Int) : SurfaceTe
         mEGLDisplay = EGL14.EGL_NO_DISPLAY
         mEGLContext = EGL14.EGL_NO_CONTEXT
         mEGLSurface = EGL14.EGL_NO_SURFACE
-
+        
         surface.release()
+        surfaceTexture.release()
     }
 
     fun makeCurrent() {
@@ -152,17 +169,6 @@ class OutputSurface(private val width: Int, private val height: Int) : SurfaceTe
      */
     fun drawImage(invert: Boolean = false) {
         textureRender.drawFrame(surfaceTexture, invert)
-    }
-
-    override fun onFrameAvailable(st: SurfaceTexture) {
-        if (VERBOSE) Log.d(TAG, "new frame available")
-        synchronized(frameSyncObject) {
-            if (frameAvailable) {
-                throw RuntimeException("mFrameAvailable already set, frame could be dropped")
-            }
-            frameAvailable = true
-            frameSyncObject.notifyAll()
-        }
     }
 
     fun saveFrame(fileName: String) {

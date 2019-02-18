@@ -36,10 +36,6 @@ class TextureFunction : SurfaceTexture.OnFrameAvailableListener {
         surfaceTexture = null
     }
 
-    fun reset() {
-        
-    }
-
     fun changeFragmentShader(fragmentShader: String) {
         textureRender!!.changeFragmentShader(fragmentShader)
     }

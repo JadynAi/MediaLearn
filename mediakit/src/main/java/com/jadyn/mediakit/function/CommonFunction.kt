@@ -57,7 +57,7 @@ fun MediaCodecInfo.CodecCapabilities.isSupportColorFormat(colorForamt: Int): Boo
 
 //------------------Decode Video----------------------
 
-fun compressToJpeg(fileName: String, image: Image) {
+fun compressToJpeg(fileName: String, image: Image): Boolean {
     val fileOutputStream: FileOutputStream
     try {
         fileOutputStream = FileOutputStream(fileName)
@@ -66,8 +66,9 @@ fun compressToJpeg(fileName: String, image: Image) {
     }
     val rect = image.cropRect
     val yuvImage = YuvImage(image.getDataByte(), ImageFormat.NV21, rect.width(), rect.height(), null)
-    yuvImage.compressToJpeg(rect, 100, fileOutputStream)
+    val success = yuvImage.compressToJpeg(rect, 100, fileOutputStream)
     fileOutputStream.close()
+    return success
 }
 
 fun Image.isSupportFormat(): Boolean {

@@ -18,7 +18,7 @@ import java.io.File
  *@Since:2019/1/28
  *@ChangeList:
  */
-class VideoDecoder private constructor(file: File, private val isSurface: Boolean = false) {
+class VideoDecoder private constructor(file: File, private val decodeCore: DecodeCore = YuvCore()) {
 
     private val TAG = this.javaClass.name
 
@@ -31,10 +31,14 @@ class VideoDecoder private constructor(file: File, private val isSurface: Boolea
     }
 
     private val DEF_TIME_OUT = 10000L
-    private var outputSurface: OutputSurface? = null
     private var decoder: MediaCodec
     private val defDecoderColorFormat = MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible
+    
     private var outputDirectory: String = Environment.getExternalStorageDirectory().path + "/"
+        private set(value) {
+            decodeCore.configure(value)
+            field = value
+        }
 
     init {
         val mime = mediaFormat.mime
@@ -74,16 +78,15 @@ class VideoDecoder private constructor(file: File, private val isSurface: Boolea
         stop()
         decoderDisposable?.dispose()
         videoAnalyze.release()
-        outputSurface?.release()
+        decodeCore.release()
     }
 
     private fun decodeToFrames() {
-        outputSurface = if (isSurface) OutputSurface(mediaFormat.width, mediaFormat.height) else null
-
         // 指定帧格式COLOR_FormatYUV420Flexible,几乎所有的解码器都支持
         if (decoder.codecInfo.getCapabilitiesForType(mediaFormat.mime).isSupportColorFormat(defDecoderColorFormat)) {
             mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, defDecoderColorFormat)
-            decoder.configure(mediaFormat, outputSurface?.surface, null, 0)
+            decoder.configure(mediaFormat, decodeCore.fkOutputSurface(mediaFormat.width, mediaFormat.height),
+                    null, 0)
         } else {
             throw RuntimeException("this mobile not support YUV 420 Color Format")
             TODO("soft decode")
@@ -102,10 +105,8 @@ class VideoDecoder private constructor(file: File, private val isSurface: Boolea
 
         while (!outputEnd && isStart) {
             if (!inputEnd) {
-                val inputBufferId = decoder.dequeueInputBuffer(DEF_TIME_OUT)
-                if (inputBufferId >= 0) {
-                    // 获得一个可写的输入缓存对象
-                    val inputBuffer = decoder.getInputBuffer(inputBufferId)
+                // 获得可用输入队列，并填充数据
+                decoder.dequeueValidInputBuffer(DEF_TIME_OUT) { inputBufferId, inputBuffer ->
                     // 使用MediaExtractor读取数据
                     val sampleSize = videoAnalyze.mediaExtractor.readSampleData(inputBuffer, 0)
                     if (sampleSize < 0) {
@@ -128,34 +129,10 @@ class VideoDecoder private constructor(file: File, private val isSurface: Boolea
                 outputEnd = true
             }) {
                 outputFrameCount++
-
-                if (outputSurface != null) {
-                    val doRender = bufferInfo.size != 0
-                    // CodeC搭配输出Surface时，调用此方法将数据及时渲染到Surface上
-                    decoder.releaseOutputBuffer(it, doRender)
-                    if (doRender) {
-                        // 2019/2/14-15:24 必须和surface创建时保持统一线程
-                        outputSurface!!.awaitNewImage()
-                        outputSurface!!.drawImage(true)
-
-                        val file = File(outputDirectory, String.format("frame-%02d.jpg", outputFrameCount))
-                        decoding.invoke(outputFrameCount)
-                        outputSurface!!.saveFrame(file.toString())
-                    }
-                } else {
-                    if (bufferInfo.size != 0) {
-                        // YUV输出JPEG。使用Image时，先拿到image数据再releaseOutputBuffer
-                        val image = decoder.getOutputImage(it)
-                        if (outputFrameCount <= 1) {
-                            Log.d(TAG, "output Image format ${image.format}: ")
-                        }
-                        val fileName = DecoderFormat.JPG.outputFrameFileName(outputDirectory,
-                                outputFrameCount)
-                        DecoderFormat.JPG.compressCorrespondingFile(fileName, image)
-                        decoding.invoke(outputFrameCount)
-                        image.close()
-                    }
-                    decoder.releaseOutputBuffer(it, true)
+                //视频帧编码为图片
+                val index = decodeCore.codeToFrame(bufferInfo, it, outputFrameCount, decoder)
+                if (index > 0) {
+                    decoding.invoke(index)
                 }
             }
         }
@@ -170,6 +147,8 @@ class VideoDecoder private constructor(file: File, private val isSurface: Boolea
         private var dir = ""
 
         private var surfaceOutput = false
+
+        private var decoderCore: DecodeCore = YuvCore()
 
         fun makeFile(path: String?): DecoderBuilder {
             if (path.isNullOrBlank()) {
@@ -207,11 +186,12 @@ class VideoDecoder private constructor(file: File, private val isSurface: Boolea
         * */
         fun setUseSurfaceOutput(use: Boolean): DecoderBuilder {
             surfaceOutput = use
+            decoderCore = if (use) GLCore() else YuvCore()
             return this
         }
 
         fun build(): VideoDecoder {
-            return VideoDecoder(file, surfaceOutput).apply {
+            return VideoDecoder(file, decoderCore).apply {
                 outputDirectory = this@DecoderBuilder.dir
             }
         }

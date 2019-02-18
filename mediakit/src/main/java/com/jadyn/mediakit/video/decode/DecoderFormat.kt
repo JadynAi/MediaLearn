@@ -5,7 +5,7 @@ import com.jadyn.mediakit.function.compressToJpeg
 
 /**
  *@version:
- *@FileDescription: 解码输出类型
+ *@FileDescription: 解码输出类型，目前只支持JPEG图片文件
  *@Author:jing
  *@Since:2019/2/9
  *@ChangeList:
@@ -35,14 +35,16 @@ fun DecoderFormat.outputFrameFileName(parentDir: String, frame: Int): String {
 /*
 * 将对应的输出格式压缩到对应的文件
 * */
-fun DecoderFormat.compressCorrespondingFile(fileName: String, image: Image) {
+fun DecoderFormat.compressCorrespondingFile(fileName: String, image: Image): Boolean {
     return when {
         this == DecoderFormat.JPG -> {
             compressToJpeg(fileName, image)
         }
         this == DecoderFormat.I420 -> {
+            false
         }
         else -> {
+            false
         }
     }
 }

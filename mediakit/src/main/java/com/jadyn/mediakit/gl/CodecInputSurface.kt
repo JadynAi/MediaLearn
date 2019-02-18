@@ -1,4 +1,4 @@
-package com.jadyn.ai.medialearn.codec
+package com.jadyn.mediakit.gl
 
 import android.opengl.EGL14
 import android.opengl.EGLConfig
