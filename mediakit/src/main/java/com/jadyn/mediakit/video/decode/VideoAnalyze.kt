@@ -1,10 +1,10 @@
-package com.jadyn.ai.medialearn.decode
+package com.jadyn.mediakit.video.decode
 
 import android.media.MediaExtractor
 import android.media.MediaFormat
-import com.jadyn.ai.medialearn.codec.selectVideoTrack
-import com.jadyn.ai.medialearn.utils.duration
-import com.jadyn.ai.medialearn.utils.fps
+import com.jadyn.mediakit.function.duration
+import com.jadyn.mediakit.function.fps
+import com.jadyn.mediakit.function.selectVideoTrack
 
 /**
  *@version:

@@ -1,4 +1,4 @@
-package com.jadyn.ai.medialearn.decode
+package com.jadyn.mediakit.video.decode
 
 import android.graphics.Bitmap
 import android.graphics.SurfaceTexture
@@ -8,9 +8,9 @@ import android.opengl.GLES20
 import android.util.Log
 import android.util.Size
 import android.view.Surface
-import com.jadyn.ai.medialearn.codec.checkEglError
-import com.jadyn.ai.medialearn.codec.checkGlError
-import com.jadyn.ai.medialearn.gl.STextureRender
+import com.jadyn.mediakit.function.checkEglError
+import com.jadyn.mediakit.function.checkGlError
+import com.jadyn.mediakit.gl.STextureRender
 import java.io.BufferedOutputStream
 import java.io.FileOutputStream
 import java.nio.ByteBuffer

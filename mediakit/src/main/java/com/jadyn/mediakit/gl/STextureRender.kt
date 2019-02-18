@@ -1,12 +1,12 @@
-package com.jadyn.ai.medialearn.gl
+package com.jadyn.mediakit.gl
 
 import android.graphics.SurfaceTexture
 import android.opengl.GLES11Ext
 import android.opengl.GLES20
 import android.opengl.Matrix
 import android.util.Log
-import com.jadyn.ai.medialearn.codec.checkGlError
-import com.jadyn.ai.medialearn.codec.checkLocation
+import com.jadyn.mediakit.function.checkGlError
+import com.jadyn.mediakit.function.checkLocation
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer

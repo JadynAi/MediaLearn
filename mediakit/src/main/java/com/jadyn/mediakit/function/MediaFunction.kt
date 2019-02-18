@@ -1,5 +1,6 @@
-package com.jadyn.ai.medialearn.utils
+package com.jadyn.mediakit.function
 
+import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.util.Size
 
@@ -34,3 +35,15 @@ val MediaFormat.mime
 
 val MediaFormat.rotation
     get() = if (containsKey(MediaFormat.KEY_ROTATION)) getInteger(MediaFormat.KEY_ROTATION) else 0
+
+fun MediaExtractor.selectVideoTrack(): Int {
+    val numTracks = trackCount
+    for (i in 0 until numTracks) {
+        val format = getTrackFormat(i)
+        val mime = format.getString(MediaFormat.KEY_MIME)
+        if (mime.startsWith("video/")) {
+            return i
+        }
+    }
+    return -1
+}

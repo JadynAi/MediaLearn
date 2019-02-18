@@ -1,16 +1,11 @@
-package com.jadyn.ai.medialearn.decode
+package com.jadyn.mediakit.video.decode
 
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
 import android.os.Environment
 import android.util.Log
-import com.jadyn.ai.medialearn.codec.debugShowSupportColorFormat
-import com.jadyn.ai.medialearn.codec.isSupportColorFormat
-import com.jadyn.ai.medialearn.utils.disposeOutput
-import com.jadyn.ai.medialearn.utils.height
-import com.jadyn.ai.medialearn.utils.mime
-import com.jadyn.ai.medialearn.utils.width
+import com.jadyn.mediakit.function.*
 import io.reactivex.Observable
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
@@ -35,19 +30,14 @@ class VideoDecoder private constructor(file: File, private val isSurface: Boolea
         videoAnalyze.mediaFormat
     }
 
-    private var outputSurface: OutputSurface? = null
-
-    private var decoder: MediaCodec
-
-    private val defDecoderColorFormat = MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible
-
     private val DEF_TIME_OUT = 10000L
-
+    private var outputSurface: OutputSurface? = null
+    private var decoder: MediaCodec
+    private val defDecoderColorFormat = MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible
     private var outputDirectory: String = Environment.getExternalStorageDirectory().path + "/"
 
     init {
         val mime = mediaFormat.mime
-
         decoder = MediaCodec.createDecoderByType(mime)
         debugShowSupportColorFormat(decoder.codecInfo.getCapabilitiesForType(mime))
     }

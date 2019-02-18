@@ -1,4 +1,4 @@
-package com.jadyn.ai.medialearn.utils
+package com.jadyn.mediakit.function
 
 import android.media.MediaCodec
 import android.util.Log

@@ -6,6 +6,7 @@ import android.support.v7.app.AppCompatActivity
 import android.text.TextUtils
 import androidx.core.widget.toast
 import com.jadyn.ai.medialearn.R
+import com.jadyn.mediakit.video.decode.VideoDecoder
 import kotlinx.android.synthetic.main.activity_decode.*
 import java.io.File
 

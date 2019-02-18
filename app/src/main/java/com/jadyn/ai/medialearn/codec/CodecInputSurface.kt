@@ -4,6 +4,7 @@ import android.opengl.EGL14
 import android.opengl.EGLConfig
 import android.opengl.EGLExt
 import android.view.Surface
+import com.jadyn.mediakit.function.checkEglError
 
 /**
  *@version:

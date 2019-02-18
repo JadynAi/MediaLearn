@@ -1,7 +1,7 @@
-package com.jadyn.ai.medialearn.decode
+package com.jadyn.mediakit.video.decode
 
 import android.media.Image
-import com.jadyn.ai.medialearn.codec.compressToJpeg
+import com.jadyn.mediakit.function.compressToJpeg
 
 /**
  *@version:

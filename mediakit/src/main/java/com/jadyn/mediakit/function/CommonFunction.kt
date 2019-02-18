@@ -1,11 +1,9 @@
-package com.jadyn.ai.medialearn.codec
+package com.jadyn.mediakit.function
 
 import android.graphics.ImageFormat
 import android.graphics.YuvImage
 import android.media.Image
 import android.media.MediaCodecInfo
-import android.media.MediaExtractor
-import android.media.MediaFormat
 import android.opengl.EGL14
 import android.opengl.GLES20
 import android.util.Log
@@ -16,7 +14,7 @@ import java.nio.ByteBuffer
 
 /**
  *@version:
- *@FileDescription: MediaCodeC辅助工具类
+ *@FileDescription: 常见编解码辅助工具类
  *@Author:jing
  *@Since:2018/12/5
  *@ChangeList:
@@ -47,18 +45,6 @@ fun checkLocation(location: Int, label: String) {
     }
 }
 
-fun MediaExtractor.selectVideoTrack(): Int {
-    val numTracks = trackCount
-    for (i in 0 until numTracks) {
-        val format = getTrackFormat(i)
-        val mime = format.getString(MediaFormat.KEY_MIME)
-        if (mime.startsWith("video/")) {
-            return i
-        }
-    }
-    return -1
-}
-
 fun debugShowSupportColorFormat(caps: MediaCodecInfo.CodecCapabilities) {
     caps.colorFormats.forEach {
         Log.d("colorFormat", "$it : \t")
@@ -70,7 +56,6 @@ fun MediaCodecInfo.CodecCapabilities.isSupportColorFormat(colorForamt: Int): Boo
 }
 
 //------------------Decode Video----------------------
-
 
 fun compressToJpeg(fileName: String, image: Image) {
     val fileOutputStream: FileOutputStream
