@@ -1,5 +1,6 @@
 package com.jadyn.mediakit.video.decode
 
+import android.graphics.Bitmap
 import android.media.MediaCodec
 import android.view.Surface
 
@@ -33,6 +34,9 @@ abstract class DecodeCore {
     * */
     abstract fun codeToFrame(bufferInfo: MediaCodec.BufferInfo, outputBufferId: Int,
                              outputFrameCount: Int, decoder: MediaCodec): Int
+
+    abstract fun codeFrameBitmap(bufferInfo: MediaCodec.BufferInfo, outputBufferId: Int,
+                                 decoder: MediaCodec, ob: (Bitmap) -> Unit)
 
     abstract fun release()
 }

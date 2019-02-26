@@ -10,8 +10,7 @@ import android.util.Size
 import android.view.Surface
 import com.jadyn.mediakit.function.checkEglError
 import com.jadyn.mediakit.function.checkGlError
-import java.io.BufferedOutputStream
-import java.io.FileOutputStream
+import com.jadyn.mediakit.function.saveFrame
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -22,7 +21,7 @@ import java.nio.ByteOrder
  *@Since:2019/2/12
  *@ChangeList:
  */
-class OutputSurface(private val width: Int, private val height: Int){
+class OutputSurface(private val width: Int, private val height: Int) {
 
     constructor(size: Size) : this(size.width, size.height)
 
@@ -88,13 +87,13 @@ class OutputSurface(private val width: Int, private val height: Int){
             throw RuntimeException("unable to initialize EGL14")
         }
 
-        val attributeList = intArrayOf(EGL14.EGL_RED_SIZE, 8, 
-                EGL14.EGL_GREEN_SIZE, 8, 
+        val attributeList = intArrayOf(EGL14.EGL_RED_SIZE, 8,
+                EGL14.EGL_GREEN_SIZE, 8,
                 EGL14.EGL_BLUE_SIZE, 8,
                 EGL14.EGL_ALPHA_SIZE, 8,
-                EGL14.EGL_RENDERABLE_TYPE, 
+                EGL14.EGL_RENDERABLE_TYPE,
                 EGL14.EGL_OPENGL_ES2_BIT,
-                EGL14.EGL_SURFACE_TYPE, 
+                EGL14.EGL_SURFACE_TYPE,
                 EGL14.EGL_PBUFFER_BIT, EGL14.EGL_NONE)
         val configs = arrayOfNulls<EGLConfig>(1)
         val numConfigs = IntArray(1)
@@ -133,7 +132,7 @@ class OutputSurface(private val width: Int, private val height: Int){
         mEGLDisplay = EGL14.EGL_NO_DISPLAY
         mEGLContext = EGL14.EGL_NO_CONTEXT
         mEGLSurface = EGL14.EGL_NO_SURFACE
-        
+
         surface.release()
         surfaceTexture.release()
     }
@@ -172,19 +171,16 @@ class OutputSurface(private val width: Int, private val height: Int){
     }
 
     fun saveFrame(fileName: String) {
+        produceBitmap().saveFrame(fileName)
+    }
+
+    fun produceBitmap(): Bitmap {
         pixelBuf.rewind()
         GLES20.glReadPixels(0, 0, width, height, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, pixelBuf)
-        var bos: BufferedOutputStream? = null
-        try {
-            bos = BufferedOutputStream(FileOutputStream(fileName))
-            val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-            pixelBuf.rewind()
-            bmp.copyPixelsFromBuffer(pixelBuf)
-            bmp.compress(Bitmap.CompressFormat.JPEG, 100, bos)
-            bmp.recycle()
-        } finally {
-            bos?.close()
-        }
+        val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        pixelBuf.rewind()
+        bmp.copyPixelsFromBuffer(pixelBuf)
+        return bmp
     }
 
 }

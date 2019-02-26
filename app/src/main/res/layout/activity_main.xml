@@ -16,23 +16,23 @@
         android:text="视频录制Camera(未准备好^^)"
         android:textColor="@android:color/white"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHorizontal_bias="0.517"
+        app:layout_constraintHorizontal_bias="0.522"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.214"/>
+        app:layout_constraintVertical_bias="0.127"/>
 
     <TextView
         android:id="@+id/tv_go_camera2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="112dp"
+        android:layout_marginTop="84dp"
         android:background="@android:color/darker_gray"
         android:padding="10dp"
         android:text="视频录制Camera2(未准备好^^)"
         android:textColor="@android:color/white"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.501"
+        app:layout_constraintHorizontal_bias="0.502"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tv_go_camera"/>
 
@@ -40,7 +40,7 @@
         android:id="@+id/tv_decode"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="108dp"
+        android:layout_marginTop="80dp"
         android:background="@android:color/holo_blue_light"
         android:padding="10dp"
         android:text="视频解码"
@@ -48,5 +48,19 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tv_go_camera2"/>
+
+    <TextView
+        android:id="@+id/tv_decode_frame"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="80dp"
+        android:background="@android:color/holo_blue_light"
+        android:padding="10dp"
+        android:text="视频解码指定帧"
+        android:textColor="@android:color/white"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_decode"/>
 
 </android.support.constraint.ConstraintLayout>

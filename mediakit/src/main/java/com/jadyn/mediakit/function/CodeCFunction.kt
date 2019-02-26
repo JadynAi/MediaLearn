@@ -18,7 +18,7 @@ import java.nio.ByteBuffer
 fun MediaCodec.disposeOutput(bufferInfo: MediaCodec.BufferInfo, defTimeOut: Long,
                              endStream: () -> Unit = {},
                              render: (outputBufferId: Int) -> Unit) {
-    // 2019/2/9-22:20 获取可用的输出缓存队列
+    //  获取可用的输出缓存队列
     val outputBufferId = dequeueOutputBuffer(bufferInfo, defTimeOut)
     Log.d("disposeOutput", "output buffer id : $outputBufferId ")
     if (outputBufferId >= 0) {

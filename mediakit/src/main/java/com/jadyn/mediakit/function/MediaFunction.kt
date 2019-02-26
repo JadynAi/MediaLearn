@@ -23,6 +23,10 @@ val MediaFormat.size
 val MediaFormat.duration
     get() = getLong(MediaFormat.KEY_DURATION)
 
+//时长：秒
+val MediaFormat.durationSecond
+    get() = (getLong(MediaFormat.KEY_DURATION) / 1000000L).toInt()
+
 val MediaFormat.fps: Int
     get() = try {
         getInteger(MediaFormat.KEY_FRAME_RATE)
@@ -33,9 +37,9 @@ val MediaFormat.fps: Int
 val MediaFormat.mime
     get() = getString(MediaFormat.KEY_MIME)
 
-val MediaFormat.rotation
-    get() = if (containsKey(MediaFormat.KEY_ROTATION)) getInteger(MediaFormat.KEY_ROTATION) else 0
-
+/*
+* 选择视频轨
+* */
 fun MediaExtractor.selectVideoTrack(): Int {
     val numTracks = trackCount
     for (i in 0 until numTracks) {
@@ -46,4 +50,15 @@ fun MediaExtractor.selectVideoTrack(): Int {
         }
     }
     return -1
+}
+
+/*
+* 防止时间越界
+* */
+fun MediaFormat.getSafeTimeUS(second: Float): Long {
+    return when {
+        second < 0L -> 0L
+        second * 1000000 > duration -> duration
+        else -> (second * 1000000).toLong()
+    }
 }

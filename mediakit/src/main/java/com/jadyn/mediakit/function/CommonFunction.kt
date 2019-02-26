@@ -1,15 +1,18 @@
 package com.jadyn.mediakit.function
 
+import android.graphics.Bitmap
 import android.graphics.ImageFormat
-import android.graphics.YuvImage
 import android.media.Image
 import android.media.MediaCodecInfo
 import android.opengl.EGL14
 import android.opengl.GLES20
+import android.support.annotation.IntRange
 import android.util.Log
-import java.io.FileNotFoundException
+import java.io.BufferedOutputStream
+import java.io.File
 import java.io.FileOutputStream
 import java.nio.ByteBuffer
+import java.security.MessageDigest
 
 
 /**
@@ -56,21 +59,6 @@ fun MediaCodecInfo.CodecCapabilities.isSupportColorFormat(colorForamt: Int): Boo
 }
 
 //------------------Decode Video----------------------
-
-fun compressToJpeg(fileName: String, image: Image): Boolean {
-    val fileOutputStream: FileOutputStream
-    try {
-        fileOutputStream = FileOutputStream(fileName)
-    } catch (e: FileNotFoundException) {
-        throw RuntimeException("compress JPG can not create available file ")
-    }
-    val rect = image.cropRect
-    val yuvImage = YuvImage(image.getDataByte(), ImageFormat.NV21, rect.width(), rect.height(), null)
-    val success = yuvImage.compressToJpeg(rect, 100, fileOutputStream)
-    fileOutputStream.close()
-    return success
-}
-
 fun Image.isSupportFormat(): Boolean {
     return when (format) {
         ImageFormat.YUV_420_888, ImageFormat.NV21, ImageFormat.YV12 -> true
@@ -160,4 +148,51 @@ fun Image.getDataByte(): ByteArray {
 fun ByteBuffer.getNoException(dst: ByteArray, offset: Int, length: Int): ByteBuffer? {
     val realLength = if (length > remaining()) remaining() else length
     return get(dst, offset, realLength)
+}
+
+fun Bitmap.saveFrame(fileName: String, @IntRange(from = 1, to = 100) quality: Int = 100) {
+    var bos: BufferedOutputStream? = null
+    try {
+        File(fileName).makeParent()
+        bos = BufferedOutputStream(FileOutputStream(fileName))
+        compress(Bitmap.CompressFormat.JPEG, quality, bos)
+        recycle()
+    } catch (e: Exception) {
+        e.printStackTrace()
+    } finally {
+        bos?.close()
+    }
+}
+
+fun md5(str: String): String {
+    val digest = MessageDigest.getInstance("MD5")
+    val result = digest.digest(str.toByteArray())
+    //没转16进制之前是16位
+    println("result${result.size}")
+    //转成16进制后是32字节
+    return toHex(result)
+}
+
+fun toHex(byteArray: ByteArray): String {
+    //转成16进制后是32字节
+    return with(StringBuilder()) {
+        byteArray.forEach {
+            val hex = it.toInt() and (0xFF)
+            val hexStr = Integer.toHexString(hex)
+            if (hexStr.length == 1) {
+                append("0").append(hexStr)
+            } else {
+                append(hexStr)
+            }
+        }
+        toString()
+    }
+}
+
+fun File.makeParent() {
+    parentFile?.apply {
+        if (!exists()) {
+            this.mkdirs()
+        }
+    }
 }

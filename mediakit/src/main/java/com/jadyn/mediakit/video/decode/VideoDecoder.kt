@@ -33,7 +33,7 @@ class VideoDecoder private constructor(file: File, private val decodeCore: Decod
     private val DEF_TIME_OUT = 10000L
     private var decoder: MediaCodec
     private val defDecoderColorFormat = MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible
-    
+
     private var outputDirectory: String = Environment.getExternalStorageDirectory().path + "/"
         private set(value) {
             decodeCore.configure(value)
@@ -103,6 +103,8 @@ class VideoDecoder private constructor(file: File, private val decodeCore: Decod
         decoder.start()
         var outputFrameCount = 0
 
+        var advanceCount = 0
+
         while (!outputEnd && isStart) {
             if (!inputEnd) {
                 // 获得可用输入队列，并填充数据
@@ -114,12 +116,15 @@ class VideoDecoder private constructor(file: File, private val decodeCore: Decod
                         decoder.queueInputBuffer(inputBufferId, 0, 0, 0L,
                                 MediaCodec.BUFFER_FLAG_END_OF_STREAM)
                         inputEnd = true
+                        Log.d(TAG, "queueInputBuffer end stream :$advanceCount  time is ${System.currentTimeMillis()}")
                     } else {
                         // 将数据压入到输入队列
                         val presentationTimeUs = videoAnalyze.mediaExtractor.sampleTime
                         decoder.queueInputBuffer(inputBufferId, 0,
                                 sampleSize, presentationTimeUs, 0)
                         videoAnalyze.mediaExtractor.advance()
+                        advanceCount++
+                        Log.d(TAG, "queueInputBuffer count :$advanceCount  time is ${System.currentTimeMillis()}")
                     }
                 }
             }
@@ -130,12 +135,14 @@ class VideoDecoder private constructor(file: File, private val decodeCore: Decod
             }) {
                 outputFrameCount++
                 //视频帧编码为图片
+                Log.d(TAG, "outputBuffer count :$advanceCount  time is ${System.currentTimeMillis()}")
                 val index = decodeCore.codeToFrame(bufferInfo, it, outputFrameCount, decoder)
                 if (index > 0) {
                     decoding.invoke(index)
                 }
             }
         }
+        Log.d(TAG, "MediaExtractor advanced count is $advanceCount: ")
         Log.d(TAG, "decode frames end ${(System.currentTimeMillis() - startTime) / 1000}")
     }
 

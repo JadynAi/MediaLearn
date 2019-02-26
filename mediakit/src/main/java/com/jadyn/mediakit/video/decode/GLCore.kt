@@ -1,5 +1,6 @@
 package com.jadyn.mediakit.video.decode
 
+import android.graphics.Bitmap
 import android.media.MediaCodec
 import android.view.Surface
 import com.jadyn.mediakit.gl.OutputSurface
@@ -41,6 +42,21 @@ class GLCore : DecodeCore() {
             return -1
         }
         return -1
+    }
+
+    override fun codeFrameBitmap(bufferInfo: MediaCodec.BufferInfo, outputBufferId: Int,
+                                 decoder: MediaCodec, ob: (Bitmap) -> Unit) {
+        outputSurface?.apply {
+            val doRender = bufferInfo.size != 0
+            // CodeC搭配输出Surface时，调用此方法将数据及时渲染到Surface上
+            decoder.releaseOutputBuffer(outputBufferId, doRender)
+            if (doRender) {
+                // 2019/2/14-15:24 必须和surface创建时保持统一线程
+                awaitNewImage()
+                drawImage(true)
+                ob.invoke(produceBitmap())
+            }
+        }
     }
 
     override fun release() {
