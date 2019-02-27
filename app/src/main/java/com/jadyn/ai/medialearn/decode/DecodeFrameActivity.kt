@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.support.v7.app.AppCompatActivity
 import android.text.TextUtils
+import android.util.Log
 import android.widget.SeekBar
 import com.jadyn.ai.medialearn.R
 import com.jadyn.mediakit.function.durationSecond
@@ -35,6 +36,16 @@ class DecodeFrameActivity : AppCompatActivity() {
         setContentView(R.layout.activity_decode_frame)
 
         file_frame_et.setText(decodeMP4Path)
+        
+        
+        val a = arrayListOf(1,2,3,4,5,6)
+        
+        a.forEach {
+            if (it == 4) {
+                return@forEach
+            }
+            Log.d("fuck", "it is $it: ")
+        }
 
         sure_video.setOnClickListener {
             val dataSource = file_frame_et.text.toString()
@@ -50,9 +61,16 @@ class DecodeFrameActivity : AppCompatActivity() {
         }
 
         video_seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
                 videoAnalyze?.apply {
                     updateTime(progress, mediaFormat.durationSecond)
+                }
+                videoDecoder2?.apply {
+                    getFrame(seekBar.progress.toFloat(), {
+                        frame_img.setImageBitmap(it)
+                    }, {
+                        Log.d("cece", "throwable ${it.message}: ")
+                    })
                 }
             }
 
@@ -60,11 +78,6 @@ class DecodeFrameActivity : AppCompatActivity() {
             }
 
             override fun onStopTrackingTouch(seekBar: SeekBar) {
-                videoDecoder2?.apply {
-                    getFrame(seekBar.progress.toFloat(), {
-                        frame_img.setImageBitmap(it)
-                    }, {})
-                }
             }
         })
 

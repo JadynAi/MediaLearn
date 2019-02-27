@@ -38,9 +38,9 @@ class FrameCache(@IntRange(from = 0, to = 3) maxSize: Int, private val dataSourc
             }
         }
     }
-    
+
     private val cacheDiskList = arrayListOf<Long>()
-    
+
     init {
         //初始化的时候，把硬盘的已缓存的模板保存下来，用来判断
     }
@@ -56,16 +56,17 @@ class FrameCache(@IntRange(from = 0, to = 3) maxSize: Int, private val dataSourc
     //获取目标帧缓存
     fun cacheFrame(target: Long, b: Bitmap) {
         Log.d(TAG, "cacheFrame target $target: ")
-        cacheLru(target, b)
+        // todo(内存缓存会导致绘制失败，原因未明，暂时搁置，学习Glide内存缓存之后再探
+//        cacheLru(target, b)
         cacheDisk(target, b)
     }
-    
+
     fun release() {
         compositeDisposable.clear()
     }
 
     fun asyncGetTarget(target: Long, success: (Bitmap) -> Unit, failed: (Throwable) -> Unit) {
-        getLruBitmap(target)?.apply{
+        getLruBitmap(target)?.apply {
             success.invoke(this)
             return
         }
@@ -92,6 +93,16 @@ class FrameCache(@IntRange(from = 0, to = 3) maxSize: Int, private val dataSourc
     fun blockingGetDiskCache(target: Long): Bitmap? {
         return BitmapFactory.decodeFile(getDiskKey(target))
     }
+
+    fun hasDiskCache(target: Long): Boolean {
+        return try {
+            File(getDiskKey(target)).exists()
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    fun hasCache(target: Long) = getLruBitmap(target) != null || hasDiskCache(target)
 
     private fun cacheLru(target: Long, b: Bitmap) {
         lruCache.put(getLruKey(target), b)

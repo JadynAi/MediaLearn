@@ -120,6 +120,7 @@ class VideoDecoder private constructor(file: File, private val decodeCore: Decod
                     } else {
                         // 将数据压入到输入队列
                         val presentationTimeUs = videoAnalyze.mediaExtractor.sampleTime
+                        Log.d("TimeTest", "input time $presentationTimeUs")
                         decoder.queueInputBuffer(inputBufferId, 0,
                                 sampleSize, presentationTimeUs, 0)
                         videoAnalyze.mediaExtractor.advance()
@@ -134,6 +135,7 @@ class VideoDecoder private constructor(file: File, private val decodeCore: Decod
                 outputEnd = true
             }) {
                 outputFrameCount++
+                Log.d("TimeTest", "out info ${bufferInfo.presentationTimeUs}")
                 //视频帧编码为图片
                 Log.d(TAG, "outputBuffer count :$advanceCount  time is ${System.currentTimeMillis()}")
                 val index = decodeCore.codeToFrame(bufferInfo, it, outputFrameCount, decoder)

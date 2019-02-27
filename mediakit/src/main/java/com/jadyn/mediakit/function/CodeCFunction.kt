@@ -42,3 +42,10 @@ fun MediaCodec.dequeueValidInputBuffer(timeOutUs: Long, input: (inputBufferId: I
     }
     return false
 }
+
+fun MediaCodec.queueEndSteam(timeOutUs: Long) {
+    dequeueValidInputBuffer(timeOutUs) { inputBufferId, inputBuffer ->
+        queueInputBuffer(inputBufferId, 0, 0, 0L,
+                MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+    }
+}

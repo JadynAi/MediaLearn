@@ -13,7 +13,6 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import java.util.*
-import java.util.concurrent.Executors
 
 /**
  *@version:
@@ -35,21 +34,21 @@ class VideoDecoder2(dataSource: String) {
     private val decodeCore by lazy {
         GLCore()
     }
-    private val decoderExecutor by lazy {
-        Schedulers.computation()
-        Executors.newSingleThreadExecutor()
+    private val decoderScheduler by lazy {
+        Schedulers.io()
     }
     private val frameCache by lazy {
         FrameCache(3, dataSource)
     }
 
-    private val queuqTask by lazy {
-        arrayListOf<DecodeFrame>()
+    private val queueTask by lazy {
+        Collections.synchronizedList(arrayListOf<DecodeFrame>())
     }
 
-    private val DEF_TIME_OUT = 10000L
+    private val DEF_TIME_OUT = 2000L
     private var decoder: MediaCodec
     private val defDecoderColorFormat = MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible
+    private var isStart = false
 
     init {
         val mime = mediaFormat.mime
@@ -64,27 +63,35 @@ class VideoDecoder2(dataSource: String) {
         }
     }
 
-
+    /**
+     * 得到指定时间的帧，异步回调
+     *
+     * @param second 秒
+     *
+     * @param success 成功回调
+     *
+     * @param failed 失败回调
+     */
     fun getFrame(second: Float, success: (Bitmap) -> Unit, failed: (Throwable) -> Unit) {
         val target = videoAnalyze.getValidSampleTime(mediaFormat.getSafeTimeUS(second))
         frameCache.asyncGetTarget(target, success, {
-            // 如果正在取这一帧，就不作任何处理
-            if (queuqTask.isNotEmpty() && queuqTask[0].sampleTime ==
-                    target) {
-            } else {
+            // 如果此时任务栈里正在取这一帧，就不作任何处理
+            val isSameFrame = queueTask.isNotEmpty() && queueTask[0].sampleTime == target
+            if (!isSameFrame) {
                 Log.d(TAG, "getFrame second $second sampleTime ${videoAnalyze.getValidSampleTime(mediaFormat.getSafeTimeUS(second))}: ")
-                DecodeFrame(second, success, failed).start()
+                DecodeFrame(second, success, failed).execute()
             }
         })
     }
 
     fun release() {
         videoAnalyze.release()
-        if (queuqTask.isNotEmpty()) {
-            queuqTask.forEach {
+        if (queueTask.isNotEmpty()) {
+            queueTask.forEach {
                 it.release()
             }
         }
+        decodeCore.release()
         decoder.release()
     }
 
@@ -92,117 +99,112 @@ class VideoDecoder2(dataSource: String) {
                             private val success: (Bitmap) -> Unit,
                             private val failed: (Throwable) -> Unit) {
 
-        val sampleTime: Long
+        val sampleTime: Long = videoAnalyze.getValidSampleTime(when {
+            target < 0L -> 0L
+            target * 1000000 > mediaFormat.duration -> mediaFormat.duration
+            else -> (target * 1000000).toLong()
+        })
         private val core: Observable<Bitmap>
         private var flint: Disposable? = null
 
         init {
-            sampleTime = videoAnalyze.getValidSampleTime(when {
-                target < 0L -> 0L
-                target * 1000000 > mediaFormat.duration -> mediaFormat.duration
-                else -> (target * 1000000).toLong()
-            })
-
             core = Observable.create<Bitmap> { emitter ->
-                decoder.configure(mediaFormat, decodeCore.fkOutputSurface(mediaFormat.width, mediaFormat.height),
-                        null, 0)
-                decoder.start()
-                //处理目标时间帧
-                handleFrame(sampleTime, emitter)
-
-                //如果队列没有紧急任务，那么就抽空往下渲染几帧,
-                val timeList = videoAnalyze.getLaterTime(sampleTime, 5)
-                if (timeList.isNotEmpty()) {
-                    timeList.forEach {
-                        handleFrame(it, null)
-                    }
-                } else {
-                    emitter.onComplete()
+                if (!isStart) {
+                    decoder.configure(mediaFormat, decodeCore.fkOutputSurface(mediaFormat.width, mediaFormat.height),
+                            null, 0)
+                    decoder.start()
+                    isStart = true
                 }
-            }.subscribeOn(Schedulers.from(decoderExecutor))
+                val info = MediaCodec.BufferInfo()
+                //处理目标时间帧
+                handleFrame(sampleTime, info, emitter)
+
+                //如果队列没有任务，那么就抽空往下渲染几帧,用作缓存
+                if (queueTask.size <= 1) {
+                    val timeList = videoAnalyze.getLaterTime(sampleTime, 5)
+                    if (timeList.isNotEmpty()) {
+                        Log.d(TAG, "time list $timeList ")
+                        timeList.forEach {
+                            //观察队列是否有紧急任务
+                            endCore()
+                            //如果缓存有，就不再缓存
+                            if (frameCache.hasCache(it)) {
+                                return@forEach
+                            }
+                            handleFrame(it, info, null)
+                        }
+                    }
+                }
+                emitter.onComplete()
+            }.subscribeOn(decoderScheduler)
                     .doOnComplete {
                         schedulerNext()
                     }
                     .observeOn(AndroidSchedulers.mainThread())
         }
 
-        private fun handleFrame(time: Long, emitter: ObservableEmitter<Bitmap>? = null) {
-            // 缓存移到外部
-//            frameCache.getLruBitmap(time)?.apply {
-//                emitter?.onNext(this)
-//                endCore()
-//            }
-//            var diskBitmap: Bitmap? = null
-//            val diskCost = measureTimeMillis {
-//                diskBitmap = frameCache.blockingGetDiskCache(time)
-//            }
-//
-//            Log.d(TAG, "disk cache time $time cost $diskCost: ")
-//            diskBitmap?.apply {
-//                emitter?.onNext(this)
-//                endCore()
-//            }
-            val info = MediaCodec.BufferInfo()
-            decoder.dequeueValidInputBuffer(DEF_TIME_OUT) { inputBufferId, inputBuffer ->
-                videoAnalyze.mediaExtractor.seekTo(time, MediaExtractor.SEEK_TO_CLOSEST_SYNC)
-                val sampleSize = videoAnalyze.mediaExtractor.readSampleData(inputBuffer, 0)
-                // 将数据压入到输入队列
-                val presentationTimeUs = videoAnalyze.mediaExtractor.sampleTime
-                Log.d(TAG, "${if (emitter != null) "main time" else "fuck time"} dequeue time is $time ")
-                decoder.queueInputBuffer(inputBufferId, 0,
-                        sampleSize, presentationTimeUs, MediaCodec.BUFFER_FLAG_CODEC_CONFIG)
-            }
-
-            //如果不给codec标记结束印记的话，就拿不到输出的数据，dequeueOutputBuffer会一直返回-1
-            decoder.dequeueValidInputBuffer(DEF_TIME_OUT) { inputBufferId, inputBuffer ->
-                decoder.queueInputBuffer(inputBufferId, 0, 0, 0L,
-                        MediaCodec.BUFFER_FLAG_END_OF_STREAM)
-            }
-
-            var notGetResult = true
-            val start = System.currentTimeMillis()
-            while (notGetResult) {
-                // outputBuffer不会即刻得到数据，必须循环
-                val id = decoder.dequeueOutputBuffer(info, DEF_TIME_OUT)
-                Log.d(TAG, "output $time id is $id: ")
-                if (id >= 0) {
-                    if ((info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                        // 2019/2/12-22:59 bufferInfo无可用缓存
-                        notGetResult = false
+        private fun handleFrame(time: Long, info: MediaCodec.BufferInfo, emitter: ObservableEmitter<Bitmap>? = null) {
+            val a = arrayListOf<Long>()
+            val b = arrayListOf<Long>()
+            var outputDone = false
+            var inputDone = false
+            videoAnalyze.mediaExtractor.seekTo(time, MediaExtractor.SEEK_TO_PREVIOUS_SYNC)
+            while (!outputDone) {
+                if (!inputDone) {
+                    decoder.dequeueValidInputBuffer(DEF_TIME_OUT) { inputBufferId, inputBuffer ->
+                        val sampleSize = videoAnalyze.mediaExtractor.readSampleData(inputBuffer, 0)
+                        if (sampleSize < 0) {
+                            decoder.queueInputBuffer(inputBufferId, 0, 0, 0L,
+                                    MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+                            inputDone = true
+                        } else {
+                            // 将数据压入到输入队列
+                            val presentationTimeUs = videoAnalyze.mediaExtractor.sampleTime
+                            b.add(presentationTimeUs)
+                            Log.d(TAG, "${if (emitter != null) "main time" else "fuck time"} dequeue time is $presentationTimeUs ")
+                            decoder.queueInputBuffer(inputBufferId, 0,
+                                    sampleSize, presentationTimeUs, 0)
+                            videoAnalyze.mediaExtractor.advance()
+                        }
                     }
+                }
+
+                decoder.disposeOutput(info, DEF_TIME_OUT, {
+                    outputDone = true
+                }, { id ->
+                    Log.d(TAG, "out time ${info.presentationTimeUs} ")
+                    a.add(info.presentationTimeUs)
                     decodeCore.codeFrameBitmap(info, id, decoder) {
-                        emitter?.onNext(it)
-                        //缓存这一帧
+                        if (info.presentationTimeUs == time) {
+                            inputDone = true
+                            outputDone = true
+                            emitter?.onNext(it)
+                        }
+                        //在新的线程缓存帧
                         frameCache.cacheFrame(time, it)
-                        //解码每一帧的时候都要观察队列是否有紧急任务
-                        endCore()
-                        notGetResult = false
                     }
-                }
-                if (System.currentTimeMillis() - start >= 1000L) {
-                    notGetResult = false
-                }
+                })
             }
-            decoder.flush()
         }
 
         private fun endCore() {
-            if (queuqTask.size > 1) {
+            if (queueTask.size > 1) {
                 //队列还有任务.抛出异常用来终止上游继续运行
                 throw EndSignal()
             }
         }
 
-        fun start() {
-            if (queuqTask.isEmpty()) {
+        fun execute() {
+            if (queueTask.isEmpty()) {
                 run()
+                queueTask.add(this)
             } else {
-                if (queuqTask.contains(this)) {
+                if (queueTask.contains(this)) {
                     //提升优先级,此时位于0index的不可能为本身，所以和1交换
-                    Collections.swap(queuqTask, queuqTask.indexOf(this), 1)
+                    Collections.swap(queueTask, queueTask.indexOf(this), 1)
                 } else {
                     // 入列
-                    queuqTask.add(this)
+                    queueTask.add(this)
                 }
             }
         }
@@ -219,7 +221,7 @@ class VideoDecoder2(dataSource: String) {
             if (flint != null) {
                 return
             }
-            queuqTask.add(this)
+            Log.d(TAG, "run sample $sampleTime ")
             flint = core.subscribe({
                 success.invoke(it)
             }, {
@@ -235,11 +237,12 @@ class VideoDecoder2(dataSource: String) {
         * 火石熄灭，执行队列下一个任务
         * */
         private fun schedulerNext() {
-            decoder.reset()
+            Log.d(TAG, "schedulerNext ")
+            decoder.flush()
             flint?.dispose()
-            queuqTask.remove(this)
-            if (queuqTask.isNotEmpty()) {
-                queuqTask.get(0).start()
+            queueTask.remove(this)
+            if (queueTask.isNotEmpty()) {
+                queueTask[0].run()
             }
         }
 

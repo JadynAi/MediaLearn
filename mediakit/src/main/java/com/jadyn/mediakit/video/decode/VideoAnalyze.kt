@@ -21,8 +21,7 @@ class VideoAnalyze(val dataSource: String) {
         MediaExtractor()
     }
 
-    val checkExtractor by lazy {
-
+    private val checkExtractor by lazy {
         MediaExtractor().apply {
             setDataSource(dataSource)
             val trackIndex = selectVideoTrack()
@@ -118,8 +117,11 @@ class VideoAnalyze(val dataSource: String) {
         return sampleTime
     }
 
+    /*
+    * time是一个精确的帧，所以使用closest_sync
+    * */
     fun getLaterTime(time: Long, range: Int): ArrayList<Long> {
-        checkExtractor.seekTo(time, MediaExtractor.SEEK_TO_PREVIOUS_SYNC)
+        checkExtractor.seekTo(time, MediaExtractor.SEEK_TO_CLOSEST_SYNC)
         checkExtractor.advance()
         val list = arrayListOf<Long>()
         if (checkExtractor.sampleTime == -1L) {
