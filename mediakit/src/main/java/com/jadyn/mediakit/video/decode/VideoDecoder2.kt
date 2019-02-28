@@ -38,7 +38,7 @@ class VideoDecoder2(dataSource: String) {
         Schedulers.io()
     }
     private val frameCache by lazy {
-        FrameCache(3, dataSource)
+        FrameCache(dataSource)
     }
 
     private val queueTask by lazy {
@@ -74,19 +74,14 @@ class VideoDecoder2(dataSource: String) {
      */
     fun getFrame(second: Float, success: (Bitmap) -> Unit, failed: (Throwable) -> Unit) {
         val target = videoAnalyze.getValidSampleTime(mediaFormat.getSafeTimeUS(second))
-//        frameCache.asyncGetTarget(target, success, {
-//            // 如果此时任务栈里正在取这一帧，就不作任何处理
-//            val isSameFrame = queueTask.isNotEmpty() && queueTask[0].sampleTime == target
-//            if (!isSameFrame) {
-//                Log.d(TAG, "getFrame second $second sampleTime ${videoAnalyze.getValidSampleTime(mediaFormat.getSafeTimeUS(second))}: ")
-//                DecodeFrame(second, success, failed).execute()
-//            }
-//        })
-        val isSameFrame = queueTask.isNotEmpty() && queueTask[0].sampleTime == target
-        if (!isSameFrame) {
-            Log.d(TAG, "getFrame second $second sampleTime ${videoAnalyze.getValidSampleTime(mediaFormat.getSafeTimeUS(second))}: ")
-            DecodeFrame(second, success, failed).execute()
-        }
+        frameCache.asyncGetTarget(target, success, {
+            // 如果此时任务栈里正在取这一帧，就不作任何处理
+            val isSameFrame = queueTask.isNotEmpty() && queueTask[0].sampleTime == target
+            if (!isSameFrame) {
+                Log.d(TAG, "getFrame second $second sampleTime ${videoAnalyze.getValidSampleTime(mediaFormat.getSafeTimeUS(second))}: ")
+                DecodeFrame(second, success, failed).execute()
+            }
+        })
     }
 
     fun release() {
@@ -161,7 +156,9 @@ class VideoDecoder2(dataSource: String) {
                     if (decodeCore.updateTexture(info, id, decoder)) {
                         if (info.presentationTimeUs == time) {
                             outputDone = true
-                            emitter?.onNext(decodeCore.generateFrame())
+                            val bitmap = decodeCore.generateFrame()
+                            emitter?.onNext(bitmap)
+                            frameCache.cacheFrame(time, bitmap)
                         }
                     }
                 })

@@ -6,6 +6,7 @@ import android.media.Image
 import android.media.MediaCodecInfo
 import android.opengl.EGL14
 import android.opengl.GLES20
+import android.os.Build
 import android.support.annotation.IntRange
 import android.util.Log
 import java.io.BufferedOutputStream
@@ -194,5 +195,20 @@ fun File.makeParent() {
         if (!exists()) {
             this.mkdirs()
         }
+    }
+}
+
+fun Bitmap.getByteSize(): Int {
+    if (isRecycled) {
+        return 0
+    }
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+        try {
+            allocationByteCount
+        } catch (e: Exception) {
+            0
+        }
+    } else {
+        height * rowBytes
     }
 }

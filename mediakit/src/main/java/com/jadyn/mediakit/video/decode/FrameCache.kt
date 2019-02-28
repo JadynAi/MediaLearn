@@ -3,14 +3,12 @@ package com.jadyn.mediakit.video.decode
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Environment
-import android.support.annotation.IntRange
 import android.support.v4.util.LruCache
 import android.text.TextUtils
 import android.util.Log
 import com.jadyn.mediakit.function.md5
 import com.jadyn.mediakit.function.saveFrame
 import io.reactivex.Observable
-import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import java.io.File
@@ -22,17 +20,19 @@ import java.io.File
  *@Since:2019/2/20
  *@ChangeList:
  */
-class FrameCache(@IntRange(from = 0, to = 3) maxSize: Int, private val dataSource: String) {
+class FrameCache(private val dataSource: String) {
 
-    private val TAG = "FrameCache $dataSource"
+    private val TAG = "FrameCache"
 
     private val lruCache by lazy {
+        val maxMemory = (Runtime.getRuntime().maxMemory() / 1024).toInt()
 
-        object : LruCache<String, Bitmap>(if (Runtime.getRuntime().availableProcessors() >= maxSize) maxSize
-        else Runtime.getRuntime().availableProcessors()) {
+        // Use 1/8th of the available memory for this memory cache.
+        val cacheSize = maxMemory / 8
+        object : LruCache<String, Bitmap>(cacheSize) {
             override fun sizeOf(key: String?, value: Bitmap?): Int {
                 value?.apply {
-                    return rowBytes * height / 1024
+                    return byteCount / 1024
                 }
                 return super.sizeOf(key, value)
             }
@@ -56,9 +56,9 @@ class FrameCache(@IntRange(from = 0, to = 3) maxSize: Int, private val dataSourc
     //获取目标帧缓存
     fun cacheFrame(target: Long, b: Bitmap) {
         Log.d(TAG, "cacheFrame target $target: ")
-        // todo(内存缓存会导致绘制失败，原因未明，暂时搁置，学习Glide内存缓存之后再探
-        cacheLru(target, b)
-        cacheDisk(target, b)
+        val b1 = Bitmap.createBitmap(b)
+        cacheLru(target, b1)
+//        cacheDisk(target, b)
     }
 
     fun release() {
@@ -67,20 +67,22 @@ class FrameCache(@IntRange(from = 0, to = 3) maxSize: Int, private val dataSourc
 
     fun asyncGetTarget(target: Long, success: (Bitmap) -> Unit, failed: (Throwable) -> Unit) {
         getLruBitmap(target)?.apply {
+            Log.d(TAG, "get cache from lru $target ")
             success.invoke(this)
             return
         }
-        val disposable = Observable.fromCallable {
-            val bitmap = blockingGetDiskCache(target) ?: throw Throwable("null disk")
-            bitmap
-        }.subscribeOn(cacheDiskScheduler)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    success.invoke(it)
-                }, {
-                    failed.invoke(it)
-                })
-        compositeDisposable.add(disposable)
+//        val disposable = Observable.fromCallable {
+//            val bitmap = blockingGetDiskCache(target) ?: throw Throwable("null disk")
+//            bitmap
+//        }.subscribeOn(cacheDiskScheduler)
+//                .observeOn(AndroidSchedulers.mainThread())
+//                .subscribe({
+//                    success.invoke(it)
+//                }, {
+//                    failed.invoke(it)
+//                })
+//        compositeDisposable.add(disposable)
+        failed.invoke(Throwable(" not lru cache"))
     }
 
     fun getLruBitmap(target: Long): Bitmap? {
