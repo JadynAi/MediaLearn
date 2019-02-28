@@ -158,13 +158,11 @@ class VideoDecoder2(dataSource: String) {
                     outputDone = true
                 }, { id ->
                     Log.d(TAG, "out time ${info.presentationTimeUs} ")
-                    decodeCore.codeFrameBitmap(info, id, decoder) {
+                    if (decodeCore.updateTexture(info, id, decoder)) {
                         if (info.presentationTimeUs == time) {
                             outputDone = true
-                            emitter?.onNext(it)
+                            emitter?.onNext(decodeCore.generateFrame())
                         }
-                        //在新的线程缓存帧
-//                        frameCache.cacheFrame(time, it)
                     }
                 })
             }

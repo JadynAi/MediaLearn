@@ -46,6 +46,13 @@ class GLCore : DecodeCore() {
 
     override fun codeFrameBitmap(bufferInfo: MediaCodec.BufferInfo, outputBufferId: Int,
                                  decoder: MediaCodec, ob: (Bitmap) -> Unit) {
+        if (updateTexture(bufferInfo, outputBufferId, decoder)) {
+            ob.invoke(outputSurface!!.produceBitmap())
+        }
+    }
+
+    fun updateTexture(bufferInfo: MediaCodec.BufferInfo, outputBufferId: Int,
+                      decoder: MediaCodec): Boolean {
         outputSurface?.apply {
             val doRender = bufferInfo.size != 0
             // CodeC搭配输出Surface时，调用此方法将数据及时渲染到Surface上
@@ -54,10 +61,16 @@ class GLCore : DecodeCore() {
                 // 2019/2/14-15:24 必须和surface创建时保持统一线程
                 awaitNewImage()
                 drawImage(true)
-                ob.invoke(produceBitmap())
+                return true
             }
         }
+        return false
     }
+
+    /*
+    * must call after updateTexture return true
+    * */
+    fun generateFrame() = outputSurface!!.produceBitmap()
 
     override fun release() {
         outputSurface?.release()
