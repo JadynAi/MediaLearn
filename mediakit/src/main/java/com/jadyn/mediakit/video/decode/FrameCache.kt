@@ -57,7 +57,7 @@ class FrameCache(@IntRange(from = 0, to = 3) maxSize: Int, private val dataSourc
     fun cacheFrame(target: Long, b: Bitmap) {
         Log.d(TAG, "cacheFrame target $target: ")
         // todo(内存缓存会导致绘制失败，原因未明，暂时搁置，学习Glide内存缓存之后再探
-//        cacheLru(target, b)
+        cacheLru(target, b)
         cacheDisk(target, b)
     }
 
@@ -73,7 +73,7 @@ class FrameCache(@IntRange(from = 0, to = 3) maxSize: Int, private val dataSourc
         val disposable = Observable.fromCallable {
             val bitmap = blockingGetDiskCache(target) ?: throw Throwable("null disk")
             bitmap
-        }.subscribeOn(Schedulers.io())
+        }.subscribeOn(cacheDiskScheduler)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
                     success.invoke(it)
@@ -120,7 +120,7 @@ class FrameCache(@IntRange(from = 0, to = 3) maxSize: Int, private val dataSourc
         compositeDisposable.add(disposable)
     }
 
-    private fun getLruKey(target: Long) = TextUtils.concat(dataSource, target.toString()).toString()
+    private fun getLruKey(target: Long) = TextUtils.concat(md5(dataSource), target.toString()).toString()
 
     private fun getDiskKey(target: Long) = TextUtils.concat(
             Environment.getExternalStorageDirectory().path,

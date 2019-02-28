@@ -144,7 +144,7 @@ class OutputSurface(private val width: Int, private val height: Int) {
     }
 
     fun awaitNewImage() {
-        val timeout_ms = 2500L
+        val timeout_ms = 500L
 
         synchronized(frameSyncObject) {
             while (!frameAvailable) {

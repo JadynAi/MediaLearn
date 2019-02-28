@@ -74,14 +74,19 @@ class VideoDecoder2(dataSource: String) {
      */
     fun getFrame(second: Float, success: (Bitmap) -> Unit, failed: (Throwable) -> Unit) {
         val target = videoAnalyze.getValidSampleTime(mediaFormat.getSafeTimeUS(second))
-        frameCache.asyncGetTarget(target, success, {
-            // 如果此时任务栈里正在取这一帧，就不作任何处理
-            val isSameFrame = queueTask.isNotEmpty() && queueTask[0].sampleTime == target
-            if (!isSameFrame) {
-                Log.d(TAG, "getFrame second $second sampleTime ${videoAnalyze.getValidSampleTime(mediaFormat.getSafeTimeUS(second))}: ")
-                DecodeFrame(second, success, failed).execute()
-            }
-        })
+//        frameCache.asyncGetTarget(target, success, {
+//            // 如果此时任务栈里正在取这一帧，就不作任何处理
+//            val isSameFrame = queueTask.isNotEmpty() && queueTask[0].sampleTime == target
+//            if (!isSameFrame) {
+//                Log.d(TAG, "getFrame second $second sampleTime ${videoAnalyze.getValidSampleTime(mediaFormat.getSafeTimeUS(second))}: ")
+//                DecodeFrame(second, success, failed).execute()
+//            }
+//        })
+        val isSameFrame = queueTask.isNotEmpty() && queueTask[0].sampleTime == target
+        if (!isSameFrame) {
+            Log.d(TAG, "getFrame second $second sampleTime ${videoAnalyze.getValidSampleTime(mediaFormat.getSafeTimeUS(second))}: ")
+            DecodeFrame(second, success, failed).execute()
+        }
     }
 
     fun release() {
@@ -118,23 +123,6 @@ class VideoDecoder2(dataSource: String) {
                 val info = MediaCodec.BufferInfo()
                 //处理目标时间帧
                 handleFrame(sampleTime, info, emitter)
-
-                //如果队列没有任务，那么就抽空往下渲染几帧,用作缓存
-                if (queueTask.size <= 1) {
-                    val timeList = videoAnalyze.getLaterTime(sampleTime, 5)
-                    if (timeList.isNotEmpty()) {
-                        Log.d(TAG, "time list $timeList ")
-                        timeList.forEach {
-                            //观察队列是否有紧急任务
-                            endCore()
-                            //如果缓存有，就不再缓存
-                            if (frameCache.hasCache(it)) {
-                                return@forEach
-                            }
-                            handleFrame(it, info, null)
-                        }
-                    }
-                }
                 emitter.onComplete()
             }.subscribeOn(decoderScheduler)
                     .doOnComplete {
@@ -144,8 +132,6 @@ class VideoDecoder2(dataSource: String) {
         }
 
         private fun handleFrame(time: Long, info: MediaCodec.BufferInfo, emitter: ObservableEmitter<Bitmap>? = null) {
-            val a = arrayListOf<Long>()
-            val b = arrayListOf<Long>()
             var outputDone = false
             var inputDone = false
             videoAnalyze.mediaExtractor.seekTo(time, MediaExtractor.SEEK_TO_PREVIOUS_SYNC)
@@ -160,7 +146,6 @@ class VideoDecoder2(dataSource: String) {
                         } else {
                             // 将数据压入到输入队列
                             val presentationTimeUs = videoAnalyze.mediaExtractor.sampleTime
-                            b.add(presentationTimeUs)
                             Log.d(TAG, "${if (emitter != null) "main time" else "fuck time"} dequeue time is $presentationTimeUs ")
                             decoder.queueInputBuffer(inputBufferId, 0,
                                     sampleSize, presentationTimeUs, 0)
@@ -173,18 +158,17 @@ class VideoDecoder2(dataSource: String) {
                     outputDone = true
                 }, { id ->
                     Log.d(TAG, "out time ${info.presentationTimeUs} ")
-                    a.add(info.presentationTimeUs)
                     decodeCore.codeFrameBitmap(info, id, decoder) {
                         if (info.presentationTimeUs == time) {
-                            inputDone = true
                             outputDone = true
                             emitter?.onNext(it)
                         }
                         //在新的线程缓存帧
-                        frameCache.cacheFrame(time, it)
+//                        frameCache.cacheFrame(time, it)
                     }
                 })
             }
+            decoder.flush()
         }
 
         private fun endCore() {
