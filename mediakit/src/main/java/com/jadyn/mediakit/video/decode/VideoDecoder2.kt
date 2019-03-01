@@ -131,6 +131,9 @@ class VideoDecoder2(dataSource: String) {
                     .observeOn(AndroidSchedulers.mainThread())
         }
 
+        /*
+        * 持续压入数据，直到拿到目标帧
+        * */
         private fun handleFrame(time: Long, info: MediaCodec.BufferInfo, emitter: ObservableEmitter<Bitmap>? = null) {
             var outputDone = false
             var inputDone = false
@@ -229,19 +232,6 @@ class VideoDecoder2(dataSource: String) {
             if (queueTask.isNotEmpty()) {
                 queueTask[0].run()
             }
-        }
-
-        override fun hashCode(): Int {
-            return sampleTime.hashCode()
-        }
-
-        override fun equals(other: Any?): Boolean {
-            other?.apply {
-                if (other is DecodeFrame) {
-                    return this@DecodeFrame.sampleTime == other.sampleTime
-                }
-            }
-            return super.equals(other)
         }
 
         //用来停止上游继续运行
