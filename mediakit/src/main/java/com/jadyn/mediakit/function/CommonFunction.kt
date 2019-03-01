@@ -9,10 +9,7 @@ import android.opengl.GLES20
 import android.support.annotation.IntRange
 import android.util.Base64
 import android.util.Log
-import java.io.BufferedOutputStream
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.FileOutputStream
+import java.io.*
 import java.nio.ByteBuffer
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
@@ -170,13 +167,21 @@ fun Bitmap.saveFrame(fileName: String, @IntRange(from = 1, to = 100) quality: In
 fun Bitmap.convertString(): String {
     val outputStream = ByteArrayOutputStream()
     return try {
-        compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+        compress(Bitmap.CompressFormat.PNG, 100, outputStream)
         val bytes = outputStream.toByteArray()
         Base64.encodeToString(bytes, Base64.DEFAULT)
     } catch (e: Exception) {
         ""
     }
-   
+
+}
+
+fun Bitmap.fillOutputStream(o: OutputStream): Boolean {
+    return try {
+        compress(Bitmap.CompressFormat.PNG, 100, o)
+    } catch (e: Exception) {
+        false
+    }
 }
 
 fun md5(str: String): String {

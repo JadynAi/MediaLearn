@@ -44,15 +44,17 @@ class DecodeFrameActivity : AppCompatActivity() {
 //                    return
 //                }
 //                Log.d("cece", "cc $cc succeed: ")
-//            } catch (e: java.lang.Exception) {
-//                Log.d("cece", "e: ${e.message} ")
+//                Log.d("cece", "pool shutdown ${e.isShutdown}: ")
+//            } catch (e1: java.lang.Exception) {
+//                Log.d("cece", "pool Exception shutdown ${e.isShutdown}: ")
+//                Log.d("cece", "e: ${e1.message} ")
 //            }
 //        }
 //
 //    }
 //
 //    private var count = 0
-
+//
 //    override fun onBackPressed() {
 //        e.shutdownNow()
 //        super.onBackPressed()

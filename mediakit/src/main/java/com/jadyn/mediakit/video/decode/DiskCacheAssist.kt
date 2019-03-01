@@ -4,7 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
 import com.jadyn.mediakit.cache.DiskLruCache
-import com.jadyn.mediakit.function.convertString
+import com.jadyn.mediakit.function.fillOutputStream
 import com.jadyn.mediakit.function.hashKeyForDisk
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -14,10 +14,11 @@ import io.reactivex.schedulers.Schedulers
 import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
+import kotlin.system.measureTimeMillis
 
 /**
  *@version:
- *@FileDescription:
+ *@FileDescription: 磁盘缓存协助类
  *@Author:Jing
  *@Since:2019/3/1
  *@ChangeList:
@@ -71,9 +72,23 @@ class DiskCacheAssist(dir: String, appVersion: Int, valueCount: Int, maxSize: In
         }, {
             queueWriteTask.remove(code)
             failed.invoke(it)
+        }, {
+            //写入完成时，检查线程池是否关闭，然后关闭DiskLruCache
+            if (writerExecutors.isShutdown) {
+                diskLruCache.close()
+            } else {
+                if (queueWriteTask.size == 0) {
+                    //如果队列任务做完了，就调用flush方法同步信息
+                    val c = measureTimeMillis {
+                        diskLruCache.flush()
+                    }
+                    Log.d(TAG, "flush cost $c ")
+                }
+            }
         }))
     }
 
+    //----read---------
     private val readerExecutor by lazy {
         Executors.newSingleThreadExecutor()
     }
@@ -114,7 +129,6 @@ class DiskCacheAssist(dir: String, appVersion: Int, valueCount: Int, maxSize: In
         return null
     }
 
-
     fun release() {
         writerExecutors.shutdownNow()
         compositeDisposable.clear()
@@ -122,44 +136,35 @@ class DiskCacheAssist(dir: String, appVersion: Int, valueCount: Int, maxSize: In
 
     private inner class WriteR(private val key: String, private val b: Bitmap,
                                private val success: () -> Unit,
-                               private val failed: (Exception) -> Unit) : Runnable {
+                               private val failed: (Exception) -> Unit,
+                               private val complete: () -> Unit = {}) : Runnable {
 
         override fun run() {
             try {
                 val editor = diskLruCache.edit(key)
                 editor?.apply {
+
                     Log.d(TAG, "writer disk cache $key running")
-                    val bitmapString = b.convertString()
-                    if (bitmapString.isBlank()) {
-                        editor.abort()
-                    } else {
-                        editor.set(0, bitmapString)
+                    // 将bitmap写入缓存
+                    val fillSucceed = b.fillOutputStream(newOutputStream(0))
+                    if (fillSucceed) {
                         editor.commit()
+                    } else {
+                        editor.abort()
+                        failed.invoke(Exception("bitmap fill outputStream failed"))
+                        complete.invoke()
+                        return
                     }
                     success.invoke()
+                    complete.invoke()
                     return
                 }
                 failed.invoke(Exception("edit key is null"))
+                complete.invoke()
             } catch (e: Exception) {
                 e.printStackTrace()
                 failed.invoke(e)
-            }
-        }
-    }
-
-    private inner class ReadB(private val cacheKey: String, private val success: (Bitmap) -> Unit,
-                              private val failed: (Exception) -> Unit)
-        : Runnable {
-        override fun run() {
-            try {
-                diskLruCache.get(cacheKey)?.apply {
-                    val inputStream = getInputStream(0)
-                    success.invoke(BitmapFactory.decodeStream(inputStream))
-                    return
-                }
-                failed.invoke(Exception("not cache this "))
-            } catch (e: Exception) {
-                failed.invoke(e)
+                complete.invoke()
             }
         }
     }
