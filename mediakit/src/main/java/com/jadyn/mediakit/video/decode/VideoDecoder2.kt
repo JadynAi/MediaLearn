@@ -13,6 +13,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import java.util.*
+import kotlin.system.measureTimeMillis
 
 /**
  *@version:
@@ -93,6 +94,7 @@ class VideoDecoder2(dataSource: String) {
         }
         decodeCore.release()
         decoder.release()
+        frameCache.release()
     }
 
     inner class DecodeFrame(target: Float,
@@ -115,10 +117,13 @@ class VideoDecoder2(dataSource: String) {
                     decoder.start()
                     isStart = true
                 }
-                val info = MediaCodec.BufferInfo()
-                //处理目标时间帧
-                handleFrame(sampleTime, info, emitter)
-                emitter.onComplete()
+                val c = measureTimeMillis {
+                    val info = MediaCodec.BufferInfo()
+                    //处理目标时间帧
+                    handleFrame(sampleTime, info, emitter)
+                    emitter.onComplete()
+                }
+                Log.d(TAG, "media code decoder frame $c ")
             }.subscribeOn(decoderScheduler)
                     .doOnComplete {
                         schedulerNext()
@@ -155,10 +160,11 @@ class VideoDecoder2(dataSource: String) {
                     Log.d(TAG, "out time ${info.presentationTimeUs} ")
                     if (decodeCore.updateTexture(info, id, decoder)) {
                         if (info.presentationTimeUs == time) {
+                            // 遇到目标时间帧，才生产Bitmap
                             outputDone = true
                             val bitmap = decodeCore.generateFrame()
-                            emitter?.onNext(bitmap)
                             frameCache.cacheFrame(time, bitmap)
+                            emitter?.onNext(bitmap)
                         }
                     }
                 })
@@ -178,7 +184,7 @@ class VideoDecoder2(dataSource: String) {
                 run()
                 queueTask.add(this)
             } else {
-                if (queueTask.contains(this)) {
+                if (queueTask.contains(this) && queueTask.size > 1) {
                     //提升优先级,此时位于0index的不可能为本身，所以和1交换
                     Collections.swap(queueTask, queueTask.indexOf(this), 1)
                 } else {

@@ -31,15 +31,43 @@ class DecodeFrameActivity : AppCompatActivity() {
 
     private var dis: Disposable? = null
 
+//    private val e by lazy {
+//        Executors.newSingleThreadExecutor()
+//    }
+//
+//    inner class a(val cc: Int) : Runnable {
+//        override fun run() {
+//            Log.d("cece", "cc: $cc thread ${Thread.currentThread().name}")
+//            try {
+//                Thread.sleep(1000)
+//                if (cc == 5) {
+//                    return
+//                }
+//                Log.d("cece", "cc $cc succeed: ")
+//            } catch (e: java.lang.Exception) {
+//                Log.d("cece", "e: ${e.message} ")
+//            }
+//        }
+//
+//    }
+//
+//    private var count = 0
+
+//    override fun onBackPressed() {
+//        e.shutdownNow()
+//        super.onBackPressed()
+//    }
+    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_decode_frame)
 
         file_frame_et.setText(decodeMP4Path)
-        
-        
-        val a = arrayListOf(1,2,3,4,5,6)
-        
+
+
+        val a = arrayListOf(1, 2, 3, 4, 5, 6)
+
         a.forEach {
             if (it == 4) {
                 return@forEach
@@ -58,6 +86,8 @@ class DecodeFrameActivity : AppCompatActivity() {
 
             videoDecoder2 = VideoDecoder2(dataSource)
             updateTime(0, video_seek.max)
+
+//            e.execute(a(count++))
         }
 
         video_seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -78,6 +108,7 @@ class DecodeFrameActivity : AppCompatActivity() {
             }
 
             override fun onStopTrackingTouch(seekBar: SeekBar) {
+                
             }
         })
 

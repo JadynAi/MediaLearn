@@ -6,14 +6,16 @@ import android.media.Image
 import android.media.MediaCodecInfo
 import android.opengl.EGL14
 import android.opengl.GLES20
-import android.os.Build
 import android.support.annotation.IntRange
+import android.util.Base64
 import android.util.Log
 import java.io.BufferedOutputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import java.security.MessageDigest
+import java.security.NoSuchAlgorithmException
 
 
 /**
@@ -165,6 +167,18 @@ fun Bitmap.saveFrame(fileName: String, @IntRange(from = 1, to = 100) quality: In
     }
 }
 
+fun Bitmap.convertString(): String {
+    val outputStream = ByteArrayOutputStream()
+    return try {
+        compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+        val bytes = outputStream.toByteArray()
+        Base64.encodeToString(bytes, Base64.DEFAULT)
+    } catch (e: Exception) {
+        ""
+    }
+   
+}
+
 fun md5(str: String): String {
     val digest = MessageDigest.getInstance("MD5")
     val result = digest.digest(str.toByteArray())
@@ -198,17 +212,10 @@ fun File.makeParent() {
     }
 }
 
-fun Bitmap.getByteSize(): Int {
-    if (isRecycled) {
-        return 0
-    }
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-        try {
-            allocationByteCount
-        } catch (e: Exception) {
-            0
-        }
-    } else {
-        height * rowBytes
+fun String.hashKeyForDisk(): String {
+    return try {
+        md5(this)
+    } catch (e: NoSuchAlgorithmException) {
+        hashCode().toString()
     }
 }
