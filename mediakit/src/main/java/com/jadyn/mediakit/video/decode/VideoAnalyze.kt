@@ -95,7 +95,8 @@ class VideoAnalyze(val dataSource: String) {
 
     /*
     * 
-    * 查找这个时间点对应的最接近的一帧
+    * 查找这个时间点对应的最接近的一帧。
+    * 这一帧的时间点如果和目标时间相差不到 一帧间隔 就算相近
     * 
     * maxRange:查找范围
     * */
@@ -108,12 +109,16 @@ class VideoAnalyze(val dataSource: String) {
             val s = checkExtractor.sampleTime
             if (s != -1L) {
                 count++
+                // 选取和目标时间差值最小的那个
                 sampleTime = time.minDifferenceValue(sampleTime, s)
+                if (Math.abs(sampleTime - time) <= perFrameTime) {
+                    //如果这个差值在 一帧间隔 内，即为成功
+                    return sampleTime
+                }
             } else {
                 count = maxRange
             }
         }
-
         return sampleTime
     }
 
