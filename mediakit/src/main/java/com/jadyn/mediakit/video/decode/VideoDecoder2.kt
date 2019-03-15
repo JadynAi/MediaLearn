@@ -77,10 +77,10 @@ class VideoDecoder2(dataSource: String) {
         val target = videoAnalyze.getValidSampleTime(mediaFormat.getSafeTimeUS(second))
         frameCache.asyncGetTarget(target, success, {
             // 如果此时任务栈里正在取这一帧，就不作任何处理
-            val isSameFrame = queueTask.isNotEmpty() && queueTask[0].sampleTime == target
+            val isSameFrame = queueTask.isNotEmpty() && queueTask[0].target == target
             if (!isSameFrame) {
                 Log.d(TAG, "getFrame second $second sampleTime ${videoAnalyze.getValidSampleTime(mediaFormat.getSafeTimeUS(second))}: ")
-                DecodeFrame(second, success, failed).execute()
+                DecodeFrame(target, success, failed).execute()
             }
         })
     }
@@ -97,15 +97,10 @@ class VideoDecoder2(dataSource: String) {
         frameCache.release()
     }
 
-    inner class DecodeFrame(target: Float,
+    inner class DecodeFrame(val target: Long,
                             private val success: (Bitmap) -> Unit,
                             private val failed: (Throwable) -> Unit) {
 
-        val sampleTime: Long = videoAnalyze.getValidSampleTime(when {
-            target < 0L -> 0L
-            target * 1000000 > mediaFormat.duration -> mediaFormat.duration
-            else -> (target * 1000000).toLong()
-        })
         private val core: Observable<Bitmap>
         private var flint: Disposable? = null
 
@@ -120,7 +115,7 @@ class VideoDecoder2(dataSource: String) {
                 val c = measureTimeMillis {
                     val info = MediaCodec.BufferInfo()
                     //处理目标时间帧
-                    handleFrame(sampleTime, info, emitter)
+                    handleFrame(target, info, emitter)
                     emitter.onComplete()
                 }
                 Log.d(TAG, "media code decoder frame $c ")
@@ -209,7 +204,7 @@ class VideoDecoder2(dataSource: String) {
             if (flint != null) {
                 return
             }
-            Log.d(TAG, "run sample $sampleTime ")
+            Log.d(TAG, "run sample $target ")
             flint = core.subscribe({
                 success.invoke(it)
             }, {

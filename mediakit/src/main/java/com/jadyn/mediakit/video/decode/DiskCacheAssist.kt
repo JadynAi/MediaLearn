@@ -24,10 +24,11 @@ import kotlin.system.measureTimeMillis
  *@ChangeList:
  */
 
-/*
-* maxSize:max MB
-* */
-class DiskCacheAssist(dir: String, appVersion: Int, valueCount: Int, maxSize: Int) {
+/**
+ *
+ * maxSize:max MB
+ * */
+class DiskCacheAssist(dir: String, appVersion: Int, valueCount: Int = 1, maxSize: Int) {
 
     private val TAG = "DiskCacheAssist"
 
