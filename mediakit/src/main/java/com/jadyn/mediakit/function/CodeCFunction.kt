@@ -1,12 +1,15 @@
 package com.jadyn.mediakit.function
 
 import android.media.MediaCodec
+import android.media.MediaCodecInfo
+import android.media.MediaFormat
 import android.util.Log
+import android.util.Size
 import java.nio.ByteBuffer
 
 /**
  *@version:
- *@FileDescription:
+ *@FileDescription:硬编码相关辅助类
  *@Author:jing
  *@Since:2019/2/12
  *@ChangeList:
@@ -48,4 +51,16 @@ fun MediaCodec.queueEndSteam(timeOutUs: Long) {
         queueInputBuffer(inputBufferId, 0, 0, 0L,
                 MediaCodec.BUFFER_FLAG_END_OF_STREAM)
     }
+}
+
+
+fun createVideoFormat(size: Size, colorFormat: Int = MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface,
+                      bitRate: Int, frameRate: Int, iFrameInterval: Int): MediaFormat {
+    return MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, size.width, size.height)
+            .apply {
+                setInteger(MediaFormat.KEY_COLOR_FORMAT, colorFormat)
+                setInteger(MediaFormat.KEY_BIT_RATE, bitRate)
+                setInteger(MediaFormat.KEY_FRAME_RATE, frameRate)
+                setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, iFrameInterval)
+            }
 }

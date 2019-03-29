@@ -11,6 +11,7 @@ import android.util.Base64
 import android.util.Log
 import java.io.*
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 
@@ -182,6 +183,14 @@ fun Bitmap.fillOutputStream(o: OutputStream): Boolean {
     } catch (e: Exception) {
         false
     }
+}
+
+fun Bitmap.getByteBuffer(): ByteBuffer {
+    val byteBuffer = ByteBuffer.allocate(byteCount)
+    // 一般常用的cpu架构，使用的是小字节序，ByteOrder.LITTLE_ENDIAN
+    byteBuffer.order(ByteOrder.nativeOrder())
+    copyPixelsToBuffer(byteBuffer)
+    return byteBuffer
 }
 
 fun md5(str: String): String {

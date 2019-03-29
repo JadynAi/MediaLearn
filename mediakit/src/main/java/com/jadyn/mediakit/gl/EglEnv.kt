@@ -1,0 +1,118 @@
+package com.jadyn.mediakit.gl
+
+import android.opengl.EGL14
+import android.opengl.EGLConfig
+import android.view.Surface
+import com.jadyn.mediakit.function.checkEglError
+
+/**
+ *@version:
+ *@FileDescription: Android平台下，EGL环境搭建，java层代码实现
+ *@Author:Jing
+ *@Since:2019/3/26
+ *@ChangeList:
+ */
+class EglEnv(private val width: Int, private val height: Int) {
+
+    private var eglDisplay = EGL14.EGL_NO_DISPLAY
+    private var eglContext = EGL14.EGL_NO_CONTEXT
+    private var eglSurface = EGL14.EGL_NO_SURFACE
+
+    private var eglConfig: EGLConfig? = null
+
+    /**
+     * 搭建一个EGL环境
+     * */
+    fun setUpEnv(): EglEnv {
+        // 构建一个显示设备
+        eglDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
+        if (eglDisplay == EGL14.EGL_NO_DISPLAY) {
+            checkEglError("can't load EGL display")
+        }
+        val version = intArrayOf(2)
+        if (!EGL14.eglInitialize(eglDisplay, version, 0, version, 1)) {
+            checkEglError("EGL initialize failed")
+        }
+        val attribs = intArrayOf(EGL14.EGL_BUFFER_SIZE, 32,
+                EGL14.EGL_ALPHA_SIZE, 8,
+                EGL14.EGL_BLUE_SIZE, 8,
+                EGL14.EGL_GREEN_SIZE, 8,
+                EGL14.EGL_RED_SIZE, 8,
+                EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
+                EGL14.EGL_SURFACE_TYPE, EGL14.EGL_WINDOW_BIT,
+                EGL14.EGL_NONE)
+        val configs = arrayOfNulls<EGLConfig>(1)
+        val numConfigs = IntArray(1)
+        if (!EGL14.eglChooseConfig(eglDisplay, attribs, 0, configs,
+                        0, configs.size, numConfigs, 0)) {
+            checkEglError("EGL choose config failed")
+        }
+        eglConfig = configs[0]
+        // 构建上下文环境
+        val attributes = intArrayOf(EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE)
+        eglContext = EGL14.eglCreateContext(eglDisplay, configs[0],
+                null, attributes, 0)
+        if (eglContext == EGL14.EGL_NO_CONTEXT) {
+            checkEglError("EGL create context failed ")
+        }
+        return this
+    }
+
+    /**
+     * 创建离线Surface
+     * */
+    fun buildBackgroundSurface() {
+        // EGL 和 OpenGL ES环境搭建完毕，OpenGL输出可以获得。接着是EGL和设备连接
+        // 连接工具是：EGLSurface，这是一个FrameBuffer
+        val pbufferAttributes = intArrayOf(EGL14.EGL_WIDTH, width, EGL14.EGL_HEIGHT,
+                height, EGL14.EGL_NONE, EGL14.EGL_NONE)
+        eglSurface = EGL14.eglCreatePbufferSurface(eglDisplay, eglConfig, pbufferAttributes, 0)
+        if (eglSurface == EGL14.EGL_NO_SURFACE) {
+            checkEglError("EGL create Pbuffer surface failed")
+        }
+        makeCurrent()
+    }
+
+    /**
+     * 创建一个可实际显示的windowSurface
+     * 
+     * @param surface 本地设备屏幕
+     * */
+    fun buildFrontSurface(surface: Surface) {
+        val format = IntArray(1)
+        if (!EGL14.eglGetConfigAttrib(eglDisplay, eglConfig, EGL14.EGL_NATIVE_VISUAL_ID, format, 0)) {
+            checkEglError("EGL getConfig attrib failed ")
+        }
+        if (eglSurface != null) {
+            throw RuntimeException("EGL already config surface")
+        }
+        val surfaceAttribs = intArrayOf(EGL14.EGL_NONE)
+        eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig,
+                surface, surfaceAttribs, 0)
+        if (eglSurface == EGL14.EGL_NO_SURFACE) {
+            checkEglError("EGL create window surface failed")
+        }
+        makeCurrent()
+    }
+
+    /**
+     * 为此线程绑定上下文
+     * */
+    private fun makeCurrent() {
+        if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
+            checkEglError("EGL make current failed")
+        }
+    }
+
+    fun relase() {
+        if (eglDisplay != EGL14.EGL_NO_DISPLAY) {
+            EGL14.eglDestroySurface(eglDisplay, eglSurface)
+            EGL14.eglDestroyContext(eglDisplay, eglContext)
+            EGL14.eglReleaseThread()
+            EGL14.eglTerminate(eglDisplay)
+        }
+        eglSurface = EGL14.EGL_NO_SURFACE
+        eglContext = EGL14.EGL_NO_CONTEXT
+        eglDisplay = EGL14.EGL_NO_DISPLAY
+    }
+}

@@ -2,13 +2,13 @@ package com.jadyn.ai.medialearn.codec
 
 import android.graphics.SurfaceTexture
 import android.media.MediaCodec
-import android.media.MediaCodecInfo
-import android.media.MediaFormat
 import android.media.MediaMuxer
 import android.os.Environment
 import android.util.Log
+import android.util.Size
 import android.view.Surface
 import com.jadyn.ai.medialearn.camera.audio.AiLoiAudioEncoder
+import com.jadyn.mediakit.function.createVideoFormat
 import com.jadyn.mediakit.gl.CodecInputSurface
 import java.io.File
 import java.io.IOException
@@ -37,14 +37,8 @@ class AiLoiVideoEncoder(private val width: Int, private val height: Int,
     private var muxerStarted: Boolean = false
 
     private val format by lazy {
-        val format = MediaFormat.createVideoFormat(MIME_TYPE, width, height)
-
-        format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
-                MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)
-        format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate)
-        format.setInteger(MediaFormat.KEY_FRAME_RATE, frameRate)
-        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, frameInterval)
-        format
+        createVideoFormat(Size(width, height), bitRate = bitRate, frameRate = frameRate,
+                iFrameInterval = frameInterval)
     }
 
     private val outPath: String

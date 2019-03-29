@@ -76,17 +76,23 @@ class OutputSurface(private val width: Int, private val height: Int) {
         }
     }
 
+    /**
+     * 创建一个EGL上下文
+     * */
     private fun eglSetup() {
+        // 封装系统物理屏幕的对象，作为OpenGl Es 渲染的目标
         mEGLDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
         if (mEGLDisplay === EGL14.EGL_NO_DISPLAY) {
             throw RuntimeException("unable to get EGL14 display")
         }
         val version = IntArray(2)
+        // 初始化显示设备
         if (!EGL14.eglInitialize(mEGLDisplay, version, 0, version, 1)) {
             mEGLDisplay = null
             throw RuntimeException("unable to initialize EGL14")
         }
-
+        
+        // 此时可以将OpenGl Es的输出和设备屏幕桥接起来了，但是需要设置如下配置
         val attributeList = intArrayOf(EGL14.EGL_RED_SIZE, 8,
                 EGL14.EGL_GREEN_SIZE, 8,
                 EGL14.EGL_BLUE_SIZE, 8,
@@ -103,8 +109,9 @@ class OutputSurface(private val width: Int, private val height: Int) {
             throw RuntimeException("unable to find RGB888+recordable ES2 EGL config")
         }
 
-        // Configure context for OpenGL ES 2.0.
+        // Configure context for OpenGL ES 2.0.构建上下文环境
         val attribute_list = intArrayOf(EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE)
+        // 第三个参数是，和其他上下文EGLContext共享OpenGL资源
         mEGLContext = EGL14.eglCreateContext(mEGLDisplay, configs[0], EGL14.EGL_NO_CONTEXT,
                 attribute_list, 0)
         checkEglError("eglCreateContext")
@@ -112,9 +119,10 @@ class OutputSurface(private val width: Int, private val height: Int) {
             throw RuntimeException("null context")
         }
 
-        // Create a pbuffer surface.
+        // Create a pbuffer surface。将EGL和设备屏幕连接，让OpenGL的输出可以渲染到设备屏幕
         val surfaceAttribs = intArrayOf(EGL14.EGL_WIDTH, width, EGL14.EGL_HEIGHT,
                 height, EGL14.EGL_NONE)
+        // eglCreateWindowSurface可实际显示，eglCreatePbufferSurface创建一个OffScreen(画面外，后台)的Surface
         mEGLSurface = EGL14.eglCreatePbufferSurface(mEGLDisplay, configs[0], surfaceAttribs, 0)
         checkEglError("eglCreatePbufferSurface")
         if (mEGLSurface == null) {
@@ -124,6 +132,7 @@ class OutputSurface(private val width: Int, private val height: Int) {
 
     fun release() {
         if (mEGLDisplay !== EGL14.EGL_NO_DISPLAY) {
+            // 销毁也在该线程，先销毁设备，再销毁上下文
             EGL14.eglDestroySurface(mEGLDisplay, mEGLSurface)
             EGL14.eglDestroyContext(mEGLDisplay, mEGLContext)
             EGL14.eglReleaseThread()
@@ -137,6 +146,9 @@ class OutputSurface(private val width: Int, private val height: Int) {
         surfaceTexture.release()
     }
 
+    /**
+     * 为该线程绑定Surface和Context
+     * */
     fun makeCurrent() {
         if (!EGL14.eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext)) {
             throw RuntimeException("eglMakeCurrent failed")
