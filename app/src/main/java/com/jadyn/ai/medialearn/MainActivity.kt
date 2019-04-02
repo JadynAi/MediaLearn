@@ -38,9 +38,14 @@ class MainActivity : AppCompatActivity() {
         tv_decode.setOnClickListener {
             RxPermissions(this).request(
                     Manifest.permission.READ_EXTERNAL_STORAGE)
-                    .doOnNext {
-                        if (it) {
-                            start<DecodeActivity>()
+                    .doOnNext { it1 ->
+                        if (it1) {
+                            RxPermissions(this).request(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                                    .doOnNext {
+                                        if (it) {
+                                            start<DecodeActivity>()
+                                        }
+                                    }.subscribe()
                         }
                     }
                     .subscribe()
@@ -50,9 +55,14 @@ class MainActivity : AppCompatActivity() {
         tv_decode_frame.setOnClickListener {
             RxPermissions(this).request(
                     Manifest.permission.READ_EXTERNAL_STORAGE)
-                    .doOnNext {
-                        if (it) {
-                            start<DecodeFrameActivity>()
+                    .doOnNext { it1 ->
+                        if (it1) {
+                            RxPermissions(this).request(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                                    .doOnNext {
+                                        if (it) {
+                                            start<DecodeFrameActivity>()
+                                        }
+                                    }.subscribe()
                         }
                     }
                     .subscribe()

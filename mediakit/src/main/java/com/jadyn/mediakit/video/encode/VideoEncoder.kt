@@ -16,7 +16,7 @@ import java.io.IOException
 class VideoEncoder(private val width: Int, private val height: Int,
                    bitRate: Int,
                    frameRate: Int = 30,
-                   frameInterval: Int = 5) {
+                   frameInterval: Int = 5){
 
     private val mediaformat by lazy {
         createVideoFormat(Size(width, height), bitRate = bitRate, frameRate = frameRate,
@@ -32,6 +32,7 @@ class VideoEncoder(private val width: Int, private val height: Int,
     init {
         try {
             codec = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_VIDEO_AVC)
+            val inputSurface = codec.createInputSurface()
         } catch (e: IOException) {
             e.printStackTrace()
         }

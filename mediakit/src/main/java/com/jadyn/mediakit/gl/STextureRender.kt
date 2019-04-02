@@ -13,11 +13,12 @@ import java.nio.FloatBuffer
 
 /**
  *@version:
- *@FileDescription:
+ *@FileDescription: 弃用
  *@Author:jing
  *@Since:2019/2/12
  *@ChangeList:
  */
+@Deprecated("please use Texture2dProgram")
 class STextureRender {
 
     private val FLOAT_SIZE_BYTES = 4
@@ -110,7 +111,7 @@ class STextureRender {
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
         checkGlError("glDrawArrays")
-
+        
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0)
     }
 
@@ -135,6 +136,7 @@ class STextureRender {
         GLES20.glGenTextures(1, textures, 0)
 
         textureId = textures[0]
+        
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId)
         checkGlError("glBindTexture mTextureID")
 

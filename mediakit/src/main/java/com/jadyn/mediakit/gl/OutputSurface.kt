@@ -16,11 +16,12 @@ import java.nio.ByteOrder
 
 /**
  *@version:
- *@FileDescription:
+ *@FileDescription: 弃用了
  *@Author:jing
  *@Since:2019/2/12
  *@ChangeList:
  */
+@Deprecated("This class has Obsolete")
 class OutputSurface(private val width: Int, private val height: Int) {
 
     constructor(size: Size) : this(size.width, size.height)

@@ -77,6 +77,9 @@ fun createProgram(vertexSource: String, fragmentSource: String): Int {
         GLES20.glDeleteProgram(program)
         program = 0
     }
+    if (program == 0) {
+        throw RuntimeException("create GPU program failed")   
+    }
     return program
 }
 

@@ -29,17 +29,20 @@ class EglEnv(private val width: Int, private val height: Int) {
         if (eglDisplay == EGL14.EGL_NO_DISPLAY) {
             checkEglError("can't load EGL display")
         }
-        val version = intArrayOf(2)
+        val version = IntArray(2)
         if (!EGL14.eglInitialize(eglDisplay, version, 0, version, 1)) {
             checkEglError("EGL initialize failed")
         }
-        val attribs = intArrayOf(EGL14.EGL_BUFFER_SIZE, 32,
+        val attribs = intArrayOf(
+//                EGL14.EGL_BUFFER_SIZE, 32,
                 EGL14.EGL_ALPHA_SIZE, 8,
                 EGL14.EGL_BLUE_SIZE, 8,
                 EGL14.EGL_GREEN_SIZE, 8,
                 EGL14.EGL_RED_SIZE, 8,
-                EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
-                EGL14.EGL_SURFACE_TYPE, EGL14.EGL_WINDOW_BIT,
+                EGL14.EGL_RENDERABLE_TYPE, 
+                EGL14.EGL_OPENGL_ES2_BIT,
+                EGL14.EGL_SURFACE_TYPE, 
+                EGL14.EGL_WINDOW_BIT,
                 EGL14.EGL_NONE)
         val configs = arrayOfNulls<EGLConfig>(1)
         val numConfigs = IntArray(1)
@@ -50,8 +53,9 @@ class EglEnv(private val width: Int, private val height: Int) {
         eglConfig = configs[0]
         // 构建上下文环境
         val attributes = intArrayOf(EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE)
-        eglContext = EGL14.eglCreateContext(eglDisplay, configs[0],
-                null, attributes, 0)
+        // share_context 是否与其他上下文共享OpenGL资源
+        eglContext = EGL14.eglCreateContext(eglDisplay, eglConfig,
+                EGL14.EGL_NO_CONTEXT, attributes, 0)
         if (eglContext == EGL14.EGL_NO_CONTEXT) {
             checkEglError("EGL create context failed ")
         }
@@ -65,7 +69,7 @@ class EglEnv(private val width: Int, private val height: Int) {
         // EGL 和 OpenGL ES环境搭建完毕，OpenGL输出可以获得。接着是EGL和设备连接
         // 连接工具是：EGLSurface，这是一个FrameBuffer
         val pbufferAttributes = intArrayOf(EGL14.EGL_WIDTH, width, EGL14.EGL_HEIGHT,
-                height, EGL14.EGL_NONE, EGL14.EGL_NONE)
+                height, EGL14.EGL_NONE)
         eglSurface = EGL14.eglCreatePbufferSurface(eglDisplay, eglConfig, pbufferAttributes, 0)
         if (eglSurface == EGL14.EGL_NO_SURFACE) {
             checkEglError("EGL create Pbuffer surface failed")

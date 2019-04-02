@@ -36,9 +36,6 @@ class TextureFunction : SurfaceTexture.OnFrameAvailableListener {
         surfaceTexture = null
     }
 
-    fun changeFragmentShader(fragmentShader: String) {
-        textureRender!!.changeFragmentShader(fragmentShader)
-    }
 
     fun awaitNewImage() {
         val timeout_ms: Long = 2500

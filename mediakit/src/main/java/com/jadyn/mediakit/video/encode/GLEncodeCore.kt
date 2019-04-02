@@ -7,7 +7,7 @@ import com.jadyn.mediakit.gl.Texture2dProgram
 
 /**
  *@version:
- *@FileDescription:OpenGL编码核心
+ *@FileDescription: OpenGL编码核心
  *@Author:Jing
  *@Since:2019/3/29
  *@ChangeList:
@@ -27,9 +27,23 @@ class GLEncodeCore(private val width: Int, private val height: Int) {
 
     private var surfaceTexture: SurfaceTexture? = null
 
+    private var surface: Surface? = null
+
     fun generateTextureSurface(): Surface {
-        surfaceTexture = SurfaceTexture(texture2dProgram.genTextureId())
-        return Surface(surfaceTexture)
+        if (surface == null) {
+            surface = Surface(genSurfaceTexture())
+        }
+        return surface!!
+    }
+
+    /**
+     * 生成一个绑定
+     * */
+    private fun genSurfaceTexture(): SurfaceTexture {
+        if (surfaceTexture == null) {
+            surfaceTexture = SurfaceTexture(texture2dProgram.genTextureId())
+        }
+        return surfaceTexture!!
     }
 
     fun release() {
