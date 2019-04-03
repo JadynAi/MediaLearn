@@ -5,8 +5,6 @@ import android.opengl.GLES11Ext
 import android.opengl.GLES20
 import android.opengl.Matrix
 import android.util.Log
-import com.jadyn.mediakit.function.checkGlError
-import com.jadyn.mediakit.function.checkLocation
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
@@ -149,21 +147,6 @@ class STextureRender {
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T,
                 GLES20.GL_CLAMP_TO_EDGE)
         checkGlError("glTexParameter")
-    }
-
-    /**
-     * Replaces the fragment shader.  Pass in null to reset to default.
-     */
-    fun changeFragmentShader(fragmentShader: String?) {
-        var fragmentShader = fragmentShader
-        if (fragmentShader == null) {
-            fragmentShader = FRAGMENT_SHADER
-        }
-        GLES20.glDeleteProgram(mProgram)
-        mProgram = createProgram(VERTEX_SHADER, fragmentShader)
-        if (mProgram == 0) {
-            throw RuntimeException("failed creating program")
-        }
     }
 
     private fun loadShader(shaderType: Int, source: String): Int {

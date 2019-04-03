@@ -1,9 +1,9 @@
 package com.jadyn.mediakit.gl
 
 import android.content.ContentValues.TAG
+import android.opengl.EGL14
 import android.opengl.GLES20
 import android.util.Log
-import com.jadyn.mediakit.function.checkGlError
 
 /**
  *@version:
@@ -103,4 +103,25 @@ fun loadShader(shaderType: Int, source: String): Int {
         shader = 0
     }
     return shader
+}
+
+fun checkEglError(msg: String) {
+    val error: Int = EGL14.eglGetError()
+    if (error != EGL14.EGL_SUCCESS) {
+        throw RuntimeException(msg + ": EGL error: 0x" + Integer.toHexString(error))
+    }
+}
+
+fun checkGlError(op: String) {
+    var error: Int = GLES20.glGetError()
+    while (error != GLES20.GL_NO_ERROR) {
+        error = GLES20.glGetError()
+        throw RuntimeException("$op: glError $error")
+    }
+}
+
+fun checkLocation(location: Int, label: String) {
+    if (location < 0) {
+        throw RuntimeException("Unable to locate '$label' in program")
+    }
 }

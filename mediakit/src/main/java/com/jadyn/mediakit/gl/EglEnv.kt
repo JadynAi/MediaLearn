@@ -2,8 +2,8 @@ package com.jadyn.mediakit.gl
 
 import android.opengl.EGL14
 import android.opengl.EGLConfig
+import android.opengl.EGLExt
 import android.view.Surface
-import com.jadyn.mediakit.function.checkEglError
 
 /**
  *@version:
@@ -65,7 +65,7 @@ class EglEnv(private val width: Int, private val height: Int) {
     /**
      * 创建离线Surface
      * */
-    fun buildBackgroundSurface() {
+    fun buildOffScreenSurface() {
         // EGL 和 OpenGL ES环境搭建完毕，OpenGL输出可以获得。接着是EGL和设备连接
         // 连接工具是：EGLSurface，这是一个FrameBuffer
         val pbufferAttributes = intArrayOf(EGL14.EGL_WIDTH, width, EGL14.EGL_HEIGHT,
@@ -82,7 +82,7 @@ class EglEnv(private val width: Int, private val height: Int) {
      * 
      * @param surface 本地设备屏幕
      * */
-    fun buildFrontSurface(surface: Surface) {
+    fun buildWindowSurface(surface: Surface) {
         val format = IntArray(1)
         if (!EGL14.eglGetConfigAttrib(eglDisplay, eglConfig, EGL14.EGL_NATIVE_VISUAL_ID, format, 0)) {
             checkEglError("EGL getConfig attrib failed ")
@@ -108,8 +108,21 @@ class EglEnv(private val width: Int, private val height: Int) {
         }
     }
 
+    fun setPresentationTime(nsecs: Long) {
+        EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, nsecs)
+        checkEglError("eglPresentationTimeANDROID")
+    }
+
+    fun swapBuffers(): Boolean {
+        val result = EGL14.eglSwapBuffers(eglDisplay, eglSurface)
+        checkEglError("eglSwapBuffers")
+        return result
+    }
+
     fun relase() {
         if (eglDisplay != EGL14.EGL_NO_DISPLAY) {
+            EGL14.eglMakeCurrent(eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE,
+                    EGL14.EGL_NO_CONTEXT)
             EGL14.eglDestroySurface(eglDisplay, eglSurface)
             EGL14.eglDestroyContext(eglDisplay, eglContext)
             EGL14.eglReleaseThread()

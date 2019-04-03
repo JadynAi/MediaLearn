@@ -20,7 +20,8 @@ import java.nio.ByteBuffer
 * */
 fun MediaCodec.disposeOutput(bufferInfo: MediaCodec.BufferInfo, defTimeOut: Long,
                              endStream: () -> Unit = {},
-                             render: (outputBufferId: Int) -> Unit) {
+                             render: (outputBufferId: Int) -> Unit,
+                             formatChanged: () -> Unit = {}) {
     //  获取可用的输出缓存队列
     val outputBufferId = dequeueOutputBuffer(bufferInfo, defTimeOut)
     Log.d("disposeOutput", "output buffer id : $outputBufferId ")
@@ -31,6 +32,8 @@ fun MediaCodec.disposeOutput(bufferInfo: MediaCodec.BufferInfo, defTimeOut: Long
             endStream.invoke()
         }
         render.invoke(outputBufferId)
+    } else if (outputBufferId == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+        formatChanged.invoke()
     }
 }
 

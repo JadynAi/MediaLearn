@@ -63,4 +63,18 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tv_decode"/>
 
+    <TextView
+        android:id="@+id/tv_encode_frame"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="80dp"
+        android:background="@android:color/holo_blue_light"
+        android:padding="10dp"
+        android:text="视频编码"
+        android:textColor="@android:color/white"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_decode_frame"/>
+    
 </android.support.constraint.ConstraintLayout>

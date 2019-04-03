@@ -1,8 +1,8 @@
 package com.jadyn.ai.medialearn.codec
 
 import android.graphics.SurfaceTexture
-import com.jadyn.mediakit.function.checkGlError
 import com.jadyn.mediakit.gl.STextureRender
+import com.jadyn.mediakit.gl.checkGlError
 
 /**
  *@version:

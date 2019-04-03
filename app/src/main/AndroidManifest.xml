@@ -36,7 +36,10 @@
             />
         <activity android:name=".decode.DecodeFrameActivity"
             android:screenOrientation="portrait"/>
-    
+        <activity android:name=".encode.EncodeFrameActivity"
+            android:screenOrientation="portrait"
+            />
+
     </application>
 
 </manifest>

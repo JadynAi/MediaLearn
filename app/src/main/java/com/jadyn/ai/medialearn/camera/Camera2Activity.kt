@@ -54,7 +54,7 @@ class Camera2Activity : AppCompatActivity() {
                             camera2Ops = Camera2Ops(this@Camera2Activity, Size(width, height)) { c, s ->
 
                                 // 2019/1/2-17:38 竖屏视频使用高作宽，宽作高
-                                aiLoiVideoEncoder = AiLoiVideoEncoder(s.height, s.width, 6000000)
+                                aiLoiVideoEncoder = AiLoiVideoEncoder(s.height, s.width, 60000)
                                 this@Camera2Activity.texture_view.setAspectRatio(s.height, s.width)
                                 c.openCamera(Surface(texture_view.surfaceTexture.apply {
                                     setDefaultBufferSize(s.height, s.width)

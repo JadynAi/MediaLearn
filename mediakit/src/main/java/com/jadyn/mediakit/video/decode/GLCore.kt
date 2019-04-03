@@ -7,10 +7,10 @@ import android.opengl.GLES20
 import android.util.Log
 import android.util.Size
 import android.view.Surface
-import com.jadyn.mediakit.function.checkGlError
 import com.jadyn.mediakit.function.saveFrame
 import com.jadyn.mediakit.gl.EglEnv
 import com.jadyn.mediakit.gl.Texture2dProgram
+import com.jadyn.mediakit.gl.checkGlError
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -42,7 +42,7 @@ class GLCore : DecodeCore() {
             return surface
         }
         size = Size(width, height)
-        EglEnv(width, height).setUpEnv().buildBackgroundSurface()
+        EglEnv(width, height).setUpEnv().buildOffScreenSurface()
         surfaceTexture = SurfaceTexture(texture2dProgram.genTextureId())
         surfaceTexture.setOnFrameAvailableListener {
             Log.d(TAG, "new frame available")

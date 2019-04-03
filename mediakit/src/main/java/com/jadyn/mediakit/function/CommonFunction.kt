@@ -4,12 +4,12 @@ import android.graphics.Bitmap
 import android.graphics.ImageFormat
 import android.media.Image
 import android.media.MediaCodecInfo
-import android.opengl.EGL14
-import android.opengl.GLES20
 import android.support.annotation.IntRange
-import android.util.Base64
 import android.util.Log
-import java.io.*
+import java.io.BufferedOutputStream
+import java.io.File
+import java.io.FileOutputStream
+import java.io.OutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.security.MessageDigest
@@ -23,30 +23,9 @@ import java.security.NoSuchAlgorithmException
  *@Since:2018/12/5
  *@ChangeList:
  */
-fun checkEglError(msg: String) {
-    val error: Int = EGL14.eglGetError()
-    if (error != EGL14.EGL_SUCCESS) {
-        throw RuntimeException(msg + ": EGL error: 0x" + Integer.toHexString(error))
-    }
-}
-
-fun checkGlError(op: String) {
-    var error: Int = GLES20.glGetError()
-    while (error != GLES20.GL_NO_ERROR) {
-        error = GLES20.glGetError()
-        throw RuntimeException("$op: glError $error")
-    }
-}
-
 fun computePresentationTimeNsec(frameIndex: Int, frameRate: Int): Long {
     val ONE_BILLION: Long = 1000000000
     return frameIndex * ONE_BILLION / frameRate
-}
-
-fun checkLocation(location: Int, label: String) {
-    if (location < 0) {
-        throw RuntimeException("Unable to locate '$label' in program")
-    }
 }
 
 fun debugShowSupportColorFormat(caps: MediaCodecInfo.CodecCapabilities) {
@@ -163,18 +142,6 @@ fun Bitmap.saveFrame(fileName: String, @IntRange(from = 1, to = 100) quality: In
     } finally {
         bos?.close()
     }
-}
-
-fun Bitmap.convertString(): String {
-    val outputStream = ByteArrayOutputStream()
-    return try {
-        compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-        val bytes = outputStream.toByteArray()
-        Base64.encodeToString(bytes, Base64.DEFAULT)
-    } catch (e: Exception) {
-        ""
-    }
-
 }
 
 fun Bitmap.fillOutputStream(o: OutputStream): Boolean {

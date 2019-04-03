@@ -1,6 +1,7 @@
 package com.jadyn.mediakit.video.encode
 
-import android.graphics.SurfaceTexture
+import android.graphics.Bitmap
+import android.util.Size
 import android.view.Surface
 import com.jadyn.mediakit.gl.EglEnv
 import com.jadyn.mediakit.gl.Texture2dProgram
@@ -14,39 +15,26 @@ import com.jadyn.mediakit.gl.Texture2dProgram
  */
 class GLEncodeCore(private val width: Int, private val height: Int) {
 
-    init {
-        // 构建EGL环境
-        EglEnv(width, height)
-                .setUpEnv()
-                .buildBackgroundSurface()
-    }
-
     private val texture2dProgram by lazy {
         Texture2dProgram()
     }
 
-    private var surfaceTexture: SurfaceTexture? = null
+    private var textureId: Int = 0
 
-    private var surface: Surface? = null
-
-    fun generateTextureSurface(): Surface {
-        if (surface == null) {
-            surface = Surface(genSurfaceTexture())
-        }
-        return surface!!
+    private val eglEnv by lazy {
+        EglEnv(width, height)
     }
 
-    /**
-     * 生成一个绑定
-     * */
-    private fun genSurfaceTexture(): SurfaceTexture {
-        if (surfaceTexture == null) {
-            surfaceTexture = SurfaceTexture(texture2dProgram.genTextureId())
-        }
-        return surfaceTexture!!
+    fun buildEGLSurface(surface: Surface) {
+        // 构建EGL环境
+        eglEnv.setUpEnv().buildWindowSurface(surface)
+        textureId = texture2dProgram.genTextureId()
     }
 
-    fun release() {
-        surfaceTexture?.release()
+    fun drainFrame(b: Bitmap) {
+        texture2dProgram.uploadBitmapToTexture(b, Size(width, height))
+        eglEnv.setPresentationTime(0)
+        eglEnv.swapBuffers()
     }
+
 }

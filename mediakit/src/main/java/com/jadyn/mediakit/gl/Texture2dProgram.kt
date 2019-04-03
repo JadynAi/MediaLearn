@@ -4,14 +4,8 @@ import android.graphics.Bitmap
 import android.graphics.SurfaceTexture
 import android.opengl.GLES11Ext
 import android.opengl.GLES20
-import android.opengl.Matrix
 import android.util.Size
-import com.jadyn.mediakit.function.checkGlError
-import com.jadyn.mediakit.function.checkLocation
 import com.jadyn.mediakit.function.getByteBuffer
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.FloatBuffer
 
 /**
  *@version:
@@ -21,47 +15,14 @@ import java.nio.FloatBuffer
  *@ChangeList:
  */
 class Texture2dProgram {
-    private val FLOAT_SIZE_BYTES = 4
-    private val TRIANGLE_VERTICES_DATA_STRIDE_BYTES = 5 * FLOAT_SIZE_BYTES
-    private val TRIANGLE_VERTICES_DATA_POS_OFFSET = 0
-    private val TRIANGLE_VERTICES_DATA_UV_OFFSET = 3
 
-    private val mTriangleVerticesData = floatArrayOf(
-            // X, Y, Z, U, V
-            -1.0f, -1.0f, 0f, 0f, 0f, 1.0f, -1.0f, 0f, 1f, 0f, -1.0f, 1.0f, 0f, 0f, 1f, 1.0f, 1.0f, 0f, 1f, 1f)
-
-    private val mTriangleVertices: FloatBuffer
-
-    private val mMVPMatrix = FloatArray(16)
-    private val mSTMatrix = FloatArray(16)
-
-    private val program: Int
     private var textureId: Int = 0
 
-    private var muMVPMatrixHandle: Int = 0
-    private var muSTMatrixHandle: Int = 0
-    private var maPositionHandle: Int = 0
-    private var maTextureHandle: Int = 0
+    private val textureDraw: TextureDraw
 
     init {
-        mTriangleVertices = ByteBuffer.allocateDirect(
-                mTriangleVerticesData.size * FLOAT_SIZE_BYTES)
-                .order(ByteOrder.nativeOrder()).asFloatBuffer()
-        mTriangleVertices.put(mTriangleVerticesData).position(0)
-
-        Matrix.setIdentityM(mSTMatrix, 0)
-        program = createTexture2DProgram()
-
-        // get locations of attributes and uniforms
-        maPositionHandle = GLES20.glGetAttribLocation(program, "aPosition")
-        checkLocation(maPositionHandle, "aPosition")
-        maTextureHandle = GLES20.glGetAttribLocation(program, "aTextureCoord")
-        checkLocation(maTextureHandle, "aTextureCoord")
-
-        muMVPMatrixHandle = GLES20.glGetUniformLocation(program, "uMVPMatrix")
-        checkLocation(muMVPMatrixHandle, "uMVPMatrix")
-        muSTMatrixHandle = GLES20.glGetUniformLocation(program, "uSTMatrix")
-        checkLocation(muSTMatrixHandle, "uSTMatrix")
+        val program = createTexture2DProgram()
+        textureDraw = TextureDraw(program)
     }
 
     /**
@@ -96,57 +57,18 @@ class Texture2dProgram {
     }
 
     /**
-     * 将bitmap渲染到纹理上
+     * 将bitmap数据上传到这个纹理对象
      * */
-    fun renderTexture(bitmap: Bitmap, targetSize: Size) {
+    fun uploadBitmapToTexture(bitmap: Bitmap, targetSize: Size) {
         val scaleBitmap = Bitmap.createBitmap(bitmap, 0, 0, targetSize.width, targetSize.height)
         val byteBuffer = scaleBitmap.getByteBuffer()
         GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA,
                 targetSize.width, targetSize.height, 0, GLES20.GL_RGBA,
                 GLES20.GL_UNSIGNED_BYTE, byteBuffer)
+        textureDraw.drawTextureToWindow(targetSize, textureId)
     }
 
     fun drawFrame(st: SurfaceTexture, invert: Boolean) {
-        checkGlError("onDrawFrame start")
-        st.getTransformMatrix(mSTMatrix)
-        if (invert) {
-            mSTMatrix[5] = -mSTMatrix[5]
-            mSTMatrix[13] = 1.0f - mSTMatrix[13]
-        }
-
-        GLES20.glClearColor(0.0f, 1.0f, 0.0f, 1.0f)
-        GLES20.glClear(GLES20.GL_DEPTH_BUFFER_BIT or GLES20.GL_COLOR_BUFFER_BIT)
-
-        GLES20.glUseProgram(program)
-        checkGlError("glUseProgram")
-
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId)
-
-        mTriangleVertices.position(TRIANGLE_VERTICES_DATA_POS_OFFSET)
-        GLES20.glVertexAttribPointer(maPositionHandle, 3, GLES20.GL_FLOAT, false,
-                TRIANGLE_VERTICES_DATA_STRIDE_BYTES, mTriangleVertices)
-        checkGlError("glVertexAttribPointer maPosition")
-        GLES20.glEnableVertexAttribArray(maPositionHandle)
-        checkGlError("glEnableVertexAttribArray maPositionHandle")
-
-        mTriangleVertices.position(TRIANGLE_VERTICES_DATA_UV_OFFSET)
-        GLES20.glVertexAttribPointer(maTextureHandle, 2, GLES20.GL_FLOAT, false,
-                TRIANGLE_VERTICES_DATA_STRIDE_BYTES, mTriangleVertices)
-        checkGlError("glVertexAttribPointer maTextureHandle")
-        GLES20.glEnableVertexAttribArray(maTextureHandle)
-        checkGlError("glEnableVertexAttribArray maTextureHandle")
-
-        Matrix.setIdentityM(mMVPMatrix, 0)
-        GLES20.glUniformMatrix4fv(muMVPMatrixHandle, 1, false, mMVPMatrix, 0)
-        GLES20.glUniformMatrix4fv(muSTMatrixHandle, 1, false, mSTMatrix, 0)
-
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
-        checkGlError("glDrawArrays")
-        unBindTexture()
-    }
-
-    fun unBindTexture() {
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0)
+        textureDraw.drawFromSurfaceTexture(st, invert, textureId)
     }
 }
