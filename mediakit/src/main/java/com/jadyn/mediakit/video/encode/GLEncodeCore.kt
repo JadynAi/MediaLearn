@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.util.Size
 import android.view.Surface
 import com.jadyn.mediakit.gl.EglEnv
-import com.jadyn.mediakit.gl.Texture2dProgram
 
 /**
  *@version:
@@ -15,25 +14,27 @@ import com.jadyn.mediakit.gl.Texture2dProgram
  */
 class GLEncodeCore(private val width: Int, private val height: Int) {
 
-    private val texture2dProgram by lazy {
-        Texture2dProgram()
-    }
-
-    private var textureId: Int = 0
-
     private val eglEnv by lazy {
         EglEnv(width, height)
+    }
+
+    private val encodeProgram by lazy {
+        EncodeProgram(Size(width, height))
     }
 
     fun buildEGLSurface(surface: Surface) {
         // 构建EGL环境
         eglEnv.setUpEnv().buildWindowSurface(surface)
-        textureId = texture2dProgram.genTextureId()
+        encodeProgram.build()
     }
 
-    fun drainFrame(b: Bitmap) {
-        texture2dProgram.uploadBitmapToTexture(b, Size(width, height))
-        eglEnv.setPresentationTime(0)
+    /**
+     *
+     * @param presentTime 纳米，当前帧时间
+     * */
+    fun drainFrame(b: Bitmap, presentTime: Long) {
+        encodeProgram.renderBitmap(b)
+        eglEnv.setPresentationTime(presentTime)
         eglEnv.swapBuffers()
     }
 

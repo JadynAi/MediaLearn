@@ -160,6 +160,19 @@ fun Bitmap.getByteBuffer(): ByteBuffer {
     return byteBuffer
 }
 
+fun Bitmap.getRGBAByteBuffer(): ByteBuffer {
+    val buffer = getByteBuffer()
+    val rgba = buffer.array()
+    val pixels = ByteArray((rgba.size / 4) * 3)
+    val count = rgba.size / 4
+    for (i in 0 until count) {
+        pixels[i * 3] = rgba[i * 4]       //R
+        pixels[i * 3 + 1] = rgba[i * 4 + 1]    //G
+        pixels[i * 3 + 2] = rgba[i * 4 + 2]       //B
+    }
+    return ByteBuffer.wrap(pixels)
+}
+
 fun md5(str: String): String {
     val digest = MessageDigest.getInstance("MD5")
     val result = digest.digest(str.toByteArray())

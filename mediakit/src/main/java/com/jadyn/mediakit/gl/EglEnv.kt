@@ -3,6 +3,7 @@ package com.jadyn.mediakit.gl
 import android.opengl.EGL14
 import android.opengl.EGLConfig
 import android.opengl.EGLExt
+import android.util.Log
 import android.view.Surface
 
 /**
@@ -87,7 +88,7 @@ class EglEnv(private val width: Int, private val height: Int) {
         if (!EGL14.eglGetConfigAttrib(eglDisplay, eglConfig, EGL14.EGL_NATIVE_VISUAL_ID, format, 0)) {
             checkEglError("EGL getConfig attrib failed ")
         }
-        if (eglSurface != null) {
+        if (eglSurface != EGL14.EGL_NO_SURFACE) {
             throw RuntimeException("EGL already config surface")
         }
         val surfaceAttribs = intArrayOf(EGL14.EGL_NONE)
@@ -103,6 +104,7 @@ class EglEnv(private val width: Int, private val height: Int) {
      * 为此线程绑定上下文
      * */
     private fun makeCurrent() {
+        Log.d(this.javaClass.name, " egl make current ")
         if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
             checkEglError("EGL make current failed")
         }

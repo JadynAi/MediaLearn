@@ -154,7 +154,7 @@ class VideoDecoder2(dataSource: String) {
 
                 decoder.disposeOutput(info, DEF_TIME_OUT, {
                     outputDone = true
-                }, { id ->
+                }) { id ->
                     Log.d(TAG, "out time ${info.presentationTimeUs} ")
                     if (decodeCore.updateTexture(info, id, decoder)) {
                         if (info.presentationTimeUs == time) {
@@ -165,7 +165,7 @@ class VideoDecoder2(dataSource: String) {
                             emitter?.onNext(bitmap)
                         }
                     }
-                })
+                }
             }
             decoder.flush()
         }

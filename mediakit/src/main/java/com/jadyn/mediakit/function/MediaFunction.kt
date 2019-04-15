@@ -34,6 +34,14 @@ val MediaFormat.fps: Int
         0
     }
 
+/**
+ * 每一帧时间，微秒
+ * */
+val MediaFormat.perFrameTime: Long
+    get() {
+        return 1000000L / this.fps
+    }
+
 val MediaFormat.mime
     get() = getString(MediaFormat.KEY_MIME)
 

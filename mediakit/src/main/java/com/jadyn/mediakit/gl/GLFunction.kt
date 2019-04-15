@@ -1,6 +1,5 @@
 package com.jadyn.mediakit.gl
 
-import android.content.ContentValues.TAG
 import android.opengl.EGL14
 import android.opengl.GLES20
 import android.util.Log
@@ -13,26 +12,47 @@ import android.util.Log
  *@ChangeList:
  */
 //顶点着色器
-private val VERTEX_SHADER = "uniform mat4 uMVPMatrix;\n" +
-        "uniform mat4 uSTMatrix;\n" +
-        "attribute vec4 aPosition;\n" +
-        "attribute vec4 aTextureCoord;\n" +
-        "varying vec2 vTextureCoord;\n" +
-        "void main() {\n" +
-        "gl_Position = uMVPMatrix * aPosition;\n" +
-        "vTextureCoord = (uSTMatrix * aTextureCoord).xy;\n" +
-        "}\n"
+private val VERTEX_SHADER = """
+        uniform mat4 uMVPMatrix;
+        uniform mat4 uSTMatrix;
+        attribute vec4 aPosition;
+        attribute vec4 aTextureCoord;
+        varying vec2 vTextureCoord;
+        void main() {
+            gl_Position = uMVPMatrix * aPosition;
+            vTextureCoord = (uSTMatrix * aTextureCoord).xy;
+        }
+        """
 
 //片元着色器
-private val FRAGMENT_SHADER = "#extension GL_OES_EGL_image_external : require\n" +
-        "precision mediump float;\n" +
-        "varying vec2 vTextureCoord;\n" +
-        "uniform samplerExternalOES sTexture;\n" +
-        "void main() {\n" +
-        "gl_FragColor = texture2D(sTexture, vTextureCoord);\n" +
-        "}\n"
+private val FRAGMENT_SHADER = """
+        #extension GL_OES_EGL_image_external : require
+        precision mediump float;
+        varying vec2 vTextureCoord;
+        uniform samplerExternalOES sTexture;
+        void main() {
+            gl_FragColor = texture2D(sTexture, vTextureCoord);
+        }
+        """
 
 private val TAG = "GLFunction"
+
+private val COMMON_VERTEX_SHADER =
+        "attribute vec4 position;\n" +
+                "attribute vec2 texcoord;\n" +
+                "varying vec2 v_texcoord;\n" +
+                "void main() {\n" +
+                "gl_Position = position;\n" +
+                "v_texcoord = texcoord;\n" +
+                "}\n"
+
+private val COMMONE_FRAG_SHADER =
+        "precision highp float;\n" +
+                "varying highp vec2 v_texcoord;\n" +
+                "uniform sampler2D texSampler;\n" +
+                "void main() {\n" +
+                "gl_FragColor = texture2D(texSampler, v_texcoord);\n" +
+                "}\n"
 
 /**
  * 创建一个纹理program
@@ -41,10 +61,18 @@ fun createTexture2DProgram(): Int {
     return createProgram(VERTEX_SHADER, FRAGMENT_SHADER)
 }
 
+fun createCommonProgram(): Int {
+    return createProgram(COMMON_VERTEX_SHADER, COMMONE_FRAG_SHADER)
+}
+
 /**
  * 创建一个显卡可执行程序，运行在GPU
  * */
 fun createProgram(vertexSource: String, fragmentSource: String): Int {
+    val ints = IntArray(1)
+    GLES20.glGetIntegerv(GLES20.GL_MAX_VERTEX_ATTRIBS, ints, 0)
+    Log.d(TAG, "create program max vertex attribs : ${ints[0]}")
+
     val vertexShader = loadShader(GLES20.GL_VERTEX_SHADER, vertexSource)
     Log.d(TAG, "createProgram vertexShader: $vertexShader ")
     if (vertexShader == 0) {
@@ -78,7 +106,7 @@ fun createProgram(vertexSource: String, fragmentSource: String): Int {
         program = 0
     }
     if (program == 0) {
-        throw RuntimeException("create GPU program failed")   
+        throw RuntimeException("create GPU program failed")
     }
     return program
 }
@@ -105,6 +133,18 @@ fun loadShader(shaderType: Int, source: String): Int {
     return shader
 }
 
+fun getAttrib(program: Int, name: String): Int {
+    val location = GLES20.glGetAttribLocation(program, name)
+    checkLocation(location, name)
+    return location
+}
+
+fun getUniform(program: Int, name: String): Int {
+    val uniform = GLES20.glGetUniformLocation(program, name)
+    checkLocation(uniform, name)
+    return uniform
+}
+
 fun checkEglError(msg: String) {
     val error: Int = EGL14.eglGetError()
     if (error != EGL14.EGL_SUCCESS) {
@@ -113,10 +153,9 @@ fun checkEglError(msg: String) {
 }
 
 fun checkGlError(op: String) {
-    var error: Int = GLES20.glGetError()
-    while (error != GLES20.GL_NO_ERROR) {
-        error = GLES20.glGetError()
-        throw RuntimeException("$op: glError $error")
+    val error: Int = GLES20.glGetError()
+    if (error != GLES20.GL_NO_ERROR) {
+        throw RuntimeException("$op: glError $error and msg is ${Integer.toHexString(error)}")
     }
 }
 

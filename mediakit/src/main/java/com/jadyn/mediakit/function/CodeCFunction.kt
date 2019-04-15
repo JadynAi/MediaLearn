@@ -20,8 +20,8 @@ import java.nio.ByteBuffer
 * */
 fun MediaCodec.disposeOutput(bufferInfo: MediaCodec.BufferInfo, defTimeOut: Long,
                              endStream: () -> Unit = {},
-                             render: (outputBufferId: Int) -> Unit,
-                             formatChanged: () -> Unit = {}) {
+                             formatChanged: () -> Unit = {},
+                             render: (outputBufferId: Int) -> Unit) {
     //  获取可用的输出缓存队列
     val outputBufferId = dequeueOutputBuffer(bufferInfo, defTimeOut)
     Log.d("disposeOutput", "output buffer id : $outputBufferId ")
@@ -49,10 +49,30 @@ fun MediaCodec.dequeueValidInputBuffer(timeOutUs: Long, input: (inputBufferId: I
     return false
 }
 
-fun MediaCodec.queueEndSteam(timeOutUs: Long) {
-    dequeueValidInputBuffer(timeOutUs) { inputBufferId, inputBuffer ->
-        queueInputBuffer(inputBufferId, 0, 0, 0L,
-                MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+/**
+ * 
+ * @param needEnd bufferId is INFO_OUTPUT_FORMAT_CHANGED,is need to break loop
+ * */
+fun MediaCodec.handleOutputBuffer(bufferInfo: MediaCodec.BufferInfo, defTimeOut: Long,
+                                  formatChanged: () -> Unit = {},
+                                  render: (bufferId: Int) -> Unit,
+                                  needEnd: Boolean = true) {
+    loopOut@ while (true) {
+        //  获取可用的输出缓存队列
+        val outputBufferId = dequeueOutputBuffer(bufferInfo, defTimeOut)
+        Log.d("handleOutputBuffer", "output buffer id : $outputBufferId ")
+        if (outputBufferId == MediaCodec.INFO_TRY_AGAIN_LATER) {
+            if (needEnd) {
+                break@loopOut
+            }
+        } else if (outputBufferId == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+            formatChanged.invoke()
+        } else if (outputBufferId >= 0) {
+            render.invoke(outputBufferId)
+            if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) {
+                break@loopOut
+            }
+        }
     }
 }
 

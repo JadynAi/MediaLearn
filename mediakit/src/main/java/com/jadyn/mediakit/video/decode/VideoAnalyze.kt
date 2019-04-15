@@ -3,10 +3,7 @@ package com.jadyn.mediakit.video.decode
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.support.annotation.IntRange
-import com.jadyn.mediakit.function.duration
-import com.jadyn.mediakit.function.fps
-import com.jadyn.mediakit.function.minDifferenceValue
-import com.jadyn.mediakit.function.selectVideoTrack
+import com.jadyn.mediakit.function.*
 
 /**
  *@version:
@@ -76,21 +73,13 @@ class VideoAnalyze(val dataSource: String) {
 
 
     /*
-    * 
-    * return : 每一帧持续时间，微秒
-    * */
-    val perFrameTime by lazy {
-        1000000L / mediaFormat.fps
-    }
-
-
-    /*
     * 比较两个时间戳是否为同一帧
     * fixedTime: 目标时间戳
     * sampleTime:被比较时间戳
     * */
     fun sameFrame(fixedTime: Long, sampleTime: Long): Boolean {
-        return sampleTime >= fixedTime - firstFrameTime && sampleTime < fixedTime + perFrameTime - firstFrameTime
+        return sampleTime >= fixedTime - firstFrameTime && sampleTime < fixedTime +
+                mediaFormat.perFrameTime - firstFrameTime
     }
 
     /*
@@ -111,7 +100,7 @@ class VideoAnalyze(val dataSource: String) {
                 count++
                 // 选取和目标时间差值最小的那个
                 sampleTime = time.minDifferenceValue(sampleTime, s)
-                if (Math.abs(sampleTime - time) <= perFrameTime) {
+                if (Math.abs(sampleTime - time) <= mediaFormat.perFrameTime) {
                     //如果这个差值在 一帧间隔 内，即为成功
                     return sampleTime
                 }

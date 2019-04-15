@@ -1,6 +1,5 @@
 package com.jadyn.mediakit.video.encode
 
-import android.content.ContentValues
 import android.graphics.Bitmap
 import android.media.MediaCodec
 import android.media.MediaFormat
@@ -9,7 +8,8 @@ import android.util.Log
 import android.util.Size
 import android.view.Surface
 import com.jadyn.mediakit.function.createVideoFormat
-import com.jadyn.mediakit.function.disposeOutput
+import com.jadyn.mediakit.function.handleOutputBuffer
+import com.jadyn.mediakit.function.perFrameTime
 import java.io.IOException
 
 /**
@@ -20,11 +20,13 @@ import java.io.IOException
  *@ChangeList:
  */
 class VideoEncoder(private val width: Int, private val height: Int,
-                   bitRate: Int,
+                   val bitRate: Int,
                    frameRate: Int = 30,
                    frameInterval: Int = 5) {
+    
+    private val TAG = "VideoEncoder"
 
-    private val mediaformat by lazy {
+    private val mediaFormat by lazy {
         createVideoFormat(Size(width, height), bitRate = bitRate, frameRate = frameRate,
                 iFrameInterval = frameInterval)
     }
@@ -53,9 +55,8 @@ class VideoEncoder(private val width: Int, private val height: Int,
     }
 
     fun start(outputPath: String) {
-        codec.configure(mediaformat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
+        codec.configure(mediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
         inputSurface = codec.createInputSurface()
-
         try {
             mediaMuxer = MediaMuxer(outputPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
         } catch (e: IOException) {
@@ -65,40 +66,53 @@ class VideoEncoder(private val width: Int, private val height: Int,
         encodeCore.buildEGLSurface(inputSurface)
     }
 
-    fun drainFrame(b: Bitmap) {
+    /**
+     *
+     * @b : draw bitmap to texture
+     *
+     * @presentTime: frame current time
+     * */
+    fun drainFrame(b: Bitmap, presentTime: Long) {
+        encodeCore.drainFrame(b, presentTime)
         drainCoder(false)
-        encodeCore.drainFrame(b)
     }
 
-    fun drainCoder(endOfSteams: Boolean) {
+    fun drainFrame(b: Bitmap, index: Int) {
+        drainFrame(b, index * mediaFormat.perFrameTime * 1000)
+    }
+
+    fun drainEnd() {
+        drainCoder(true)
+    }
+
+    private fun drainCoder(endOfSteams: Boolean) {
         if (endOfSteams) {
             codec.signalEndOfInputStream()
         }
         val defTimeOut: Long = 1000
-        var outputDone = false
-        while (!outputDone) {
-            codec.disposeOutput(bufferInfo, defTimeOut, {
-                outputDone = true
-            }, {
-                val encodedData = codec.getOutputBuffer(it)
-                if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG != 0) {
-                    bufferInfo.size = 0
+        codec.handleOutputBuffer(bufferInfo, defTimeOut, {
+            if (muxerStarted) {
+                throw RuntimeException("already muxer started!!!")
+            }
+            Log.d(TAG, "format changed ${codec.outputFormat} ")
+            trackIndex = mediaMuxer.addTrack(codec.outputFormat)
+            mediaMuxer.start()
+            muxerStarted = true
+        }, {
+            val encodedData = codec.getOutputBuffer(it)
+            if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG != 0) {
+                bufferInfo.size = 0
+            }
+            if (bufferInfo.size != 0) {
+                if (!muxerStarted) {
+                    throw RuntimeException("muxer hasn't started")
                 }
-                if (bufferInfo.size != 0) {
-                    if (!muxerStarted) {
-                        throw RuntimeException("muxer hasn't started")
-                    }
-                    encodedData.position(bufferInfo.offset)
-                    encodedData.limit(bufferInfo.offset + bufferInfo.size)
-                    mediaMuxer.writeSampleData(trackIndex, encodedData, bufferInfo)
-                    Log.d(ContentValues.TAG, "sent " + bufferInfo.size + " bytes to muxer")
-                }
-                codec.releaseOutputBuffer(it, false)
-            }, {
-                trackIndex = mediaMuxer.addTrack(codec.outputFormat)
-                mediaMuxer.start()
-                muxerStarted = true
-            })
-        }
+                encodedData.position(bufferInfo.offset)
+                encodedData.limit(bufferInfo.offset + bufferInfo.size)
+                mediaMuxer.writeSampleData(trackIndex, encodedData, bufferInfo)
+                Log.d(TAG, "sent " + bufferInfo.size + " bytes to muxer")
+            }
+            codec.releaseOutputBuffer(it, false)
+        }, !endOfSteams)
     }
 }

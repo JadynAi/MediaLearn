@@ -1,8 +1,10 @@
 package com.jadyn.mediakit.gl
 
+import android.graphics.Bitmap
 import android.graphics.SurfaceTexture
 import android.opengl.GLES11Ext
 import android.opengl.GLES20
+import android.opengl.GLUtils
 import android.opengl.Matrix
 import android.util.Size
 import java.nio.ByteBuffer
@@ -105,15 +107,11 @@ class TextureDraw(private val program: Int) {
         unBindTexture()
     }
 
-    private fun unBindTexture() {
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0)
-    }
+    fun drawBitmap(b: Bitmap, size: Size, textureId: Int) {
+        GLES20.glViewport(0, 0, size.width, size.height)
 
-    fun drawTextureToWindow(targetSize: Size, textureId: Int) {
-        val w = targetSize.width
-        val h = targetSize.height
-        // 规定窗口大小
-        GLES20.glViewport(0, 0, w, h)
+        GLES20.glClearColor(0.0f, 1.0f, 0.0f, 1.0f)
+        GLES20.glClear(GLES20.GL_DEPTH_BUFFER_BIT or GLES20.GL_COLOR_BUFFER_BIT)
 
         // 使用显卡绘制程序
         GLES20.glUseProgram(program)
@@ -122,6 +120,9 @@ class TextureDraw(private val program: Int) {
         // 指定将要绘制的纹理对象并传递给对应的FragmentShader
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId)
+
+        Matrix.setIdentityM(mvpMatrix, 0)
+        GLES20.glUniformMatrix4fv(uMVPMatrixHandle, 1, false, mvpMatrix, 0)
 
         // 设置物体坐标
         triangleVertices.position(TRIANGLE_VERTICES_DATA_POS_OFFSET)
@@ -139,6 +140,16 @@ class TextureDraw(private val program: Int) {
         GLES20.glEnableVertexAttribArray(glTextureCoord)
         checkGlError("glEnableVertexAttribArray maTextureHandle")
 
+
+        GLUtils.texImage2D(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0, b, 0)
+
+        // 执行挥之操作
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
+        checkGlError("glDrawArrays")
+        unBindTexture()
+    }
+
+    private fun unBindTexture() {
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0)
     }
 }

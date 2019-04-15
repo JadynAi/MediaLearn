@@ -1,5 +1,10 @@
 package com.jadyn.mediakit.function
 
+import android.util.Size
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.FloatBuffer
+
 /**
  *@version:
  *@FileDescription:
@@ -20,4 +25,25 @@ fun Long.minDifferenceValue(a: Long, b: Long): Long {
         return Math.min(a, b)
     }
     return if (f_a < f_b) a else b
+}
+
+fun createFloatBuffer(array: FloatArray): FloatBuffer {
+    val buffer = ByteBuffer
+            // 分配顶点坐标分量个数 * Float占的Byte位数
+            .allocateDirect(array.size * 4)
+            // 按照本地字节序排序
+            .order(ByteOrder.nativeOrder())
+            // Byte类型转Float类型
+            .asFloatBuffer()
+
+    // 将Dalvik的内存数据复制到Native内存中
+    buffer.put(array)
+    return buffer
+}
+
+fun Size.aspectRatio(): Float {
+    return if (width > height)
+        width.toFloat() / height.toFloat()
+    else
+        height.toFloat() / width.toFloat()
 }
