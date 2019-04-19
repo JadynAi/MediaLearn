@@ -30,12 +30,16 @@ class GLEncodeCore(private val width: Int, private val height: Int) {
 
     /**
      *
-     * @param presentTime 纳米，当前帧时间
+     * @param presentTime 纳秒，当前帧时间
      * */
     fun drainFrame(b: Bitmap, presentTime: Long) {
         encodeProgram.renderBitmap(b)
+        // 给渲染的这一帧设置一个时间戳
         eglEnv.setPresentationTime(presentTime)
         eglEnv.swapBuffers()
     }
 
+    fun release() {
+        eglEnv.relase()
+    }
 }

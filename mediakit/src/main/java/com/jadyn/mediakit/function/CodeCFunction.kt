@@ -51,7 +51,7 @@ fun MediaCodec.dequeueValidInputBuffer(timeOutUs: Long, input: (inputBufferId: I
 
 /**
  * 
- * @param needEnd bufferId is INFO_OUTPUT_FORMAT_CHANGED,is need to break loop
+ * @param needEnd when bufferId is INFO_TRY_AGAIN_LATER, is need to break loop
  * */
 fun MediaCodec.handleOutputBuffer(bufferInfo: MediaCodec.BufferInfo, defTimeOut: Long,
                                   formatChanged: () -> Unit = {},

@@ -18,6 +18,15 @@ import javax.microedition.khronos.opengles.GL10
  */
 class EncodeProgram(private val size: Size) {
 
+    /**
+     * 逐行解释
+     * 
+     *  1、4*4的矩阵 
+     *  2、4维向量 
+     *  3、2维向量
+     *  4、varying 修饰从顶点着色器传递到片元着色器过来的数据
+     * 
+     * */
     private val VERTEX_SHADER = """
                 uniform mat4 u_Matrix;
                 attribute vec4 a_Position;
@@ -28,6 +37,16 @@ class EncodeProgram(private val size: Size) {
                     gl_Position = u_Matrix * a_Position;
                 }
         """
+    
+    /**
+     * 一下为代码的逐行解释
+     * 
+     * 1、float 精度修饰， medium 16bit，用于纹理坐标
+     * 2、varying 修饰从顶点着色器传递到片元着色器过来的数据
+     * 3、二维纹理声明 
+     * 
+     * 4、使用texture2D取出纹理坐标点上的纹理像素值
+     * */
     private val FRAGMENT_SHADER = """
                 precision mediump float;
                 varying vec2 v_TexCoord;

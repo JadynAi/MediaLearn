@@ -10,6 +10,7 @@ import android.view.Surface
 import com.jadyn.mediakit.function.createVideoFormat
 import com.jadyn.mediakit.function.handleOutputBuffer
 import com.jadyn.mediakit.function.perFrameTime
+import java.io.File
 import java.io.IOException
 
 /**
@@ -23,7 +24,7 @@ class VideoEncoder(private val width: Int, private val height: Int,
                    val bitRate: Int,
                    frameRate: Int = 30,
                    frameInterval: Int = 5) {
-    
+
     private val TAG = "VideoEncoder"
 
     private val mediaFormat by lazy {
@@ -40,7 +41,7 @@ class VideoEncoder(private val width: Int, private val height: Int,
     }
 
     private var codec: MediaCodec
-    private lateinit var mediaMuxer: MediaMuxer
+    private var mediaMuxer: MediaMuxer? = null
     private lateinit var inputSurface: Surface
 
     private var trackIndex: Int = 0
@@ -55,6 +56,10 @@ class VideoEncoder(private val width: Int, private val height: Int,
     }
 
     fun start(outputPath: String) {
+        val file = File(outputPath)
+        if (file?.exists()) {
+            file.delete()
+        }
         codec.configure(mediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
         inputSurface = codec.createInputSurface()
         try {
@@ -83,6 +88,12 @@ class VideoEncoder(private val width: Int, private val height: Int,
 
     fun drainEnd() {
         drainCoder(true)
+        encodeCore.release()
+        codec.stop()
+        codec.reset()
+        mediaMuxer?.stop()
+        mediaMuxer?.release()
+        mediaMuxer = null
     }
 
     private fun drainCoder(endOfSteams: Boolean) {
@@ -95,11 +106,12 @@ class VideoEncoder(private val width: Int, private val height: Int,
                 throw RuntimeException("already muxer started!!!")
             }
             Log.d(TAG, "format changed ${codec.outputFormat} ")
-            trackIndex = mediaMuxer.addTrack(codec.outputFormat)
-            mediaMuxer.start()
+            trackIndex = mediaMuxer!!.addTrack(codec.outputFormat)
+            mediaMuxer!!.start()
             muxerStarted = true
         }, {
             val encodedData = codec.getOutputBuffer(it)
+            Log.d(TAG, "buffer info flag ${bufferInfo.flags}: ")
             if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG != 0) {
                 bufferInfo.size = 0
             }
@@ -107,9 +119,10 @@ class VideoEncoder(private val width: Int, private val height: Int,
                 if (!muxerStarted) {
                     throw RuntimeException("muxer hasn't started")
                 }
+                Log.d(TAG, "buffer info offset ${bufferInfo.offset} time is ${bufferInfo.presentationTimeUs} ")
                 encodedData.position(bufferInfo.offset)
                 encodedData.limit(bufferInfo.offset + bufferInfo.size)
-                mediaMuxer.writeSampleData(trackIndex, encodedData, bufferInfo)
+                mediaMuxer!!.writeSampleData(trackIndex, encodedData, bufferInfo)
                 Log.d(TAG, "sent " + bufferInfo.size + " bytes to muxer")
             }
             codec.releaseOutputBuffer(it, false)

@@ -7,6 +7,7 @@ import com.jadyn.ai.medialearn.camera.Camera2Activity
 import com.jadyn.ai.medialearn.decode.DecodeActivity
 import com.jadyn.ai.medialearn.decode.DecodeFrameActivity
 import com.jadyn.ai.medialearn.encode.EncodeFrameActivity
+import com.jadyn.ai.medialearn.gles.GLActivity
 import com.jadyn.ai.medialearn.permissions.RxPermissions
 import com.jadyn.ai.medialearn.utils.start
 import kotlinx.android.synthetic.main.activity_main.*
@@ -82,6 +83,10 @@ class MainActivity : AppCompatActivity() {
                     }
                     .subscribe()
 
+        }
+
+        tv_gl.setOnClickListener {
+            start<GLActivity>()
         }
 
     }

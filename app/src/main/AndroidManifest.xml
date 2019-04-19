@@ -39,6 +39,9 @@
         <activity android:name=".encode.EncodeFrameActivity"
             android:screenOrientation="portrait"
             />
+        <activity android:name=".gles.GLActivity"
+            android:screenOrientation="portrait"
+            />
 
     </application>
 
