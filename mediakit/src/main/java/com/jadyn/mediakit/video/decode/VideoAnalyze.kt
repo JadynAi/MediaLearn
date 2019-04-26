@@ -2,7 +2,7 @@ package com.jadyn.mediakit.video.decode
 
 import android.media.MediaExtractor
 import android.media.MediaFormat
-import android.support.annotation.IntRange
+import android.util.Log
 import com.jadyn.mediakit.function.*
 
 /**
@@ -89,25 +89,26 @@ class VideoAnalyze(val dataSource: String) {
     * 
     * maxRange:查找范围
     * */
-    fun getValidSampleTime(time: Long, @IntRange(from = 2) maxRange: Int = 5): Long {
+    fun getValidSampleTime(time: Long): Long {
+        Log.d("getValidSampleTime", "time $time")
         checkExtractor.seekTo(time, MediaExtractor.SEEK_TO_PREVIOUS_SYNC)
-        var count = 0
         var sampleTime = checkExtractor.sampleTime
-        while (count < maxRange) {
+        val topTime = time + 2000000
+        Log.d("getValidSampleTime", "sampleTime $sampleTime perFrameTime ${mediaFormat.perFrameTime}")
+        var isFind = false
+        while (!isFind) {
             checkExtractor.advance()
             val s = checkExtractor.sampleTime
+            Log.d("getValidSampleTime", "advance $s")
             if (s != -1L) {
-                count++
                 // 选取和目标时间差值最小的那个
                 sampleTime = time.minDifferenceValue(sampleTime, s)
-                if (Math.abs(sampleTime - time) <= mediaFormat.perFrameTime) {
-                    //如果这个差值在 一帧间隔 内，即为成功
-                    return sampleTime
-                }
+                isFind = s >= topTime
             } else {
-                count = maxRange
+                isFind = true
             }
         }
+        Log.d("getValidSampleTime", "final time is  $sampleTime")
         return sampleTime
     }
 

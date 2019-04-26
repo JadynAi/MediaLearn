@@ -7,12 +7,9 @@ import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.util.Log
 import com.jadyn.mediakit.function.*
-import io.reactivex.Observable
-import io.reactivex.ObservableEmitter
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.Disposable
-import io.reactivex.schedulers.Schedulers
-import java.util.*
+import io.reactivex.subjects.PublishSubject
+import java.util.concurrent.Executors
 import kotlin.system.measureTimeMillis
 
 /**
@@ -35,16 +32,28 @@ class VideoDecoder2(dataSource: String) {
     private val decodeCore by lazy {
         GLCore()
     }
-    private val decoderScheduler by lazy {
-        Schedulers.io()
-    }
     private val frameCache by lazy {
         FrameCache(dataSource)
     }
 
-    private val queueTask by lazy {
-        Collections.synchronizedList(arrayListOf<DecodeFrame>())
+    private var s: ((Bitmap) -> Unit)? = null
+    private var f: ((Throwable) -> Unit)? = null
+
+    private val thread by lazy {
+        Executors.newSingleThreadScheduledExecutor()
     }
+    private val handler by lazy {
+        val create = PublishSubject.create<Bitmap>()
+        create.observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    s?.invoke(it)
+                }, {
+                    f?.invoke(it)
+                })
+        create
+    }
+
+    private var curFrame = 0L
 
     private val DEF_TIME_OUT = 2000L
     private var decoder: MediaCodec
@@ -73,67 +82,100 @@ class VideoDecoder2(dataSource: String) {
      *
      * @param failed 失败回调
      */
-    fun getFrame(second: Float, success: (Bitmap) -> Unit, failed: (Throwable) -> Unit) {
+    fun getFrame(second: Float, success: (Bitmap) -> Unit, failed: (Throwable) -> Unit,
+                 isNeedCache: Boolean = true) {
         val target = videoAnalyze.getValidSampleTime(mediaFormat.getSafeTimeUS(second))
-//        frameCache.asyncGetTarget(target, success, {
-//        })
-            // 如果此时任务栈里正在取这一帧，就不作任何处理
-            val isSameFrame = queueTask.isNotEmpty() && queueTask[0].target == target
+        Log.d(TAG, "getFrame second $second sampleTime $target: ")
+        getInternalFrame(target, success, failed, isNeedCache)
+    }
+
+    /**
+     * 得到指定时间的帧，ms,毫秒级别，异步回调
+     *
+     * @param second ms
+     *
+     * @param success 成功回调
+     *
+     * @param failed 失败回调
+     */
+    fun getFrame(ms: Long, success: (Bitmap) -> Unit, failed: (Throwable) -> Unit,
+                 isNeedCache: Boolean = true) {
+        val target = videoAnalyze.getValidSampleTime(mediaFormat.getSafeTimeUS(ms))
+        Log.d(TAG, "getFrame ms $ms sampleTime $target: ")
+        getInternalFrame(target, success, failed, isNeedCache)
+    }
+
+    private fun getInternalFrame(target: Long, success: (Bitmap) -> Unit,
+                                 failed: (Throwable) -> Unit, isNeedCache: Boolean = true) {
+        fun codecDecode() {
+            // 如果此时正在取这一帧，就不作任何处理
+            val isSameFrame = curFrame != 0L && curFrame == target
             if (!isSameFrame) {
-                Log.d(TAG, "getFrame second $second sampleTime ${videoAnalyze.getValidSampleTime(mediaFormat.getSafeTimeUS(second))}: ")
-                DecodeFrame(target, success, failed).execute()
+                curFrame = target
+                s = success
+                f = failed
+                thread.execute(Decoder2(target))
             }
+        }
+        if (isNeedCache) {
+            frameCache.asyncGetTarget(target, success, {
+                codecDecode()
+            })
+        } else {
+            codecDecode()
+        }
+
+    }
+
+    private fun prepareCodeC() {
+        if (!isStart) {
+            decoder.configure(mediaFormat, decodeCore.fkOutputSurface(mediaFormat.width, mediaFormat.height),
+                    null, 0)
+            decoder.start()
+            isStart = true
+        }
     }
 
     fun release() {
         videoAnalyze.release()
-        if (queueTask.isNotEmpty()) {
-            queueTask.forEach {
-                it.release()
-            }
-        }
         decodeCore.release()
         decoder.release()
         frameCache.release()
+        thread.shutdown()
+        handler.onComplete()
     }
 
-    inner class DecodeFrame(val target: Long,
-                            private val success: (Bitmap) -> Unit,
-                            private val failed: (Throwable) -> Unit) {
+    inner class Decoder2(val target: Long) : Runnable {
 
-        private val core: Observable<Bitmap>
-        private var flint: Disposable? = null
-
-        init {
-            core = Observable.create<Bitmap> { emitter ->
-                if (!isStart) {
-                    decoder.configure(mediaFormat, decodeCore.fkOutputSurface(mediaFormat.width, mediaFormat.height),
-                            null, 0)
-                    decoder.start()
-                    isStart = true
-                }
-                val c = measureTimeMillis {
-                    val info = MediaCodec.BufferInfo()
-                    //处理目标时间帧
-                    handleFrame(target, info, emitter)
-                    emitter.onComplete()
-                }
-                Log.d(TAG, "media code decoder frame $c ")
-            }.subscribeOn(decoderScheduler)
-                    .doOnComplete {
-                        schedulerNext()
+        override fun run() {
+            prepareCodeC()
+            Log.d(TAG, "decoder2 thread is ${Thread.currentThread().name}")
+            val c = measureTimeMillis {
+                val info = MediaCodec.BufferInfo()
+                //处理目标时间帧
+                try {
+                    handleFrame(target, info)?.apply {
+                        if (curFrame == target) {
+                            handler.onNext(this)
+                        }
                     }
-                    .observeOn(AndroidSchedulers.mainThread())
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Log.d(TAG, "decoder2 frame failed : $e")
+                    if (curFrame == target) {
+                        handler.onError(Throwable(e))
+                    }
+                }
+            }
+            Log.d(TAG, "decoder2 frame time ms is : $c")
         }
 
-        /*
-        * 持续压入数据，直到拿到目标帧
-        * */
-        private fun handleFrame(time: Long, info: MediaCodec.BufferInfo, emitter: ObservableEmitter<Bitmap>? = null) {
+        private fun handleFrame(time: Long, info: MediaCodec.BufferInfo): Bitmap? {
             var outputDone = false
             var inputDone = false
+            var b: Bitmap? = null
             videoAnalyze.mediaExtractor.seekTo(time, MediaExtractor.SEEK_TO_PREVIOUS_SYNC)
-            while (!outputDone) {
+            while (!outputDone && time == curFrame) {
                 if (!inputDone) {
                     decoder.dequeueValidInputBuffer(DEF_TIME_OUT) { inputBufferId, inputBuffer ->
                         val sampleSize = videoAnalyze.mediaExtractor.readSampleData(inputBuffer, 0)
@@ -144,7 +186,6 @@ class VideoDecoder2(dataSource: String) {
                         } else {
                             // 将数据压入到输入队列
                             val presentationTimeUs = videoAnalyze.mediaExtractor.sampleTime
-                            Log.d(TAG, "${if (emitter != null) "main time" else "fuck time"} dequeue time is $presentationTimeUs ")
                             decoder.queueInputBuffer(inputBufferId, 0,
                                     sampleSize, presentationTimeUs, 0)
                             videoAnalyze.mediaExtractor.advance()
@@ -161,75 +202,13 @@ class VideoDecoder2(dataSource: String) {
                             // 遇到目标时间帧，才生产Bitmap
                             outputDone = true
                             val bitmap = decodeCore.generateFrame()
+                            b = bitmap
                             frameCache.cacheFrame(time, bitmap)
-                            emitter?.onNext(bitmap)
                         }
                     }
                 }
             }
-            decoder.flush()
+            return b
         }
-
-        private fun endCore() {
-            if (queueTask.size > 1) {
-                //队列还有任务.抛出异常用来终止上游继续运行
-                throw EndSignal()
-            }
-        }
-
-        fun execute() {
-            if (queueTask.isEmpty()) {
-                run()
-                queueTask.add(this)
-            } else {
-                if (queueTask.contains(this) && queueTask.size > 1) {
-                    //提升优先级,此时位于0index的不可能为本身，所以和1交换
-                    Collections.swap(queueTask, queueTask.indexOf(this), 1)
-                } else {
-                    // 入列
-                    queueTask.add(this)
-                }
-            }
-        }
-
-        fun release() {
-            flint?.apply {
-                if (!isDisposed) {
-                    endCore()
-                }
-            }
-        }
-
-        private fun run() {
-            if (flint != null) {
-                return
-            }
-            Log.d(TAG, "run sample $target ")
-            flint = core.subscribe({
-                success.invoke(it)
-            }, {
-                if (it is EndSignal) {
-                    schedulerNext()
-                } else {
-                    failed.invoke(it)
-                }
-            })
-        }
-
-        /*
-        * 火石熄灭，执行队列下一个任务
-        * */
-        private fun schedulerNext() {
-            Log.d(TAG, "schedulerNext ")
-            decoder.flush()
-            flint?.dispose()
-            queueTask.remove(this)
-            if (queueTask.isNotEmpty()) {
-                queueTask[0].run()
-            }
-        }
-
-        //用来停止上游继续运行
-        inner class EndSignal : Throwable()
     }
 }

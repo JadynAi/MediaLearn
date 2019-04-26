@@ -145,7 +145,7 @@ class DiskCacheAssist(dir: String, appVersion: Int, valueCount: Int = 1, maxSize
                 val editor = diskLruCache.edit(key)
                 editor?.apply {
 
-                    Log.d(TAG, "writer disk cache $key running")
+                    Log.d(TAG, "writer disk cache ${Thread.currentThread().name}")
                     // 将bitmap写入缓存
                     val fillSucceed = b.fillOutputStream(newOutputStream(0))
                     if (fillSucceed) {

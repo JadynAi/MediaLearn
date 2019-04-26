@@ -70,3 +70,11 @@ fun MediaFormat.getSafeTimeUS(second: Float): Long {
         else -> (second * 1000000).toLong()
     }
 }
+
+fun MediaFormat.getSafeTimeUS(ms: Long): Long {
+    return when {
+        ms < 0L -> 0L
+        ms * 1000 > duration -> duration
+        else -> ms * 1000
+    }
+}
