@@ -91,4 +91,18 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tv_encode_frame"/>
 
+    <TextView
+        android:id="@+id/tv_cutout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="48dp"
+        android:background="@android:color/holo_blue_light"
+        android:padding="10dp"
+        android:text="抠图"
+        android:textColor="@android:color/white"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.515"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_gl"/>
+
 </android.support.constraint.ConstraintLayout>

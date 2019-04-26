@@ -75,14 +75,14 @@ class VideoDecoder2(dataSource: String) {
      */
     fun getFrame(second: Float, success: (Bitmap) -> Unit, failed: (Throwable) -> Unit) {
         val target = videoAnalyze.getValidSampleTime(mediaFormat.getSafeTimeUS(second))
-        frameCache.asyncGetTarget(target, success, {
+//        frameCache.asyncGetTarget(target, success, {
+//        })
             // 如果此时任务栈里正在取这一帧，就不作任何处理
             val isSameFrame = queueTask.isNotEmpty() && queueTask[0].target == target
             if (!isSameFrame) {
                 Log.d(TAG, "getFrame second $second sampleTime ${videoAnalyze.getValidSampleTime(mediaFormat.getSafeTimeUS(second))}: ")
                 DecodeFrame(target, success, failed).execute()
             }
-        })
     }
 
     fun release() {

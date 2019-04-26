@@ -42,6 +42,9 @@
         <activity android:name=".gles.GLActivity"
             android:screenOrientation="portrait"
             />
+        <activity android:name=".cutout.CutOutActivity"
+            android:screenOrientation="portrait"
+            />
 
     </application>
 

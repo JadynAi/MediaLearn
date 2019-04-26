@@ -35,7 +35,7 @@ class EglEnv(private val width: Int, private val height: Int) {
             checkEglError("EGL initialize failed")
         }
         val attribs = intArrayOf(
-//                EGL14.EGL_BUFFER_SIZE, 32,
+                EGL14.EGL_BUFFER_SIZE, 32,
                 EGL14.EGL_ALPHA_SIZE, 8,
                 EGL14.EGL_BLUE_SIZE, 8,
                 EGL14.EGL_GREEN_SIZE, 8,

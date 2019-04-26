@@ -68,7 +68,7 @@ class GLCore : DecodeCore() {
         if (doRender) {
             // 2019/2/14-15:24 必须和surface创建时保持统一线程
             awaitNewImage()
-            drawImage(true)
+            drawImage()
 
             val file = File(outputDir, String.format("frame-%02d.jpg", outputFrameCount))
             saveFrame(file.toString())
@@ -92,7 +92,7 @@ class GLCore : DecodeCore() {
         if (doRender) {
             // 2019/2/14-15:24 必须和surface创建时保持统一线程
             awaitNewImage()
-            drawImage(true)
+            drawImage()
             return true
         }
         return false
@@ -125,8 +125,8 @@ class GLCore : DecodeCore() {
     /**
      * Draws the data from SurfaceTexture onto the current EGL surface.
      */
-    private fun drawImage(invert: Boolean = false) {
-        texture2dProgram.drawFrame(surfaceTexture, invert)
+    private fun drawImage() {
+        texture2dProgram.drawFrame(surfaceTexture)
     }
 
     private fun produceBitmap(): Bitmap {
@@ -136,6 +136,7 @@ class GLCore : DecodeCore() {
         val bmp = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
         pixelBuf.rewind()
         bmp.copyPixelsFromBuffer(pixelBuf)
+//        val scaledBitmap = Bitmap.createScaledBitmap(bmp, size.width * 2, size.height * 2, false)
         return bmp
     }
 

@@ -4,6 +4,7 @@ import android.Manifest
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import com.jadyn.ai.medialearn.camera.Camera2Activity
+import com.jadyn.ai.medialearn.cutout.CutOutActivity
 import com.jadyn.ai.medialearn.decode.DecodeActivity
 import com.jadyn.ai.medialearn.decode.DecodeFrameActivity
 import com.jadyn.ai.medialearn.encode.EncodeFrameActivity
@@ -87,6 +88,10 @@ class MainActivity : AppCompatActivity() {
 
         tv_gl.setOnClickListener {
             start<GLActivity>()
+        }
+
+        tv_cutout.setOnClickListener {
+            start<CutOutActivity>()
         }
 
     }

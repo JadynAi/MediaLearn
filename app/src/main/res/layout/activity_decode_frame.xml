@@ -23,11 +23,23 @@
         android:id="@+id/frame_img"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:background="@android:color/holo_blue_bright"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHeight_percent="0.5"
         app:layout_constraintStart_toStartOf="parent"
         />
+
+    <TextureView
+        android:id="@+id/texture_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHeight_percent="0.5"
+        app:layout_constraintStart_toStartOf="parent"/>
+
 
     <TextView
         android:id="@+id/sure_video"
@@ -45,11 +57,11 @@
     <android.support.v7.widget.AppCompatSeekBar
         android:id="@+id/video_seek"
         android:layout_width="0dp"
-        android:layout_marginTop="5dp"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/sure_video"
-        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="5dp"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/sure_video"
         />
 
     <TextView
@@ -57,12 +69,12 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:gravity="center"
-        tools:text="sfsfsfsfsf"
         android:textColor="@android:color/black"
         app:layout_constraintBottom_toBottomOf="@+id/sure_video"
         app:layout_constraintEnd_toStartOf="@+id/sure_video"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/sure_video"/>
+        app:layout_constraintTop_toTopOf="@+id/sure_video"
+        tools:text="sfsfsfsfsf"/>
 
 
 </android.support.constraint.ConstraintLayout>

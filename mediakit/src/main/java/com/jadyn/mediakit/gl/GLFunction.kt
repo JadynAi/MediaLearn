@@ -11,59 +11,8 @@ import android.util.Log
  *@Since:2019/3/27
  *@ChangeList:
  */
-//顶点着色器
-private val VERTEX_SHADER = """
-        uniform mat4 uMVPMatrix;
-        uniform mat4 uSTMatrix;
-        attribute vec4 aPosition;
-        attribute vec4 aTextureCoord;
-        varying vec2 vTextureCoord;
-        void main() {
-            gl_Position = uMVPMatrix * aPosition;
-            vTextureCoord = (uSTMatrix * aTextureCoord).xy;
-        }
-        """
-
-//片元着色器
-private val FRAGMENT_SHADER = """
-        #extension GL_OES_EGL_image_external : require
-        precision mediump float;
-        varying vec2 vTextureCoord;
-        uniform samplerExternalOES sTexture;
-        void main() {
-            gl_FragColor = texture2D(sTexture, vTextureCoord);
-        }
-        """
 
 private val TAG = "GLFunction"
-
-private val COMMON_VERTEX_SHADER =
-        "attribute vec4 position;\n" +
-                "attribute vec2 texcoord;\n" +
-                "varying vec2 v_texcoord;\n" +
-                "void main() {\n" +
-                "gl_Position = position;\n" +
-                "v_texcoord = texcoord;\n" +
-                "}\n"
-
-private val COMMONE_FRAG_SHADER =
-        "precision highp float;\n" +
-                "varying highp vec2 v_texcoord;\n" +
-                "uniform sampler2D texSampler;\n" +
-                "void main() {\n" +
-                "gl_FragColor = texture2D(texSampler, v_texcoord);\n" +
-                "}\n"
-
-/**
- * 创建一个纹理program
- * */
-fun createTexture2DProgram(): Int {
-    return createProgram(VERTEX_SHADER, FRAGMENT_SHADER)
-}
-
-fun createCommonProgram(): Int {
-    return createProgram(COMMON_VERTEX_SHADER, COMMONE_FRAG_SHADER)
-}
 
 /**
  * 创建一个显卡可执行程序，运行在GPU
