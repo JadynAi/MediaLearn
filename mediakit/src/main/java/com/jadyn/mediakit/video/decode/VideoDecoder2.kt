@@ -104,7 +104,7 @@ class VideoDecoder2(dataSource: String) {
             val isSameFrame = curFrame != 0L && curFrame == target
             if (!isSameFrame) {
                 curFrame = target
-                val decoder2 = Decoder2(target, success, failed)
+                val decoder2 = Decoder2(target, success, failed, if (isNeedCache) 1 else 0)
                 decoder2.disposable?.apply {
                     compositeDisposable.add(this)
                 }
@@ -223,7 +223,8 @@ class VideoDecoder2(dataSource: String) {
                             if (curFrame == target) {
                                 handler.onNext(bitmap)
                             }
-                            frameCache.cacheFrame(target, bitmap)
+                            frameCache.cacheFrame(info.presentationTimeUs, bitmap)
+                            Log.d(TAG, "target cache $target time is ${info.presentationTimeUs}")
                         }
                     }
                 }
