@@ -53,16 +53,16 @@ class FrameCache(dataSource: String) {
         diskCache.writeBitmap(getDiskKey(target), b)
     }
 
-    fun asyncGetTarget(target: Long, success: (Bitmap) -> Unit, failed: (Throwable) -> Unit) {
+    fun asyncGetTarget(target: Long, success: (time: Long, Bitmap) -> Unit, failed: (Throwable) -> Unit) {
         getLruBitmap(target)?.apply {
             Log.d(TAG, "get cache from lru $target ")
-            success.invoke(this)
+            success.invoke(target, this)
             return
         }
         //异步读取Disk缓存，Disk读取Bitmap的success是在子线程执行的，所以回调主线程
         diskCache.asyncReadBitmap(getDiskKey(target), {
             Log.d(TAG, "get disk cache ${getDiskKey(target)} ")
-            success.invoke(it)
+            success.invoke(target, it)
         }, failed)
     }
 

@@ -33,7 +33,7 @@ class Texture2dProgram {
         varying highp vec2 v_TexCoordinate;
         void main () {
             vec4 color = texture2D(texture, v_TexCoordinate);
-            vec3 colorToReplace = vec3(0.0, 1.0, 0.0);
+            vec3 colorToReplace = vec3(0.0, 0.0, 0.0);
             float maskY = 0.2989 * colorToReplace.r + 0.5866 * colorToReplace.g + 0.1145 * colorToReplace.b;
             float maskCr = 0.7132 * (colorToReplace.r - maskY);
             float maskCb = 0.5647 * (colorToReplace.b - maskY);
@@ -42,19 +42,23 @@ class Texture2dProgram {
             float Cr = 0.7132 * (color.r - Y);
             float Cb = 0.5647 * (color.b - Y);
             
-//            float distanceColor = distance(vec2(maskCr, maskCb), vec2(Cr, Cb));
-//            if (distanceColor < 0.4){
-//                gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
-//            } else {
-//                gl_FragColor = vec4(color.rgb, smoothstep(0.4, 0.6, distanceColor));
-//            }
-
             float thresholdSensitivity = 0.3;
             float smoothing = 0.1;
 
             float blendValue = smoothstep(thresholdSensitivity, thresholdSensitivity + smoothing, distance(vec2(Cr, Cb), vec2(maskCr, maskCb)));
-//            gl_FragColor = vec4(color.rgb, color.a * blendValue);
-            gl_FragColor = vec4(color.rgb * blendValue, 1.0 * blendValue);
+            gl_FragColor = vec4(color.rgb, color.a * blendValue);
+//            gl_FragColor = vec4(color.rgb * blendValue, 1.0 * blendValue);
+        }
+        """
+
+    //片元着色器
+    private val NORMAL_FRAGMENT_SHADER = """
+        #extension GL_OES_EGL_image_external : require
+        precision highp float;
+        uniform samplerExternalOES texture;
+        varying highp vec2 v_TexCoordinate;
+        void main () {
+            gl_FragColor = texture2D(texture, v_TexCoordinate);
         }
         """
 
@@ -64,7 +68,7 @@ class Texture2dProgram {
 
     init {
         Log.d(this.javaClass.name, " create texture 2d program ")
-        val program = createProgram(VERTEX_SHADER, FRAGMENT_SHADER)
+        val program = createProgram(VERTEX_SHADER, NORMAL_FRAGMENT_SHADER)
         textureDraw = TextureDraw(program)
     }
 

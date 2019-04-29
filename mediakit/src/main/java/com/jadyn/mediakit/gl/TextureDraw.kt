@@ -61,10 +61,24 @@ class TextureDraw(private val program: Int) {
      */
     private val drawOrder = shortArrayOf(0, 1, 2, 0, 2, 3)
 
+    var positionAttr = 0
+    var textureCoordinateAttr = 0
+    var textureUniform = 0
+    var textureTransformUniform = 0
+
 
     init {
         setUpTexture()
         setupVertexBuffer()
+
+        positionAttr = GLES20.glGetAttribLocation(program, "vPosition")
+        checkLocation(positionAttr, "check vPosition")
+        textureCoordinateAttr = GLES20.glGetAttribLocation(program, "vTexCoordinate")
+        checkLocation(textureCoordinateAttr, "check vTexCoordinate")
+        textureUniform = GLES20.glGetUniformLocation(program, "texture")
+        checkLocation(textureUniform, "check texture")
+        textureTransformUniform = GLES20.glGetUniformLocation(program, "textureTransform")
+        checkLocation(textureTransformUniform, "check textureTransform")
     }
 
     private fun setupVertexBuffer() {
@@ -99,22 +113,18 @@ class TextureDraw(private val program: Int) {
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f)
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
         GLES20.glUseProgram(program)
-        val positionAttr = GLES20.glGetAttribLocation(program, "vPosition")
-        val textureCoordinateAttr = GLES20.glGetAttribLocation(program, "vTexCoordinate")
-        val textureUniform = GLES20.glGetUniformLocation(program, "texture")
-        val textureTransforUniform = GLES20.glGetUniformLocation(program, "textureTransform")
 
         GLES20.glEnableVertexAttribArray(positionAttr)
         GLES20.glVertexAttribPointer(positionAttr, 2, GLES20.GL_FLOAT, false, 0, vertexBuffer)
 
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId)
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId)
         GLES20.glUniform1i(textureUniform, 0)
 
         GLES20.glEnableVertexAttribArray(textureCoordinateAttr)
         GLES20.glVertexAttribPointer(textureCoordinateAttr, 4, GLES20.GL_FLOAT, false, 0, textureBuffer)
 
-        GLES20.glUniformMatrix4fv(textureTransforUniform, 1, false,
+        GLES20.glUniformMatrix4fv(textureTransformUniform, 1, false,
                 stMatrix, 0)
 
         GLES20.glDrawElements(GLES20.GL_TRIANGLES, drawOrder.size, GLES20.GL_UNSIGNED_SHORT, drawOrderBuffer)

@@ -8,6 +8,8 @@ import android.media.MediaFormat
 import android.util.Log
 import com.jadyn.mediakit.function.*
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.disposables.Disposable
 import io.reactivex.subjects.PublishSubject
 import java.util.concurrent.Executors
 import kotlin.system.measureTimeMillis
@@ -36,21 +38,11 @@ class VideoDecoder2(dataSource: String) {
         FrameCache(dataSource)
     }
 
-    private var s: ((Bitmap) -> Unit)? = null
-    private var f: ((Throwable) -> Unit)? = null
-
     private val thread by lazy {
         Executors.newSingleThreadScheduledExecutor()
     }
-    private val handler by lazy {
-        val create = PublishSubject.create<Bitmap>()
-        create.observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    s?.invoke(it)
-                }, {
-                    f?.invoke(it)
-                })
-        create
+    private val compositeDisposable by lazy {
+        CompositeDisposable()
     }
 
     private var curFrame = 0L
@@ -74,7 +66,7 @@ class VideoDecoder2(dataSource: String) {
     }
 
     /**
-     * 得到指定时间的帧，异步回调
+     * 得到指定时间的帧，秒级别，异步回调
      *
      * @param second 秒
      *
@@ -112,13 +104,19 @@ class VideoDecoder2(dataSource: String) {
             val isSameFrame = curFrame != 0L && curFrame == target
             if (!isSameFrame) {
                 curFrame = target
-                s = success
-                f = failed
-                thread.execute(Decoder2(target))
+                val decoder2 = Decoder2(target, success, failed)
+                decoder2.disposable?.apply {
+                    compositeDisposable.add(this)
+                }
+                thread.execute(decoder2)
             }
         }
         if (isNeedCache) {
-            frameCache.asyncGetTarget(target, success, {
+            frameCache.asyncGetTarget(target, { time, bitmap ->
+                if (target == time) {
+                    success.invoke(bitmap)
+                }
+            }, {
                 codecDecode()
             })
         } else {
@@ -142,10 +140,30 @@ class VideoDecoder2(dataSource: String) {
         decoder.release()
         frameCache.release()
         thread.shutdown()
-        handler.onComplete()
+        compositeDisposable.clear()
     }
 
-    inner class Decoder2(val target: Long) : Runnable {
+    /**
+     * @param extraNum 额外解码帧数量
+     * */
+    inner class Decoder2(val target: Long, success: (Bitmap) -> Unit,
+                         failed: (Throwable) -> Unit, private val extraNum: Int = 1) : Runnable {
+
+        var disposable: Disposable? = null
+            private set
+
+        private val handler = PublishSubject.create<Bitmap>()
+
+        init {
+            disposable = handler.observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({
+                        success.invoke(it)
+                    }, {
+                        failed.invoke(it)
+                    }, {
+                        disposable?.dispose()
+                    })
+        }
 
         override fun run() {
             prepareCodeC()
@@ -154,28 +172,23 @@ class VideoDecoder2(dataSource: String) {
                 val info = MediaCodec.BufferInfo()
                 //处理目标时间帧
                 try {
-                    handleFrame(target, info)?.apply {
-                        if (curFrame == target) {
-                            handler.onNext(this)
-                        }
-                    }
+                    handleFrame(info)
                 } catch (e: Exception) {
                     e.printStackTrace()
                     Log.d(TAG, "decoder2 frame failed : $e")
-                    if (curFrame == target) {
-                        handler.onError(Throwable(e))
-                    }
+                    handler.onError(Throwable(e))
+                    handler.onComplete()
                 }
             }
             Log.d(TAG, "decoder2 frame time ms is : $c")
         }
 
-        private fun handleFrame(time: Long, info: MediaCodec.BufferInfo): Bitmap? {
+        private fun handleFrame(info: MediaCodec.BufferInfo) {
             var outputDone = false
             var inputDone = false
-            var b: Bitmap? = null
-            videoAnalyze.mediaExtractor.seekTo(time, MediaExtractor.SEEK_TO_PREVIOUS_SYNC)
-            while (!outputDone && time == curFrame) {
+            videoAnalyze.mediaExtractor.seekTo(target, MediaExtractor.SEEK_TO_PREVIOUS_SYNC)
+            var curExtraNum = -1
+            while (!outputDone) {
                 if (!inputDone) {
                     decoder.dequeueValidInputBuffer(DEF_TIME_OUT) { inputBufferId, inputBuffer ->
                         val sampleSize = videoAnalyze.mediaExtractor.readSampleData(inputBuffer, 0)
@@ -198,17 +211,22 @@ class VideoDecoder2(dataSource: String) {
                 }) { id ->
                     Log.d(TAG, "out time ${info.presentationTimeUs} ")
                     if (decodeCore.updateTexture(info, id, decoder)) {
-                        if (info.presentationTimeUs == time) {
+                        if (info.presentationTimeUs == target) {
                             // 遇到目标时间帧，才生产Bitmap
-                            outputDone = true
+                            curExtraNum = 0
+                        }
+                        if (curExtraNum >= 0) {
+                            curExtraNum++
+                            outputDone = curExtraNum == extraNum
                             val bitmap = decodeCore.generateFrame()
-                            b = bitmap
-                            frameCache.cacheFrame(time, bitmap)
+                            if (curFrame == target) {
+                                handler.onNext(bitmap)
+                            }
+                            frameCache.cacheFrame(target, bitmap)
                         }
                     }
                 }
             }
-            return b
         }
     }
 }
