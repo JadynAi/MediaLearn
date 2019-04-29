@@ -111,6 +111,7 @@ class VideoDecoder2(dataSource: String) {
                 thread.execute(decoder2)
             }
         }
+        // 是否需要缓存，不需要的话就直接解码。需要缓存则优先从缓存中读取
         if (isNeedCache) {
             frameCache.asyncGetTarget(target, { time, bitmap ->
                 if (target == time) {
@@ -216,8 +217,8 @@ class VideoDecoder2(dataSource: String) {
                             curExtraNum = 0
                         }
                         if (curExtraNum >= 0) {
-                            curExtraNum++
                             outputDone = curExtraNum == extraNum
+                            curExtraNum++
                             val bitmap = decodeCore.generateFrame()
                             if (curFrame == target) {
                                 handler.onNext(bitmap)
