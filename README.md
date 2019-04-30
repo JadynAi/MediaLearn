@@ -3,6 +3,8 @@
 
 ## MediaCodeC硬编码
 
+### MediaCodeC硬编码将图片集编码为视频Mp4文件[MediaCodeC编码视频](https://ailoli.me/2019/04/01/2019-04-01-MediaCodeC-encoder1/)
+
 ### MediaCodeC将视频完整解码，并存储为图片文件。使用两种不同的方式，[硬编码解码视频](https://ailoli.me/2019/01/25/2019-01-25-MediaCodeC-Decode-1/)
 
 ### MediaCodeC解码视频指定帧[硬编码解码指定帧](https://ailoli.me/2019/02/09/2019-02-09-MediaCodeC-frame/)
