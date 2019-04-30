@@ -59,7 +59,7 @@ class DecodeFrameActivity : AppCompatActivity() {
                         frame_img.setImageBitmap(it)
                     }, {
                         Log.d("cece", "throwable ${it.message}: ")
-                    }, false)
+                    })
                 }
             }
 
@@ -80,7 +80,7 @@ class DecodeFrameActivity : AppCompatActivity() {
                         frame_img.setImageBitmap(it)
                     }, {
                         Log.d("cece", "throwable ${it.message}: ")
-                    }, true)
+                    })
                 }
             }
 

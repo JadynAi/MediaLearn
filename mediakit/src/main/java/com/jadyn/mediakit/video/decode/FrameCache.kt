@@ -53,7 +53,11 @@ class FrameCache(dataSource: String) {
         diskCache.writeBitmap(getDiskKey(target), b)
     }
 
-    fun asyncGetTarget(target: Long, success: (time: Long, Bitmap) -> Unit, failed: (Throwable) -> Unit) {
+    fun asyncGetTarget(target: Long, isNeedCache: Boolean = true, success: (time: Long, Bitmap) -> Unit, failed: (Throwable) -> Unit) {
+        if (!isNeedCache) {
+            failed.invoke(Throwable("function set not need cache"))
+            return
+        }
         getLruBitmap(target)?.apply {
             Log.d(TAG, "get cache from lru $target ")
             success.invoke(target, this)

@@ -74,11 +74,10 @@ class VideoDecoder2(dataSource: String) {
      *
      * @param failed 失败回调
      */
-    fun getFrame(second: Float, success: (Bitmap) -> Unit, failed: (Throwable) -> Unit,
-                 isNeedCache: Boolean = true) {
+    fun getFrame(second: Float, success: (Bitmap) -> Unit, failed: (Throwable) -> Unit) {
         val target = videoAnalyze.getValidSampleTime(mediaFormat.getSafeTimeUS(second))
         Log.d(TAG, "getFrame second $second sampleTime $target: ")
-        getInternalFrame(target, success, failed, isNeedCache)
+        getInternalFrame(target, success, failed)
     }
 
     /**
@@ -90,39 +89,31 @@ class VideoDecoder2(dataSource: String) {
      *
      * @param failed 失败回调
      */
-    fun getFrame(ms: Long, success: (Bitmap) -> Unit, failed: (Throwable) -> Unit,
-                 isNeedCache: Boolean = true) {
+    fun getFrame(ms: Long, success: (Bitmap) -> Unit, failed: (Throwable) -> Unit) {
         val target = videoAnalyze.getValidSampleTime(mediaFormat.getSafeTimeUS(ms))
         Log.d(TAG, "getFrame ms $ms sampleTime $target: ")
-        getInternalFrame(target, success, failed, isNeedCache)
+        getInternalFrame(target, success, failed)
     }
 
     private fun getInternalFrame(target: Long, success: (Bitmap) -> Unit,
-                                 failed: (Throwable) -> Unit, isNeedCache: Boolean = true) {
-        fun codecDecode() {
+                                 failed: (Throwable) -> Unit) {
+        // 是否需要缓存，不需要的话就直接解码。需要缓存则优先从缓存中读取
+        frameCache.asyncGetTarget(target, true, { time, bitmap ->
+            if (target == time) {
+                success.invoke(bitmap)
+            }
+        }, {
             // 如果此时正在取这一帧，就不作任何处理
             val isSameFrame = curFrame != 0L && curFrame == target
             if (!isSameFrame) {
                 curFrame = target
-                val decoder2 = Decoder2(target, success, failed, if (isNeedCache) 1 else 0)
+                val decoder2 = Decoder2(target, success, failed)
                 decoder2.disposable?.apply {
                     compositeDisposable.add(this)
                 }
                 thread.execute(decoder2)
             }
-        }
-        // 是否需要缓存，不需要的话就直接解码。需要缓存则优先从缓存中读取
-        if (isNeedCache) {
-            frameCache.asyncGetTarget(target, { time, bitmap ->
-                if (target == time) {
-                    success.invoke(bitmap)
-                }
-            }, {
-                codecDecode()
-            })
-        } else {
-            codecDecode()
-        }
+        })
 
     }
 
