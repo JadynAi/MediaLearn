@@ -46,8 +46,7 @@ class Camera2RecordActivity : AppCompatActivity() {
             override fun onSurfaceTextureAvailable(surface: SurfaceTexture?, width: Int, height: Int) {
                 cameraMgr = CameraMgr(this@Camera2RecordActivity, Size(width, height))
                 // texture view 自动配置宽高
-                camera2_record_texture.setAspectRatio(cameraMgr.previewSize.height,
-                        cameraMgr.previewSize.width)
+                camera2_record_texture.setAspectRatio(cameraMgr.previewSize)
                 configureTextureTransform(camera2_record_texture.width,
                         camera2_record_texture.height)
                 cameraMgr.openCamera(Surface(surface))
@@ -61,8 +60,8 @@ class Camera2RecordActivity : AppCompatActivity() {
         val rotation = windowManager.defaultDisplay.rotation
         val matrix = Matrix()
         val viewRect = RectF(0f, 0f, viewWidth.toFloat(), viewHeight.toFloat())
-        val bufferRect = RectF(0f, 0f, cameraMgr.previewSize.height.toFloat(),
-                cameraMgr.previewSize.width.toFloat())
+        val bufferRect = RectF(0f, 0f, cameraMgr.previewSize.width.toFloat(),
+                cameraMgr.previewSize.height.toFloat())
         val centerX = viewRect.centerX()
         val centerY = viewRect.centerY()
 

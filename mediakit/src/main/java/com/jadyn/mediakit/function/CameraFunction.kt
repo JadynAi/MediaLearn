@@ -44,13 +44,18 @@ fun getOptimalSize(sizeMap: Array<Size>, width: Int, height: Int): Size {
         }
     }
     return if (sizeList.size > 0) {
-        Collections.min(sizeList) { lhs, rhs -> java.lang.Long.signum((lhs.width * lhs.height - rhs.width * rhs.height).toLong()) }
+        Collections.min(sizeList) { lhs, rhs -> Long.signum((lhs.width * lhs.height - rhs.width * rhs.height).toLong()) }
     } else sizeMap[0]
 }
 
+/**
+ *
+ * @param displayRotation window rotation
+ * */
 fun chooseOptimalSize(choices: Array<Size>, textureViewWidth: Int, textureViewHeight: Int, maxWidth: Int,
-        maxHeight: Int,
-        aspectRatio: Size): Size {
+                      maxHeight: Int,
+                      aspectRatio: Size,
+                      displayRotation: Int): Size {
     // Collect the supported resolutions that are at least as big as the preview Surface
     val bigEnough = ArrayList<Size>()
     // Collect the supported resolutions that are smaller than the preview Surface
@@ -69,14 +74,12 @@ fun chooseOptimalSize(choices: Array<Size>, textureViewWidth: Int, textureViewHe
     }
     // Pick the smallest of those big enough. If there is no one big enough, pick the
     // largest of those not big enough.
-    return when {
-        bigEnough.size > 0 -> Collections.min(bigEnough, CompareSizesByArea())
-        notBigEnough.size > 0 -> Collections.max(notBigEnough, CompareSizesByArea())
-        else -> {
-            Log.e("", "Couldn't find any suitable preview size")
-            choices[0]
-        }
-    }
+    val s = if (bigEnough.isNotEmpty()) Collections.min(bigEnough, CompareSizesByArea())
+    else (if (notBigEnough.isNotEmpty()) Collections.max(notBigEnough, CompareSizesByArea()
+    ) else choices[0])
+    // 如果window的旋转是0 或者 180，那么就将size的width和height置换
+    return if (displayRotation == Surface.ROTATION_0 || displayRotation == Surface.ROTATION_180) 
+        s.swapp() else s
 }
 
 /**

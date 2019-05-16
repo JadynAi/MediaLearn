@@ -7,6 +7,7 @@ import android.graphics.ImageFormat
 import android.graphics.Point
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.*
+import android.media.ImageReader
 import android.util.Log
 import android.util.Size
 import android.view.Surface
@@ -43,6 +44,7 @@ class CameraMgr(private val activity: Activity, private val size: Size) {
     private var cameraDevice: CameraDevice? = null
     private var builder: CaptureRequest.Builder? = null
     private var cameraSession: CameraCaptureSession? = null
+    private var imageReader: ImageReader? = null
     private val stateCallback by lazy {
         object : CameraDevice.StateCallback() {
             override fun onOpened(camera: CameraDevice?) {
@@ -65,6 +67,7 @@ class CameraMgr(private val activity: Activity, private val size: Size) {
     }
 
     init {
+        // 计算出和给定宽高以及设备屏幕宽高，最接近的摄像头尺寸。以及一些api的初始化
         try {
             for (cameraId in cameraMgr.cameraIdList) {
                 val characteristics = cameraMgr.getCameraCharacteristics(cameraId)
@@ -93,9 +96,15 @@ class CameraMgr(private val activity: Activity, private val size: Size) {
 
                 previewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture::class.java),
                         rotatedPreviewSize.width, rotatedPreviewSize.height,
-                        maxPreviewSize.width, maxPreviewSize.height, largest)
+                        maxPreviewSize.width, maxPreviewSize.height, largest, displayRotation)
                 this.cameraId = cameraId
 
+                imageReader = ImageReader.newInstance(previewSize.width, previewSize.height
+                        , ImageFormat.JPEG, 2).apply {
+                    setOnImageAvailableListener({
+
+                    }, null)
+                }
                 flashSupported =
                         characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
 
@@ -162,6 +171,12 @@ class CameraMgr(private val activity: Activity, private val size: Size) {
     private fun stopPreview() {
         cameraSession?.close()
         cameraSession = null
+    }
+
+    //------------TakePicture---------
+
+    fun takePhoto(path: String? = null) {
+
     }
 
     //------------Record--------------

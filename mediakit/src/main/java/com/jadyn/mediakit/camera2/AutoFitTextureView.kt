@@ -3,6 +3,7 @@ package com.jadyn.mediakit.camera2
 import android.content.Context
 import android.graphics.Matrix
 import android.util.AttributeSet
+import android.util.Size
 import android.view.MotionEvent
 import android.view.TextureView
 
@@ -45,6 +46,10 @@ class AutoFitTextureView @JvmOverloads constructor(
         requestLayout()
     }
 
+    fun setAspectRatio(size: Size) {
+        setAspectRatio(size.width, size.height)
+    }
+
     override fun setTransform(transform: Matrix?) {
         if (defTransform == null) {
             defTransform = transform
@@ -84,6 +89,10 @@ class AutoFitTextureView @JvmOverloads constructor(
                 }
             }
         }
+    }
+    
+    private val gestureDetector by lazy { 
+        
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
