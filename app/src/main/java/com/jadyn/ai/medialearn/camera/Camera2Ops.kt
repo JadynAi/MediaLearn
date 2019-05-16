@@ -12,6 +12,7 @@ import android.util.Log
 import android.util.Size
 import android.view.Surface
 import com.jadyn.ai.medialearn.codec.AiLoiVideoEncoder
+import com.jadyn.mediakit.function.getOptimalSize
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable

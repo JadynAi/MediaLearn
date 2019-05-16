@@ -4,6 +4,7 @@ import android.util.Size
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
+import kotlin.math.max
 
 /**
  *@version:
@@ -46,4 +47,12 @@ fun Size.aspectRatio(): Float {
         width.toFloat() / height.toFloat()
     else
         height.toFloat() / width.toFloat()
+}
+
+fun Size.swapp(): Size {
+    return Size(height, width)
+}
+
+fun Size.maxChoose(other: Size): Size {
+    return Size(max(width, other.width), max(height, other.height))
 }

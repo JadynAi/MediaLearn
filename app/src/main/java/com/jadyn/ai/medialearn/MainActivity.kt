@@ -3,8 +3,7 @@ package com.jadyn.ai.medialearn
 import android.Manifest
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import com.jadyn.ai.medialearn.camera.Camera2Activity
-import com.jadyn.ai.medialearn.cutout.CutOutActivity
+import com.jadyn.ai.medialearn.camera2.Camera2RecordActivity
 import com.jadyn.ai.medialearn.decode.DecodeActivity
 import com.jadyn.ai.medialearn.decode.DecodeFrameActivity
 import com.jadyn.ai.medialearn.encode.EncodeFrameActivity
@@ -33,7 +32,7 @@ class MainActivity : AppCompatActivity() {
                     Manifest.permission.READ_EXTERNAL_STORAGE)
                     .doOnNext {
                         if (it) {
-                            start<Camera2Activity>()
+                            start<Camera2RecordActivity>()
                         }
                     }
                     .subscribe()
@@ -91,7 +90,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         tv_cutout.setOnClickListener {
-            start<CutOutActivity>()
         }
 
     }

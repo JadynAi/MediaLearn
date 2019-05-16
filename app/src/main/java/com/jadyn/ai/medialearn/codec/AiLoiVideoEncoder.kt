@@ -7,7 +7,6 @@ import android.os.Environment
 import android.util.Log
 import android.util.Size
 import android.view.Surface
-import com.jadyn.ai.medialearn.camera.audio.AiLoiAudioEncoder
 import com.jadyn.mediakit.function.createVideoFormat
 import com.jadyn.mediakit.gl.CodecInputSurface
 import java.io.File
@@ -111,8 +110,6 @@ class AiLoiVideoEncoder(private val width: Int, private val height: Int,
         }
         isStart = true
         encoder.start()
-        // 2019/1/5-15:28 录音启动
-        audioEncoder?.start()
         Log.d(TAG, "codec started thread${Thread.currentThread().name}")
 
         val surfaceTexture = stMgr!!.surfaceTexture
@@ -127,11 +124,6 @@ class AiLoiVideoEncoder(private val width: Int, private val height: Int,
             Log.d(TAG, "present: " + (surfaceTexture!!.timestamp - startWhen) / 1000000.0 + "ms")
             inputSurface.setPresentationTime(surfaceTexture.timestamp)
             inputSurface.swapBuffers()
-
-            // 2019/1/5-15:29 读取音频数据
-            if (muxerStarted) {
-                audioEncoder?.startMuxer(mediaMuxer!!)
-            }
         }
         drainEncoder(true)
         stopEncoder()
@@ -210,12 +202,5 @@ class AiLoiVideoEncoder(private val width: Int, private val height: Int,
     fun release() {
         encoder.release()
         mediaMuxer?.release()
-    }
-
-    //-----录音管理-----
-    private var audioEncoder: AiLoiAudioEncoder? = null
-
-    fun bindAudioEncoder(aiLoiAudioEncoder: AiLoiAudioEncoder) {
-        audioEncoder = aiLoiAudioEncoder
     }
 }

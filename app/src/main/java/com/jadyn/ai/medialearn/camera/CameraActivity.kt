@@ -11,6 +11,7 @@ import android.view.TextureView
 import com.jadyn.ai.medialearn.R
 import com.jadyn.ai.medialearn.codec.AiLoiVideoEncoder
 import com.jadyn.ai.medialearn.permissions.RxPermissions
+import com.jadyn.mediakit.function.choosePreviewSize
 import kotlinx.android.synthetic.main.activity_camera.*
 
 /**

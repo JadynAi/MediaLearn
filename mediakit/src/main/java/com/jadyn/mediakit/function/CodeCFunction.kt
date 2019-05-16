@@ -82,6 +82,7 @@ fun createVideoFormat(size: Size, colorFormat: Int = MediaCodecInfo.CodecCapabil
     return MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, size.width, size.height)
             .apply {
                 setInteger(MediaFormat.KEY_COLOR_FORMAT, colorFormat)
+//                setInteger(MediaFormat.KEY_BITRATE_MODE, BITRATE_MODE_CQ)
                 setInteger(MediaFormat.KEY_BIT_RATE, bitRate)
                 setInteger(MediaFormat.KEY_FRAME_RATE, frameRate)
                 setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, iFrameInterval)

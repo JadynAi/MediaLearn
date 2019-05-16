@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.jadyn.ai.medialearn.widget.AutoFitTextureView
+    <com.jadyn.mediakit.camera2.AutoFitTextureView
         android:id="@+id/texture_view"
         android:layout_width="0dp"
         android:layout_height="0dp"
