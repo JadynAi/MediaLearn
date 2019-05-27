@@ -11,7 +11,7 @@ import java.nio.ShortBuffer
 
 /**
  *@version:
- *@FileDescription: 负责纹理的绘制工作
+ *@FileDescription: 负责从SurfaceTexture拉取数据，并执行纹理的绘制工作
  *@Author:Jing
  *@Since:2019/4/3
  *@ChangeList:

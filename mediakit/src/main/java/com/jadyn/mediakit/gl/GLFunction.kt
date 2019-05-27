@@ -14,6 +14,34 @@ import android.util.Log
 
 private val TAG = "GLFunction"
 
+//顶点着色器
+val NORMAL_VERTEX_SHADER = """
+        attribute vec4 vPosition;
+        attribute vec4 vTexCoordinate;
+        uniform mat4 textureTransform;
+        varying vec2 v_TexCoordinate;
+
+        void main () {
+            v_TexCoordinate = (textureTransform * vTexCoordinate).xy;
+            gl_Position = vPosition;
+        }
+        """
+
+//片元着色器
+val NORMAL_FRAGMENT_SHADER = """
+        #extension GL_OES_EGL_image_external : require
+        precision highp float;
+        uniform samplerExternalOES texture;
+        varying highp vec2 v_TexCoordinate;
+        void main () {
+            gl_FragColor = texture2D(texture, v_TexCoordinate);
+        }
+        """
+
+fun createCommoneProgram(): Int {
+    return createProgram(NORMAL_VERTEX_SHADER, NORMAL_FRAGMENT_SHADER)
+}
+
 /**
  * 创建一个显卡可执行程序，运行在GPU
  * */

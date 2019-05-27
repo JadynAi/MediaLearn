@@ -107,7 +107,6 @@ class CameraMgr(private val activity: Activity, private val size: Size) {
                 }
                 flashSupported =
                         characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
-
                 Log.d(TAG, "phone width ${activity.resources.displayMetrics.widthPixels} " +
                         "height ${activity.resources.displayMetrics.heightPixels}")
                 Log.d(TAG, "display rotation $displayRotation  sensor $sensorOrientation: ")
@@ -176,14 +175,28 @@ class CameraMgr(private val activity: Activity, private val size: Size) {
     //------------TakePicture---------
 
     fun takePhoto(path: String? = null) {
+        try {
+            builder?.apply {
+                set(CaptureRequest.CONTROL_AF_TRIGGER,
+                        CameraMetadata.CONTROL_AF_TRIGGER_START)
+//                cameraSession?.capture(build(),)
+            }
+        } catch (e: CameraAccessException) {
 
+        }
     }
 
     //------------Record--------------
     private var isRecordingVideo = false
 
 
-    fun startRecord() {
+    fun startRecord(recordSurface: Surface) {
+        stopPreview()
+        
+    }
+
+    //-----------Destroy--------------
+    fun onDestory() {
 
     }
 } 

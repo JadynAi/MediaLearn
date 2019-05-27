@@ -1,5 +1,6 @@
 package com.jadyn.ai.medialearn.camera2
 
+import android.Manifest
 import android.graphics.Matrix
 import android.graphics.RectF
 import android.graphics.SurfaceTexture
@@ -9,6 +10,8 @@ import android.util.Size
 import android.view.Surface
 import android.view.TextureView
 import com.jadyn.ai.medialearn.R
+import com.jadyn.ai.medialearn.permissions.RxPermissions
+import com.jadyn.mediakit.camera2.Camera2Recorder
 import com.jadyn.mediakit.camera2.CameraMgr
 import kotlinx.android.synthetic.main.activity_camera2_record.*
 
@@ -23,16 +26,8 @@ class Camera2RecordActivity : AppCompatActivity() {
 
     private lateinit var cameraMgr: CameraMgr
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_camera2_record)
-
-        toggle_full_screen.setOnClickListener {
-            toggle_full_screen.isSelected = !toggle_full_screen.isSelected
-            camera2_record_texture.toggleFullscreen()
-        }
-
-        camera2_record_texture.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
+    private val surfaceListener by lazy {
+        object : TextureView.SurfaceTextureListener {
             override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture?, width: Int, height: Int) {
             }
 
@@ -44,17 +39,58 @@ class Camera2RecordActivity : AppCompatActivity() {
             }
 
             override fun onSurfaceTextureAvailable(surface: SurfaceTexture?, width: Int, height: Int) {
-                cameraMgr = CameraMgr(this@Camera2RecordActivity, Size(width, height))
-                // texture view 自动配置宽高
-                camera2_record_texture.setAspectRatio(cameraMgr.previewSize)
-                configureTextureTransform(camera2_record_texture.width,
-                        camera2_record_texture.height)
-                cameraMgr.openCamera(Surface(surface))
-                surface?.setDefaultBufferSize(cameraMgr.previewSize.height,
-                        cameraMgr.previewSize.width)
+                openCamera2(width, height)
             }
         }
     }
+
+    private val videoRecorder by lazy {
+//        1080, 1920, 4000000
+        Camera2Recorder()
+    }
+
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_camera2_record)
+
+        toggle_full_screen.setOnClickListener {
+            toggle_full_screen.isSelected = !toggle_full_screen.isSelected
+            camera2_record_texture.toggleFullscreen()
+        }
+
+        record_video.setOnClickListener {
+            RxPermissions(this).request(Manifest.permission.RECORD_AUDIO).doOnNext {
+            }.subscribe()
+        }
+
+        take_photo.setOnClickListener {
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (camera2_record_texture.isAvailable) {
+            openCamera2(camera2_record_texture.width, camera2_record_texture.height)
+        } else {
+            camera2_record_texture.surfaceTextureListener = surfaceListener
+        }
+    }
+
+    private fun openCamera2(width: Int, height: Int) {
+        if (!::cameraMgr.isInitialized) {
+            cameraMgr = CameraMgr(this@Camera2RecordActivity, Size(width, height))
+        }
+        val surface = camera2_record_texture.surfaceTexture
+        // texture view 自动配置宽高
+        camera2_record_texture.setAspectRatio(cameraMgr.previewSize)
+        configureTextureTransform(camera2_record_texture.width,
+                camera2_record_texture.height)
+        cameraMgr.openCamera(Surface(surface))
+        surface?.setDefaultBufferSize(cameraMgr.previewSize.height,
+                cameraMgr.previewSize.width)
+    }
+
 
     private fun configureTextureTransform(viewWidth: Int, viewHeight: Int) {
         val rotation = windowManager.defaultDisplay.rotation

@@ -1,5 +1,6 @@
 package com.jadyn.ai.medialearn.codec
 
+import android.annotation.SuppressLint
 import android.graphics.SurfaceTexture
 import com.jadyn.mediakit.gl.STextureRender
 import com.jadyn.mediakit.gl.checkGlError
@@ -16,7 +17,7 @@ class TextureFunction : SurfaceTexture.OnFrameAvailableListener {
     private val TAG = "SurfaceTextureManager"
     var surfaceTexture: SurfaceTexture? = null
         private set
-    
+
     private var textureRender: STextureRender? = null
 
     private val frameSyncObject = java.lang.Object()
@@ -26,6 +27,7 @@ class TextureFunction : SurfaceTexture.OnFrameAvailableListener {
         textureRender = STextureRender()
         textureRender!!.surfaceCreated()
         val textureId = textureRender!!.textureId
+        @SuppressLint("Recycle")
         surfaceTexture = SurfaceTexture(textureId)
         surfaceTexture!!.setOnFrameAvailableListener(this)
     }

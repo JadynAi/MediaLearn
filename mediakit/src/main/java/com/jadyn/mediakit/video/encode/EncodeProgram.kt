@@ -20,12 +20,12 @@ class EncodeProgram(private val size: Size) {
 
     /**
      * 逐行解释
-     * 
-     *  1、4*4的矩阵 
-     *  2、4维向量 
+     *
+     *  1、4*4的矩阵
+     *  2、4维向量
      *  3、2维向量
      *  4、varying 修饰从顶点着色器传递到片元着色器过来的数据
-     * 
+     *
      * */
     private val VERTEX_SHADER = """
                 uniform mat4 u_Matrix;
@@ -37,14 +37,14 @@ class EncodeProgram(private val size: Size) {
                     gl_Position = u_Matrix * a_Position;
                 }
         """
-    
+
     /**
      * 一下为代码的逐行解释
-     * 
+     *
      * 1、float 精度修饰， medium 16bit，用于纹理坐标
      * 2、varying 修饰从顶点着色器传递到片元着色器过来的数据
-     * 3、二维纹理声明 
-     * 
+     * 3、二维纹理声明
+     *
      * 4、使用texture2D取出纹理坐标点上的纹理像素值
      * */
     private val FRAGMENT_SHADER = """
@@ -75,8 +75,10 @@ class EncodeProgram(private val size: Size) {
     private var mAPositionLocation = 0
     private var uTextureUnitLocation = 0
     private var program: Int = 0
-    private var textureID = 0
-    private var  aTextCoordLocation = 0
+    private var aTextCoordLocation = 0
+    
+    var textureID = 0
+        private set
 
     init {
         vertexData = createFloatBuffer(pointData)
@@ -92,7 +94,7 @@ class EncodeProgram(private val size: Size) {
     private fun initLocation() {
         mAPositionLocation = getAttrib(program, "a_Position")
         val uMatrixLocation = getUniform(program, "u_Matrix")
-        
+
         aTextCoordLocation = getAttrib(program, "a_TexCoord")
         uTextureUnitLocation = getUniform(program, "u_TextureUnit")
 
@@ -133,7 +135,7 @@ class EncodeProgram(private val size: Size) {
 
         // 将纹理ID绑定到当前活动的纹理单元上
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureID)
-        
+
         GLES20.glUniform1i(uTextureUnitLocation, 0)
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, pointData.size / 2)
         unBindTexture()

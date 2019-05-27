@@ -27,6 +27,11 @@ class GLEncodeCore(private val width: Int, private val height: Int) {
         eglEnv.setUpEnv().buildWindowSurface(surface)
         encodeProgram.build()
     }
+    
+    /**
+     * this function must call by after buildEGLSurface
+     * */
+    fun getTextureId() = encodeProgram.textureID
 
     /**
      *
@@ -40,6 +45,6 @@ class GLEncodeCore(private val width: Int, private val height: Int) {
     }
 
     fun release() {
-        eglEnv.relase()
+        eglEnv.release()
     }
 }

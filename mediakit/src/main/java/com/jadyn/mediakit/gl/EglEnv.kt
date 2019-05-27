@@ -121,7 +121,7 @@ class EglEnv(private val width: Int, private val height: Int) {
         return result
     }
 
-    fun relase() {
+    fun release() {
         if (eglDisplay != EGL14.EGL_NO_DISPLAY) {
             EGL14.eglMakeCurrent(eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE,
                     EGL14.EGL_NO_CONTEXT)
