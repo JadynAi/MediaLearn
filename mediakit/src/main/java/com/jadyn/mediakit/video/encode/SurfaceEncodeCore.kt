@@ -13,6 +13,7 @@ import com.jadyn.mediakit.gl.*
  *@ChangeList:
  */
 class SurfaceEncodeCore(private val width: Int, private val height: Int) {
+    private val TAG = "SurfaceEncodeCore"
     private val eglEnv by lazy {
         EglEnv(width, height)
     }
@@ -27,6 +28,7 @@ class SurfaceEncodeCore(private val width: Int, private val height: Int) {
     private var frameAvailable: Boolean = false
 
     fun buildEGLSurface(surface: Surface): SurfaceTexture {
+        Log.d(TAG, "build egl thread: ${Thread.currentThread().name}")
         // 构建EGL环境
         eglEnv.setUpEnv().buildWindowSurface(surface)
         val textureId = encodeProgram.genTextureId()

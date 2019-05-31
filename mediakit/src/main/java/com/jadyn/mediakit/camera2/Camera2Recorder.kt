@@ -1,11 +1,13 @@
 package com.jadyn.mediakit.camera2
 
-import android.os.Handler
-import android.os.HandlerThread
-import com.jadyn.mediakit.audio.AudioPacket
-import com.jadyn.mediakit.audio.AudioRecorder
+import android.media.MediaFormat
+import android.util.Log
+import android.view.Surface
+import com.jadyn.mediakit.audio.AudioEncoder
+import com.jadyn.mediakit.function.copy
+import com.jadyn.mediakit.function.createAACFormat
 import com.jadyn.mediakit.video.encode.VideoRecorder
-import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.Executors
 
 /**
  *@version:
@@ -22,36 +24,20 @@ import java.util.concurrent.ConcurrentLinkedDeque
  * */
 class Camera2Recorder {
 
-    //PCM 队列
-    private val audioQueue by lazy {
-        ConcurrentLinkedDeque<AudioPacket>()
-    }
-    // 视频帧队列
-    private val videoQueue by lazy {
-        ConcurrentLinkedDeque<VideoPacket>()
-    }
-
+    private val TAG = "Camera2Recorder"
     private val isRecording = arrayListOf<Int>()
     //-----video-------
     private val videoThread by lazy {
-        val handlerThread = HandlerThread("videoRecorder")
-        handlerThread.start()
-        handlerThread
-    }
-    private val videoHandler by lazy {
-        Handler(videoThread.looper)
+        Executors.newSingleThreadExecutor()
     }
     //-----audio-------
-    private val audioThread by lazy {
-        val handlerThread = HandlerThread("audioRecorder")
-        handlerThread.start()
-        handlerThread
-    }
-    private val audioHandler by lazy {
-        Handler(audioThread.looper)
+    private val audioEncoder by lazy {
+        AudioEncoder(createAACFormat(1411000))
     }
     //-----mux-------
-    
+    private val mux by lazy {
+        Muxer()
+    }
 
     /**
      * 设置输出视频的宽高、比特率、帧率、帧间隔。输出视频路径
@@ -59,28 +45,44 @@ class Camera2Recorder {
      * 音频的参数设置全部使用音频录制类的默认参数，此处不设外参
      * */
     fun start(width: Int, height: Int, bitRate: Int, frameRate: Int = 24,
-              frameInterval: Int = 5, outputPath: String?) {
+              frameInterval: Int = 5,
+              surfaceCallback: (surface: Surface) -> Unit,
+              outputPath: String?) {
         isRecording.add(1)
-        videoHandler.post(VideoRecorder(width, height, bitRate, frameRate,
-                frameInterval, isRecording, {}, { frame, timeStamp, bufferInfo, data ->
+        var videoFormats = arrayListOf<MediaFormat>()
+        var audioFormats = arrayListOf<MediaFormat>()
+        val videoRecorder = VideoRecorder(width, height, bitRate, frameRate,
+                frameInterval, isRecording, surfaceCallback, { frame, timeStamp, bufferInfo, data ->
             data.position(bufferInfo.offset)
             data.limit(bufferInfo.offset + bufferInfo.size)
             val byteArray = ByteArray(data.remaining())
+            Log.d(TAG, "video callback ${byteArray.size}: ")
             data.get(byteArray, 0, byteArray.size)
-            val videoPacket = VideoPacket(byteArray, byteArray.size, timeStamp, frame)
-            videoQueue.push(videoPacket)
-        }))
-        audioHandler.post(AudioRecorder(isRecoding = isRecording, dataCallBack = {
-            val audioPacket = AudioPacket(it, it.size)
-            audioQueue.push(audioPacket)
-        }))
-        
-        
+            val videoPacket = VideoPacket(byteArray, byteArray.size, timeStamp, frame, bufferInfo.copy())
+            mux.pushVideo(videoPacket)
+        }) {
+            // 得到输出video format
+            videoFormats.add(it)
+        }
+        videoThread.execute(videoRecorder)
+        audioEncoder.formatChanged = {
+            audioFormats.add(it)
+        }
+        audioEncoder.start(isRecording) { data, frameCount ->
+            // 音频录音，并编码为AAC数据，再封装到音频帧数据回调.
+            Log.d(TAG, "audio  ${data.size}: ")
+            mux.pushAudio(data)
+        }
+        mux.start(isRecording, outputPath, videoFormats, audioFormats)
     }
 
-    fun reset() {
-        videoQueue.clear()
-        audioQueue.clear()
-        videoHandler.removeCallbacksAndMessages(null)
+    fun stop() {
+        isRecording.clear()
+    }
+
+    fun release() {
+        videoThread.shutdownNow()
+        audioEncoder.release()
+        mux.release()
     }
 } 

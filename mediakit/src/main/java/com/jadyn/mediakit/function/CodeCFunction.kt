@@ -50,7 +50,7 @@ fun MediaCodec.dequeueValidInputBuffer(timeOutUs: Long, input: (inputBufferId: I
 }
 
 /**
- * 
+ *
  * @param needEnd when bufferId is INFO_TRY_AGAIN_LATER, is need to break loop
  * */
 fun MediaCodec.handleOutputBuffer(bufferInfo: MediaCodec.BufferInfo, defTimeOut: Long,
@@ -87,4 +87,18 @@ fun createVideoFormat(size: Size, colorFormat: Int = MediaCodecInfo.CodecCapabil
                 setInteger(MediaFormat.KEY_FRAME_RATE, frameRate)
                 setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, iFrameInterval)
             }
+}
+
+fun createAACFormat(bitRate: Int, sampleRate: Int = 44100): MediaFormat {
+    return MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, sampleRate,
+            2).apply {
+        setInteger(MediaFormat.KEY_BIT_RATE, bitRate)
+        setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC)
+    }
+}
+
+fun MediaCodec.BufferInfo.copy(): MediaCodec.BufferInfo {
+    val copy = MediaCodec.BufferInfo()
+    copy.set(offset, size, presentationTimeUs, flags)
+    return copy
 }

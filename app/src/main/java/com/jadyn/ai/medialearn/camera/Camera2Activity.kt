@@ -50,7 +50,7 @@ class Camera2Activity : AppCompatActivity() {
                         }
 
                         override fun onSurfaceTextureAvailable(surface: SurfaceTexture?, width: Int, height: Int) {
-                            startBackgroundThread()
+//                            startBackgroundThread()
                             camera2Ops = Camera2Ops(this@Camera2Activity, Size(width, height)) { c, s ->
 
                                 // 2019/1/2-17:38 竖屏视频使用高作宽，宽作高

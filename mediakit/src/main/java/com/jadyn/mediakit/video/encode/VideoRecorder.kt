@@ -19,25 +19,24 @@ import java.nio.ByteBuffer
  */
 
 /**
- * @param readyRecordSurface 对外提供的录入Surface准备好
+ * @param readySurface 对外提供的录入Surface准备好
  *
- * @param 使用外部数组来判断是否需要停止
+ * @param isRecording 使用外部数组来判断是否需要停止
  *
  * */
 class VideoRecorder(private val width: Int, private val height: Int,
-                    val bitRate: Int,
+                    bitRate: Int,
                     frameRate: Int = 24,
                     frameInterval: Int = 5,
                     private val isRecording: List<Any>,
                     private val readySurface: (Surface) -> Unit,
                     private val dataCallback: (frame: Int, timeStamp: Long, bufferInfo: MediaCodec.BufferInfo,
-                                               data: ByteBuffer) -> Unit) : Runnable {
+                                               data: ByteBuffer) -> Unit,
+                    private val outputFormatChanged: (MediaFormat) -> Unit = {}) : Runnable {
     private val TAG = "VideoRecorder"
 
-    private val mediaFormat by lazy {
-        createVideoFormat(Size(width, height), bitRate = bitRate, frameRate = frameRate,
-                iFrameInterval = frameInterval)
-    }
+    val mediaFormat = createVideoFormat(Size(width, height), bitRate = bitRate, frameRate = frameRate,
+            iFrameInterval = frameInterval)
 
     private val encodeCore by lazy {
         SurfaceEncodeCore(width, height)
@@ -47,25 +46,27 @@ class VideoRecorder(private val width: Int, private val height: Int,
         MediaCodec.BufferInfo()
     }
 
-    private var codec: MediaCodec
+    init {
+        Log.d(TAG, "runnable init thread: ${Thread.currentThread().name} ")
+    }
+
+    private lateinit var codec: MediaCodec
     private lateinit var inputSurface: Surface
     private var frameCount = 0
+    private var isFormatChanged = false
 
-    init {
+    override fun run() {
         try {
             codec = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_VIDEO_AVC)
         } catch (e: IOException) {
             throw RuntimeException("code c init failed $e")
         }
-    }
-
-    override fun run() {
         codec.configure(mediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
         val s = codec.createInputSurface()
-        codec.start()
         val surfaceTexture = encodeCore.buildEGLSurface(s)
         inputSurface = Surface(surfaceTexture)
         readySurface.invoke(inputSurface)
+        codec.start()
 
         val startTime = System.nanoTime()
         while (isRecording.isNotEmpty()) {
@@ -77,6 +78,9 @@ class VideoRecorder(private val width: Int, private val height: Int,
                     "surface timestamp ${surfaceTexture.timestamp}")
             encodeCore.swapData(surfaceTexture.timestamp)
         }
+        drainEncoder(true)
+        codec.release()
+        encodeCore.release()
         inputSurface.release()
     }
 
@@ -85,7 +89,10 @@ class VideoRecorder(private val width: Int, private val height: Int,
             codec.signalEndOfInputStream()
         }
         codec.handleOutputBuffer(bufferInfo, 2500, {
-
+            if (!isFormatChanged) {
+                outputFormatChanged.invoke(codec.outputFormat)
+                isFormatChanged = true
+            }
         }, {
             val encodedData = codec.getOutputBuffer(it)
             if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG != 0) {

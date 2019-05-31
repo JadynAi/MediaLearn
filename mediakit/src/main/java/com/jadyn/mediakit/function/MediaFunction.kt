@@ -78,3 +78,19 @@ fun MediaFormat.getSafeTimeUS(ms: Long): Long {
         else -> ms * 1000
     }
 }
+
+/**
+ * AAC 数据增加ADT头信息
+ * */
+fun ByteArray.addADTS(packetLen: Int) {
+    val profile = 2 // AAC LC
+    val freqIdx = 4 // 44.1KHz
+    val chanCfg = 2// CPE
+    this[0] = 0xFF.toByte()
+    this[1] = 0xF9.toByte()
+    this[2] = ((profile - 1 shl 6) + (freqIdx shl 2) + (chanCfg shr 2)).toByte()
+    this[3] = ((chanCfg and 3 shl 6) + (packetLen shr 11)).toByte()
+    this[4] = (packetLen and 0x7FF shr 3).toByte()
+    this[5] = ((packetLen and 7 shl 5) + 0x1F).toByte()
+    this[6] = 0xFC.toByte()
+}

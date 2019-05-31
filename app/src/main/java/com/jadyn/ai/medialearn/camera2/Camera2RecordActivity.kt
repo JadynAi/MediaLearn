@@ -5,15 +5,18 @@ import android.graphics.Matrix
 import android.graphics.RectF
 import android.graphics.SurfaceTexture
 import android.os.Bundle
+import android.os.Environment
 import android.support.v7.app.AppCompatActivity
 import android.util.Size
 import android.view.Surface
 import android.view.TextureView
+import android.view.View
 import com.jadyn.ai.medialearn.R
 import com.jadyn.ai.medialearn.permissions.RxPermissions
 import com.jadyn.mediakit.camera2.Camera2Recorder
 import com.jadyn.mediakit.camera2.CameraMgr
 import kotlinx.android.synthetic.main.activity_camera2_record.*
+import java.io.File
 
 /**
  *@version:
@@ -45,10 +48,9 @@ class Camera2RecordActivity : AppCompatActivity() {
     }
 
     private val videoRecorder by lazy {
-//        1080, 1920, 4000000
+        //        1080, 1920, 4000000
         Camera2Recorder()
     }
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,10 +63,27 @@ class Camera2RecordActivity : AppCompatActivity() {
 
         record_video.setOnClickListener {
             RxPermissions(this).request(Manifest.permission.RECORD_AUDIO).doOnNext {
+                val file = File(Environment.getExternalStorageDirectory(),
+                        "test${System.currentTimeMillis()}.mp4")
+                videoRecorder.start(1080, 1920, 2000000, surfaceCallback = {
+                    cameraMgr.startRecord(it)
+                    runOnUiThread {
+                        record_video.visibility = View.GONE
+                        take_photo.visibility = View.GONE
+                        stop_video.visibility = View.VISIBLE
+                    }
+                }, outputPath = file.toString())
             }.subscribe()
         }
 
         take_photo.setOnClickListener {
+        }
+
+        stop_video.setOnClickListener {
+            videoRecorder.stop()
+            record_video.visibility = View.VISIBLE
+            take_photo.visibility = View.VISIBLE
+            stop_video.visibility = View.GONE
         }
     }
 

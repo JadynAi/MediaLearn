@@ -3,6 +3,7 @@ package com.jadyn.ai.medialearn
 import android.Manifest
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import com.jadyn.ai.medialearn.camera.Camera2Activity
 import com.jadyn.ai.medialearn.camera2.Camera2RecordActivity
 import com.jadyn.ai.medialearn.decode.DecodeActivity
 import com.jadyn.ai.medialearn.decode.DecodeFrameActivity
@@ -24,7 +25,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
         tv_go_camera.setOnClickListener {
-            //            start<CameraActivity>()
+            start<Camera2Activity>()
         }
 
         tv_go_camera2.setOnClickListener {

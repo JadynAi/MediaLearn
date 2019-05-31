@@ -4,6 +4,7 @@ import android.util.Size
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
+import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.math.max
 
 /**
@@ -55,4 +56,11 @@ fun Size.swapp(): Size {
 
 fun Size.maxChoose(other: Size): Size {
     return Size(max(width, other.width), max(height, other.height))
+}
+
+fun <D> ConcurrentLinkedDeque<D>.popSafe(): D? {
+    if (isEmpty()) {
+        return null
+    }
+    return pop()
 }

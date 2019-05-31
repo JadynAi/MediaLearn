@@ -8,6 +8,8 @@ import android.graphics.Point
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.*
 import android.media.ImageReader
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.util.Size
 import android.view.Surface
@@ -21,7 +23,7 @@ import java.util.*
  *@Since:2019-05-07
  *@ChangeList:
  */
-class CameraMgr(private val activity: Activity, private val size: Size) {
+class CameraMgr(private val activity: Activity, size: Size) {
 
     private val TAG = "Camera2Ops"
 
@@ -39,6 +41,10 @@ class CameraMgr(private val activity: Activity, private val size: Size) {
     lateinit var previewSize: Size
         private set
     private lateinit var cameraId: String
+
+    private val UIHandler by lazy {
+        Handler(Looper.getMainLooper())
+    }
 
     private var previewSurface: Surface? = null
     private var cameraDevice: CameraDevice? = null
@@ -161,6 +167,7 @@ class CameraMgr(private val activity: Activity, private val size: Size) {
 
     private fun updatePreview() {
         try {
+            Log.d(TAG, "update preview thread : ${Thread.currentThread().name}")
             cameraSession?.setRepeatingRequest(builder!!.build(), null, null)
         } catch (e: CameraAccessException) {
             Log.e(TAG, e.toString())
@@ -191,8 +198,37 @@ class CameraMgr(private val activity: Activity, private val size: Size) {
 
 
     fun startRecord(recordSurface: Surface) {
+        Log.d(TAG, "record thread : ${Thread.currentThread().name} ")
         stopPreview()
-        
+        try {
+            cameraDevice?.apply {
+                builder = createCaptureRequest(CameraDevice.TEMPLATE_RECORD)
+                // 自动对焦 
+                builder?.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
+                val list = arrayListOf<Surface>()
+                previewSurface?.apply {
+                    list.add(this)
+                    builder?.addTarget(this)
+                }
+                builder?.addTarget(recordSurface)
+                list.add(recordSurface)
+                createCaptureSession(list, object : CameraCaptureSession.StateCallback() {
+                    override fun onConfigureFailed(session: CameraCaptureSession?) {
+                        Log.d(TAG, "record failed ${Thread.currentThread().name}")
+                    }
+
+                    override fun onConfigured(session: CameraCaptureSession?) {
+                        Log.d(TAG, "record configure ${Thread.currentThread().name}")
+                        cameraSession = session
+                        updatePreview()
+                        isRecordingVideo = true
+                    }
+
+                }, UIHandler)
+            }
+        } catch (e: CameraAccessException) {
+            e.printStackTrace()
+        }
     }
 
     //-----------Destroy--------------
