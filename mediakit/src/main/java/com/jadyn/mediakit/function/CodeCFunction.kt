@@ -25,15 +25,17 @@ fun MediaCodec.disposeOutput(bufferInfo: MediaCodec.BufferInfo, defTimeOut: Long
     //  获取可用的输出缓存队列
     val outputBufferId = dequeueOutputBuffer(bufferInfo, defTimeOut)
     Log.d("disposeOutput", "output buffer id : $outputBufferId ")
-    if (outputBufferId >= 0) {
-        // 2019/2/12-22:55 and是位运算 &，转换为二进制进行“与”运算.位数不匹配则都为0
-        if ((bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-            // 2019/2/12-22:59 bufferInfo无可用缓存
-            endStream.invoke()
+    when {
+        outputBufferId >= 0 -> {
+            // 2019/2/12-22:55 and是位运算 &，转换为二进制进行“与”运算.位数不匹配则都为0
+            if ((bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                // 2019/2/12-22:59 bufferInfo无可用缓存
+                endStream.invoke()
+            }
+            render.invoke(outputBufferId)
         }
-        render.invoke(outputBufferId)
-    } else if (outputBufferId == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-        formatChanged.invoke()
+        outputBufferId == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> formatChanged.invoke()
+        outputBufferId == MediaCodec.INFO_TRY_AGAIN_LATER -> endStream.invoke()
     }
 }
 

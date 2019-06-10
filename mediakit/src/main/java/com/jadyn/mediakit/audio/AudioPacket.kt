@@ -4,7 +4,7 @@ import android.media.MediaCodec
 
 /**
  *@version:
- *@FileDescription: PCM 数据对象
+ *@FileDescription: 编码后的 AAC 音频数据帧对象
  *@Author:Jing
  *@Since:2019-05-20
  *@ChangeList:

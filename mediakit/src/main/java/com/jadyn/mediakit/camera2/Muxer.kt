@@ -5,8 +5,10 @@ import android.media.MediaMuxer
 import android.os.Environment
 import android.os.Handler
 import android.os.HandlerThread
+import android.util.Log
 import com.jadyn.mediakit.audio.AudioPacket
 import com.jadyn.mediakit.function.popSafe
+import com.jadyn.mediakit.function.toS
 import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentLinkedDeque
 
@@ -18,6 +20,7 @@ import java.util.concurrent.ConcurrentLinkedDeque
  *@ChangeList:
  */
 class Muxer {
+    private val TAG = "videoMuxer"
 
     //AAC 音频帧队列
     private val audioQueue by lazy {
@@ -71,9 +74,13 @@ class Muxer {
                 val videoFrame = videoQueue.popSafe()
                 val audioFrame = audioQueue.popSafe()
                 videoFrame?.apply {
-                    mediaMuxer.writeSampleData(videoTrackId, ByteBuffer.wrap(videoFrame.buffer), videoFrame.bufferInfo)
+                    Log.d(TAG, "video frame : ${bufferInfo?.toS()} ")
+                    val data = ByteBuffer.wrap(videoFrame.buffer)
+                    Log.d(TAG, "video1 muxer : $data ")
+                    mediaMuxer.writeSampleData(videoTrackId, data, videoFrame.bufferInfo)
                 }
                 audioFrame?.apply {
+                    Log.d(TAG, "audio frame : ${bufferInfo?.toS()} ")
                     mediaMuxer.writeSampleData(audioTrackId, ByteBuffer.wrap(audioFrame.buffer), audioFrame.bufferInfo)
                 }
             }

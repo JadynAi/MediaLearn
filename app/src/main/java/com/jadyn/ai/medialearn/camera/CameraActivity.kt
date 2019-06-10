@@ -108,13 +108,13 @@ class CameraActivity : AppCompatActivity() {
         val recordThread = object : HandlerThread("Record") {
             override fun run() {
                 super.run()
-                Log.d(TAG, ": ")
-                val createSurface = arcVideoEncoder.createTexture(camera!!.parameters.previewSize.width,
-                        camera!!.parameters.previewSize.height)
-                releaseCamera()
-                camera!!.setPreviewTexture(createSurface)
-                arcVideoEncoder.start()
-                camera!!.startPreview()
+//                Log.d(TAG, ": ")
+//                val createSurface = arcVideoEncoder.createTexture(camera!!.parameters.previewSize.width,
+//                        camera!!.parameters.previewSize.height)
+//                releaseCamera()
+//                camera!!.setPreviewTexture(createSurface)
+//                arcVideoEncoder.start()
+//                camera!!.startPreview()
             }
         }
         recordThread.start()

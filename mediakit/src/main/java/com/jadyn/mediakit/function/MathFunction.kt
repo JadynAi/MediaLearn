@@ -1,5 +1,6 @@
 package com.jadyn.mediakit.function
 
+import android.media.MediaCodec
 import android.util.Size
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -64,3 +65,5 @@ fun <D> ConcurrentLinkedDeque<D>.popSafe(): D? {
     }
     return pop()
 }
+
+fun MediaCodec.BufferInfo.toS() = "size: $size offset: $offset present: $presentationTimeUs"

@@ -17,6 +17,7 @@ import com.jadyn.mediakit.camera2.Camera2Recorder
 import com.jadyn.mediakit.camera2.CameraMgr
 import kotlinx.android.synthetic.main.activity_camera2_record.*
 import java.io.File
+import java.util.*
 
 /**
  *@version:
@@ -63,8 +64,9 @@ class Camera2RecordActivity : AppCompatActivity() {
 
         record_video.setOnClickListener {
             RxPermissions(this).request(Manifest.permission.RECORD_AUDIO).doOnNext {
+                val instance = Calendar.getInstance()
                 val file = File(Environment.getExternalStorageDirectory(),
-                        "test${System.currentTimeMillis()}.mp4")
+                        "test${instance.get(Calendar.DAY_OF_WEEK_IN_MONTH)}:${instance.get(Calendar.HOUR_OF_DAY)}:${instance.get(Calendar.MINUTE)}.mp4")
                 videoRecorder.start(1080, 1920, 2000000, surfaceCallback = {
                     cameraMgr.startRecord(it)
                     runOnUiThread {
@@ -81,6 +83,7 @@ class Camera2RecordActivity : AppCompatActivity() {
 
         stop_video.setOnClickListener {
             videoRecorder.stop()
+            cameraMgr.stopRecord()
             record_video.visibility = View.VISIBLE
             take_photo.visibility = View.VISIBLE
             stop_video.visibility = View.GONE

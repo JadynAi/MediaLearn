@@ -3,10 +3,7 @@ package com.jadyn.mediakit.audio
 import android.media.MediaCodec
 import android.media.MediaFormat
 import android.util.Log
-import com.jadyn.mediakit.function.addADTS
-import com.jadyn.mediakit.function.copy
-import com.jadyn.mediakit.function.dequeueValidInputBuffer
-import com.jadyn.mediakit.function.disposeOutput
+import com.jadyn.mediakit.function.*
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.Executors
 
@@ -17,6 +14,10 @@ import java.util.concurrent.Executors
  *@Since:2019-05-20
  *@ChangeList:
  */
+
+/**
+ * @param format 编码的AAC文件的数据参数:采样率、声道、比特率等
+ * */
 class AudioEncoder(private val format: MediaFormat) {
 
     private val TAG = "AudioEncoder"
@@ -40,6 +41,7 @@ class AudioEncoder(private val format: MediaFormat) {
             Log.d(TAG, "audio pcm ${Thread.currentThread().name} size :${it.size}: ")
             audioQueue.add(it)
         }))
+        // 从PCM 队列中获取数据并编码为AAC 数据格式
         audioThreads.execute {
             var frameCount = 0
             val codec = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_AUDIO_AAC)
@@ -50,6 +52,7 @@ class AudioEncoder(private val format: MediaFormat) {
             while (isRecording.isNotEmpty()) {
                 Log.d(TAG, "audio encoder ${Thread.currentThread().name}: queue ${audioQueue.isEmpty()} ")
                 if (audioQueue.isNotEmpty()) {
+                    Log.d(TAG, " audio queue encoder")
                     val bytes = audioQueue.pop()
                     var isEnd = false
                     while (!isEnd) {
@@ -58,7 +61,7 @@ class AudioEncoder(private val format: MediaFormat) {
                             inputBuffer.put(bytes)
                             inputBuffer.limit(bytes.size)
                             codec.queueInputBuffer(inputBufferId, 0, bytes.size
-                                    , System.nanoTime(), 0)
+                                    , frameCount * format.aacPerFrameTime, 0)
                         }
 
                         codec.disposeOutput(bufferInfo, 1000, {

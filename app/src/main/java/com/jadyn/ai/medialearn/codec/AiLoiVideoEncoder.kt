@@ -8,7 +8,7 @@ import android.util.Log
 import android.util.Size
 import android.view.Surface
 import com.jadyn.mediakit.function.createVideoFormat
-import com.jadyn.mediakit.gl.CodecInputSurface
+import com.jadyn.mediakit.video.encode.SurfaceEncodeCore
 import java.io.File
 import java.io.IOException
 import java.util.*
@@ -27,7 +27,7 @@ class AiLoiVideoEncoder(private val width: Int, private val height: Int,
 
     private val MIME_TYPE = "video/avc"
     private lateinit var encoder: MediaCodec
-    private lateinit var inputSurface: CodecInputSurface
+    private lateinit var inputSurface: SurfaceEncodeCore
     private var mediaMuxer: MediaMuxer? = null
 
     private val TAG = "encoder"
@@ -61,8 +61,6 @@ class AiLoiVideoEncoder(private val width: Int, private val height: Int,
         MediaCodec.BufferInfo()
     }
 
-    private var stMgr: TextureFunction? = null
-
     /*
     * 将encoderSurface作为渲染目标。这一步必须在SurfaceManager初始化之前执行。否则会无法创建vertex shader
     * 
@@ -71,13 +69,14 @@ class AiLoiVideoEncoder(private val width: Int, private val height: Int,
     private fun makeCurrent() {
         Log.d(TAG, "makeCurrent ")
         encoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
-        inputSurface = CodecInputSurface(encoder.createInputSurface())
-        inputSurface.makeCurrent()
     }
+
+    private lateinit var surfaceTexture: SurfaceTexture
 
     fun createSurface(width: Int, height: Int): Surface {
         makeCurrent()
-        val texture = createTexture(width, height)
+        inputSurface = SurfaceEncodeCore(width, height)
+        surfaceTexture = inputSurface.buildEGLSurface(encoder.createInputSurface())
 
         try {
             Log.d(TAG, "outputPath is : $outPath")
@@ -88,17 +87,7 @@ class AiLoiVideoEncoder(private val width: Int, private val height: Int,
 
         trackIndex = -1
         muxerStarted = false
-        return Surface(texture)
-    }
-
-    fun createTexture(width: Int, height: Int): SurfaceTexture {
-        if (stMgr == null) {
-            stMgr = TextureFunction()
-        }
-        val texture = stMgr!!.surfaceTexture?.apply {
-            setDefaultBufferSize(width, height)
-        }
-        return texture!!
+        return Surface(surfaceTexture)
     }
 
     private var isStart = false
@@ -112,18 +101,15 @@ class AiLoiVideoEncoder(private val width: Int, private val height: Int,
         encoder.start()
         Log.d(TAG, "codec started thread${Thread.currentThread().name}")
 
-        val surfaceTexture = stMgr!!.surfaceTexture
         var frameCount = 0
         val startWhen = System.nanoTime()
         while (isStart) {
             drainEncoder(false)
             frameCount++
 
-            stMgr!!.awaitNewImage()
-            stMgr!!.drawImage()
+            inputSurface.draw()
             Log.d(TAG, "present: " + (surfaceTexture!!.timestamp - startWhen) / 1000000.0 + "ms")
-            inputSurface.setPresentationTime(surfaceTexture.timestamp)
-            inputSurface.swapBuffers()
+            inputSurface.swapData(surfaceTexture.timestamp)
         }
         drainEncoder(true)
         stopEncoder()
@@ -194,9 +180,8 @@ class AiLoiVideoEncoder(private val width: Int, private val height: Int,
 
         // 2019/1/3-18:07 MediaCodeC状态重置
         encoder.reset()
-        // 2019/1/3-18:20 重置SurfaceTexture
-        stMgr!!.release()
-        stMgr = null
+        
+        inputSurface.release()
     }
 
     fun release() {

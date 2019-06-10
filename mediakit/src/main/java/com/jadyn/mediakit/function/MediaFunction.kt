@@ -27,6 +27,7 @@ val MediaFormat.duration
 val MediaFormat.durationSecond
     get() = (getLong(MediaFormat.KEY_DURATION) / 1000000L).toInt()
 
+// 每秒传输帧数
 val MediaFormat.fps: Int
     get() = try {
         getInteger(MediaFormat.KEY_FRAME_RATE)
@@ -41,6 +42,23 @@ val MediaFormat.perFrameTime: Long
     get() {
         return 1000000L / this.fps
     }
+
+/**
+ * AAC 每秒帧数计算
+ * AAC的Frame_size为1024，每帧一个包的话，每个RTP时间差为1024
+ * */
+val MediaFormat.aacFPS: Int
+    get() = try {
+        getInteger(MediaFormat.KEY_SAMPLE_RATE) / 1024
+    } catch (e: Exception) {
+        0
+    }
+
+/**
+ * AAC 每一帧时间，微秒
+ * */
+val MediaFormat.aacPerFrameTime: Long
+    get() = 1000000L / aacFPS
 
 val MediaFormat.mime
     get() = getString(MediaFormat.KEY_MIME)

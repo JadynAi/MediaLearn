@@ -49,16 +49,15 @@ class Camera2Recorder {
               surfaceCallback: (surface: Surface) -> Unit,
               outputPath: String?) {
         isRecording.add(1)
-        var videoFormats = arrayListOf<MediaFormat>()
-        var audioFormats = arrayListOf<MediaFormat>()
+        val videoFormats = arrayListOf<MediaFormat>()
+        val audioFormats = arrayListOf<MediaFormat>()
         val videoRecorder = VideoRecorder(width, height, bitRate, frameRate,
                 frameInterval, isRecording, surfaceCallback, { frame, timeStamp, bufferInfo, data ->
-            data.position(bufferInfo.offset)
-            data.limit(bufferInfo.offset + bufferInfo.size)
             val byteArray = ByteArray(data.remaining())
-            Log.d(TAG, "video callback ${byteArray.size}: ")
             data.get(byteArray, 0, byteArray.size)
-            val videoPacket = VideoPacket(byteArray, byteArray.size, timeStamp, frame, bufferInfo.copy())
+            Log.d(TAG, "video callback present: ${bufferInfo.presentationTimeUs}")
+            Log.d(TAG, "video1 recorder data: $data")
+            val videoPacket = VideoPacket(byteArray, data.remaining(), timeStamp, frame, bufferInfo.copy())
             mux.pushVideo(videoPacket)
         }) {
             // 得到输出video format

@@ -7,6 +7,7 @@ import android.util.Size
 import android.view.Surface
 import com.jadyn.mediakit.function.createVideoFormat
 import com.jadyn.mediakit.function.handleOutputBuffer
+import com.jadyn.mediakit.function.perFrameTime
 import java.io.IOException
 import java.nio.ByteBuffer
 
@@ -68,15 +69,15 @@ class VideoRecorder(private val width: Int, private val height: Int,
         readySurface.invoke(inputSurface)
         codec.start()
 
-        val startTime = System.nanoTime()
         while (isRecording.isNotEmpty()) {
             drainEncoder(false)
             frameCount++
 
             encodeCore.draw()
-            Log.d(TAG, "present: ${(surfaceTexture.timestamp - startTime) / 1000000.0} " +
-                    "surface timestamp ${surfaceTexture.timestamp}")
-            encodeCore.swapData(surfaceTexture.timestamp)
+            // 旧版本代码这里使用的是surfaceTexture的timeSamp函数。
+            // 但其实不应该这么用，此时的surface已经绑定了EGL环境，这个swap的时间戳应该就是这一帧代表的时间戳。
+            // 应该通过计算得到
+            encodeCore.swapData(frameCount * mediaFormat.perFrameTime * 1000)
         }
         drainEncoder(true)
         codec.release()

@@ -15,6 +15,8 @@ import android.view.Surface
  */
 class EglEnv(private val width: Int, private val height: Int) {
 
+    private val EGL_RECORDABLE_ANDROID = 0x3142
+
     private var eglDisplay = EGL14.EGL_NO_DISPLAY
     private var eglContext = EGL14.EGL_NO_CONTEXT
     private var eglSurface = EGL14.EGL_NO_SURFACE
@@ -45,6 +47,15 @@ class EglEnv(private val width: Int, private val height: Int) {
                 EGL14.EGL_SURFACE_TYPE, 
                 EGL14.EGL_WINDOW_BIT,
                 EGL14.EGL_NONE)
+//        val attribs = intArrayOf(EGL14.EGL_RED_SIZE, 8,
+//                EGL14.EGL_GREEN_SIZE, 8,
+//                EGL14.EGL_BLUE_SIZE, 8,
+//                EGL14.EGL_ALPHA_SIZE, 8,
+//                EGL14.EGL_RENDERABLE_TYPE, 
+//                EGL14.EGL_OPENGL_ES2_BIT,
+//                EGL_RECORDABLE_ANDROID, 
+//                1,
+//                EGL14.EGL_NONE)
         val configs = arrayOfNulls<EGLConfig>(1)
         val numConfigs = IntArray(1)
         if (!EGL14.eglChooseConfig(eglDisplay, attribs, 0, configs,
@@ -110,6 +121,9 @@ class EglEnv(private val width: Int, private val height: Int) {
         }
     }
 
+    /**
+     * @param nsecs 纳秒 10^-9
+     * */
     fun setPresentationTime(nsecs: Long) {
         EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, nsecs)
         checkEglError("eglPresentationTimeANDROID")

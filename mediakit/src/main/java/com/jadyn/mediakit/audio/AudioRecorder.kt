@@ -9,7 +9,7 @@ package com.jadyn.mediakit.audio
  */
 
 /**
- * 
+ *
  * @param use an external array to judge if a stop is required
  * */
 class AudioRecorder(private val sampleRate: Int = 44100,
@@ -24,7 +24,9 @@ class AudioRecorder(private val sampleRate: Int = 44100,
         audioOps.start()
         while (isRecoding.isNotEmpty()) {
             audioOps.read { size, sampleData ->
-                dataCallBack.invoke(sampleData)
+                if (size > 0) {
+                    dataCallBack.invoke(sampleData)
+                }
             }
         }
         audioOps.release()

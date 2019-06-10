@@ -231,6 +231,10 @@ class CameraMgr(private val activity: Activity, size: Size) {
         }
     }
 
+    fun stopRecord() {
+        stopPreview()
+        startPreview()
+    }
     //-----------Destroy--------------
     fun onDestory() {
 
