@@ -14,8 +14,7 @@ import android.view.Surface
  *@ChangeList:
  */
 class EglEnv(private val width: Int, private val height: Int) {
-
-    private val EGL_RECORDABLE_ANDROID = 0x3142
+//    private val EGL_RECORDABLE_ANDROID = 0x3142
 
     private var eglDisplay = EGL14.EGL_NO_DISPLAY
     private var eglContext = EGL14.EGL_NO_CONTEXT

@@ -4,9 +4,14 @@ import android.media.MediaFormat
 import android.util.Log
 import android.view.Surface
 import com.jadyn.mediakit.audio.AudioEncoder
+import com.jadyn.mediakit.audio.AudioPacket
+import com.jadyn.mediakit.audio.AudioRecorder
 import com.jadyn.mediakit.function.copy
 import com.jadyn.mediakit.function.createAACFormat
+import com.jadyn.mediakit.function.safeList
+import com.jadyn.mediakit.mux.Muxer
 import com.jadyn.mediakit.video.encode.VideoRecorder
+import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.Executors
 
 /**
@@ -27,13 +32,15 @@ class Camera2Recorder {
     private val TAG = "Camera2Recorder"
     private val isRecording = arrayListOf<Int>()
     //-----video-------
-    private val videoThread by lazy {
-        Executors.newSingleThreadExecutor()
+    private val recoderThread by lazy {
+        Executors.newFixedThreadPool(3)
     }
     //-----audio-------
-    private val audioEncoder by lazy {
-        AudioEncoder(createAACFormat(1411000))
+    //PCM 队列
+    private val audioQueue by lazy {
+        ConcurrentLinkedDeque<ByteArray>()
     }
+
     //-----mux-------
     private val mux by lazy {
         Muxer()
@@ -49,8 +56,9 @@ class Camera2Recorder {
               surfaceCallback: (surface: Surface) -> Unit,
               outputPath: String?) {
         isRecording.add(1)
-        val videoFormats = arrayListOf<MediaFormat>()
-        val audioFormats = arrayListOf<MediaFormat>()
+        val videoFormats = safeList<MediaFormat>()
+        val audioFormats = safeList<MediaFormat>()
+
         val videoRecorder = VideoRecorder(width, height, bitRate, frameRate,
                 frameInterval, isRecording, surfaceCallback, { frame, timeStamp, bufferInfo, data ->
             val byteArray = ByteArray(data.remaining())
@@ -63,15 +71,27 @@ class Camera2Recorder {
             // 得到输出video format
             videoFormats.add(it)
         }
-        videoThread.execute(videoRecorder)
-        audioEncoder.formatChanged = {
+        // 执行视频录制
+        recoderThread.execute(videoRecorder)
+        // 执行音频录制，回调PCM数据
+        recoderThread.execute(AudioRecorder(isRecoding = isRecording, dataCallBack = { size, data ->
+            Log.d(TAG, "audio pcm size : $size data :${data.size}: ")
+            audioQueue.add(data)
+        }))
+        // 执行音频编码，将PCM数据编码为AAC数据
+        recoderThread.execute(AudioEncoder(isRecording, createAACFormat(128000),
+                audioQueue, { byteBuffer, bufferInfo ->
+            byteBuffer.position(bufferInfo.offset)
+            byteBuffer.limit(bufferInfo.offset + bufferInfo.size)
+            val data = ByteArray(byteBuffer.remaining())
+            byteBuffer.get(data, 0, data.size)
+            val audioPacket = AudioPacket(data, data.size, bufferInfo.copy())
+            mux.pushAudio(audioPacket)
+        }) {
+            // 得到输出的audio format
             audioFormats.add(it)
-        }
-        audioEncoder.start(isRecording) { data, frameCount ->
-            // 音频录音，并编码为AAC数据，再封装到音频帧数据回调.
-            Log.d(TAG, "audio  ${data.size}: ")
-            mux.pushAudio(data)
-        }
+        })
+
         mux.start(isRecording, outputPath, videoFormats, audioFormats)
     }
 
@@ -80,8 +100,7 @@ class Camera2Recorder {
     }
 
     fun release() {
-        videoThread.shutdownNow()
-        audioEncoder.release()
+        recoderThread.shutdownNow()
         mux.release()
     }
 } 

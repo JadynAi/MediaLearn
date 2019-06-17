@@ -66,7 +66,9 @@ class Camera2RecordActivity : AppCompatActivity() {
             RxPermissions(this).request(Manifest.permission.RECORD_AUDIO).doOnNext {
                 val instance = Calendar.getInstance()
                 val file = File(Environment.getExternalStorageDirectory(),
-                        "test${instance.get(Calendar.DAY_OF_WEEK_IN_MONTH)}:${instance.get(Calendar.HOUR_OF_DAY)}:${instance.get(Calendar.MINUTE)}.mp4")
+                        "test${instance.get(Calendar.DAY_OF_WEEK_IN_MONTH)}" +
+                                ":${instance.get(Calendar.HOUR_OF_DAY)}" +
+                                ":${instance.get(Calendar.MINUTE)}.mp4")
                 videoRecorder.start(1080, 1920, 2000000, surfaceCallback = {
                     cameraMgr.startRecord(it)
                     runOnUiThread {

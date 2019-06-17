@@ -49,7 +49,14 @@ val MediaFormat.perFrameTime: Long
  * */
 val MediaFormat.aacFPS: Int
     get() = try {
-        getInteger(MediaFormat.KEY_SAMPLE_RATE) / 1024
+        sampleRate / 1024
+    } catch (e: Exception) {
+        0
+    }
+
+val MediaFormat.sampleRate: Int
+    get() = try {
+        getInteger(MediaFormat.KEY_SAMPLE_RATE)
     } catch (e: Exception) {
         0
     }

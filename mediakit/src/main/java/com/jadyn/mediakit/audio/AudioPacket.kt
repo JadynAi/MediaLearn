@@ -11,4 +11,10 @@ import android.media.MediaCodec
  */
 class AudioPacket(val buffer: ByteArray, val size: Int, val bufferInfo: MediaCodec.BufferInfo? = null) {
 
+    override fun toString(): String {
+        bufferInfo?.apply {
+            return presentationTimeUs.toString()
+        }
+        return ""
+    }
 } 

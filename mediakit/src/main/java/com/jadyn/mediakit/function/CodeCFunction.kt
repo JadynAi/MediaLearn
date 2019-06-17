@@ -51,6 +51,16 @@ fun MediaCodec.dequeueValidInputBuffer(timeOutUs: Long, input: (inputBufferId: I
     return false
 }
 
+fun MediaCodec.dequeueValidInputBuffer(timeOutUs: Long): InputCodeCData {
+    val inputBufferId = dequeueInputBuffer(timeOutUs)
+    if (inputBufferId >= 0) {
+        return InputCodeCData(inputBufferId, getInputBuffer(inputBufferId))
+    }
+    return InputCodeCData(inputBufferId, null)
+}
+
+data class InputCodeCData(val id: Int, val inputBuffer: ByteBuffer?)
+
 /**
  *
  * @param needEnd when bufferId is INFO_TRY_AGAIN_LATER, is need to break loop
@@ -91,10 +101,19 @@ fun createVideoFormat(size: Size, colorFormat: Int = MediaCodecInfo.CodecCapabil
             }
 }
 
-fun createAACFormat(bitRate: Int, sampleRate: Int = 44100): MediaFormat {
+/**
+ * MPEG-4 AAC LC 低复杂度规格（Low Complexity），现在的手机比较常见的 MP4 文件中的音频部份就包括了该规格音频文件
+ * MPEG-4 AAC Main 主规格
+ * MPEG-4 AAC SSR 可变采样率规格（Scaleable Sample Rate）
+ * MPEG-4 AAC LTP 长时期预测规格（Long Term Predicition）
+ * MPEG-4 AAC LD 低延迟规格（Low Delay）
+ * MPEG-4 AAC HE 高效率规格（High Efficiency）
+ * */
+fun createAACFormat(bitRate: Int = 128000, sampleRate: Int = 44100): MediaFormat {
     return MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, sampleRate,
-            2).apply {
+            1).apply {
         setInteger(MediaFormat.KEY_BIT_RATE, bitRate)
+        // 默认使用LC底规格
         setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC)
     }
 }

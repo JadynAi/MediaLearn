@@ -5,6 +5,7 @@ import android.util.Size
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
+import java.util.*
 import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.math.max
 
@@ -65,5 +66,7 @@ fun <D> ConcurrentLinkedDeque<D>.popSafe(): D? {
     }
     return pop()
 }
+
+fun <D> safeList() = Collections.synchronizedList(arrayListOf<D>())
 
 fun MediaCodec.BufferInfo.toS() = "size: $size offset: $offset present: $presentationTimeUs"

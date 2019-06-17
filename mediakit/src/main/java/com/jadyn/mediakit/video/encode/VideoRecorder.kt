@@ -69,6 +69,7 @@ class VideoRecorder(private val width: Int, private val height: Int,
         readySurface.invoke(inputSurface)
         codec.start()
 
+        val startTime = System.nanoTime()
         while (isRecording.isNotEmpty()) {
             drainEncoder(false)
             frameCount++
@@ -77,7 +78,10 @@ class VideoRecorder(private val width: Int, private val height: Int,
             // 旧版本代码这里使用的是surfaceTexture的timeSamp函数。
             // 但其实不应该这么用，此时的surface已经绑定了EGL环境，这个swap的时间戳应该就是这一帧代表的时间戳。
             // 应该通过计算得到
+            Log.d(TAG, "surfaceTexture time ${surfaceTexture.timestamp}")
+            Log.d(TAG, "system nao ${System.nanoTime()}")
             encodeCore.swapData(frameCount * mediaFormat.perFrameTime * 1000)
+//            encodeCore.swapData(System.nanoTime() - startTime)
         }
         drainEncoder(true)
         codec.release()

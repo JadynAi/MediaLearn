@@ -1,4 +1,4 @@
-package com.jadyn.mediakit.camera2
+package com.jadyn.mediakit.mux
 
 import android.media.MediaFormat
 import android.media.MediaMuxer
@@ -7,6 +7,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
 import com.jadyn.mediakit.audio.AudioPacket
+import com.jadyn.mediakit.camera2.VideoPacket
 import com.jadyn.mediakit.function.popSafe
 import com.jadyn.mediakit.function.toS
 import java.nio.ByteBuffer
@@ -41,7 +42,7 @@ class Muxer {
         Handler(thread.looper)
     }
 
-    private lateinit var mediaMuxer: MediaMuxer
+    private var mediaMuxer: MediaMuxer? = null
 
     fun start(isRecording: List<Any>, outputPath: String?,
               videoTracks: List<MediaFormat>,
@@ -61,15 +62,15 @@ class Muxer {
               videoTrack: MediaFormat? = null,
               audioTrack: MediaFormat? = null) {
         handler.post {
-            if (::mediaMuxer.isInitialized) {
+            if (mediaMuxer != null) {
                 throw RuntimeException("MediaMuxer already init")
             }
             val defP = Environment.getExternalStorageDirectory().toString() + "/${System.currentTimeMillis()}.mp4"
             val p = if (outputPath.isNullOrBlank()) defP else outputPath.trim()
             mediaMuxer = MediaMuxer(p, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
-            val videoTrackId = mediaMuxer.addTrack(videoTrack)
-            val audioTrackId = mediaMuxer.addTrack(audioTrack)
-            mediaMuxer.start()
+            val videoTrackId = mediaMuxer!!.addTrack(videoTrack)
+            val audioTrackId = mediaMuxer!!.addTrack(audioTrack)
+            mediaMuxer!!.start()
             while (isRecording.isNotEmpty()) {
                 val videoFrame = videoQueue.popSafe()
                 val audioFrame = audioQueue.popSafe()
@@ -77,15 +78,15 @@ class Muxer {
                     Log.d(TAG, "video frame : ${bufferInfo?.toS()} ")
                     val data = ByteBuffer.wrap(videoFrame.buffer)
                     Log.d(TAG, "video1 muxer : $data ")
-                    mediaMuxer.writeSampleData(videoTrackId, data, videoFrame.bufferInfo)
+                    mediaMuxer!!.writeSampleData(videoTrackId, data, videoFrame.bufferInfo)
                 }
                 audioFrame?.apply {
                     Log.d(TAG, "audio frame : ${bufferInfo?.toS()} ")
-                    mediaMuxer.writeSampleData(audioTrackId, ByteBuffer.wrap(audioFrame.buffer), audioFrame.bufferInfo)
+                    mediaMuxer!!.writeSampleData(audioTrackId, ByteBuffer.wrap(audioFrame.buffer), audioFrame.bufferInfo)
                 }
             }
-            mediaMuxer.stop()
-            mediaMuxer.release()
+            mediaMuxer!!.stop()
+            mediaMuxer!!.release()
         }
     }
 
@@ -102,6 +103,7 @@ class Muxer {
         audioQueue.clear()
         handler.removeCallbacksAndMessages(null)
         thread.quitSafely()
+        mediaMuxer = null
     }
 }
 

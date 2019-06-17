@@ -14,7 +14,7 @@ package com.jadyn.mediakit.audio
  * */
 class AudioRecorder(private val sampleRate: Int = 44100,
                     private val isRecoding: List<Any>,
-                    private val dataCallBack: (ByteArray) -> Unit) : Runnable {
+                    private val dataCallBack: (size: Int, data: ByteArray) -> Unit) : Runnable {
 
     private val audioOps by lazy {
         AudioOps(sampleRate)
@@ -25,10 +25,11 @@ class AudioRecorder(private val sampleRate: Int = 44100,
         while (isRecoding.isNotEmpty()) {
             audioOps.read { size, sampleData ->
                 if (size > 0) {
-                    dataCallBack.invoke(sampleData)
+                    dataCallBack.invoke(size, sampleData)
                 }
             }
         }
+        dataCallBack.invoke(-1, byteArrayOf())
         audioOps.release()
     }
 } 
