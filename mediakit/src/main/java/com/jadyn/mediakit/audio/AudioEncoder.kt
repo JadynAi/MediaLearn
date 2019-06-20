@@ -37,11 +37,15 @@ class AudioEncoder(
         codec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
         codec.start()
 
-        //两种计算时间的方式。一种使用Bytes计算，一种使用FrameCount计算
+        //三种计算时间的方式。一种使用Bytes计算，一种使用FrameCount计算
         var totalBytes = 0
         var presentationTimeUs = 0L
+        
+        //2:帧数计算
         var frameCount = 0
 
+        //3:startTime计算
+        val startTime = System.nanoTime()
         val bufferInfo = MediaCodec.BufferInfo()
         // 循环的拿取PCM数据，编码为AAC数据。
         while (isRecording.isNotEmpty() || pcmDataQueue.isNotEmpty()) {
@@ -56,7 +60,7 @@ class AudioEncoder(
                     it.limit(size)
                     // 当输入数据全部处理完，需要向Codec发送end——stream的Flag
                     codec.queueInputBuffer(id, 0, size
-                            , frameCount * format.aacPerFrameTime,
+                            , (System.nanoTime() - startTime) / 1000,
                             if (isEmpty()) MediaCodec.BUFFER_FLAG_END_OF_STREAM else 0)
                     // 1000000L/ 总数据 / audio channel / sampleRate
                     presentationTimeUs = 1000000L * (totalBytes / 2) / format.sampleRate
