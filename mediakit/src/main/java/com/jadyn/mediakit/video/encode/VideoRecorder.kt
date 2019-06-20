@@ -2,14 +2,17 @@ package com.jadyn.mediakit.video.encode
 
 import android.media.MediaCodec
 import android.media.MediaFormat
+import android.os.Environment
 import android.util.Log
 import android.util.Size
 import android.view.Surface
 import com.jadyn.mediakit.function.createVideoFormat
 import com.jadyn.mediakit.function.handleOutputBuffer
-import com.jadyn.mediakit.function.perFrameTime
+import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 import java.nio.ByteBuffer
+import java.util.*
 
 /**
  *@version:
@@ -70,20 +73,32 @@ class VideoRecorder(private val width: Int, private val height: Int,
         codec.start()
 
         val startTime = System.nanoTime()
+        //日志记录文件
+        val instance = Calendar.getInstance()
+        val log = File(Environment.getExternalStorageDirectory().toString()
+                + "/videoTime:${instance.get(Calendar.DAY_OF_MONTH)}:${instance.get(Calendar.HOUR_OF_DAY)}" +
+                ":${instance.get(Calendar.MINUTE)}.txt")
+        log.setWritable(true)
+        log.createNewFile()
+        val logS = FileOutputStream(log)
+
         while (isRecording.isNotEmpty()) {
             drainEncoder(false)
             frameCount++
 
             encodeCore.draw()
-            // 旧版本代码这里使用的是surfaceTexture的timeSamp函数。
-            // 但其实不应该这么用，此时的surface已经绑定了EGL环境，这个swap的时间戳应该就是这一帧代表的时间戳。
-            // 应该通过计算得到
-            Log.d(TAG, "surfaceTexture time ${surfaceTexture.timestamp}")
-            Log.d(TAG, "system nao ${System.nanoTime()}")
-            encodeCore.swapData(frameCount * mediaFormat.perFrameTime * 1000)
-//            encodeCore.swapData(System.nanoTime() - startTime)
+            
+//            encodeCore.swapData(frameCount * mediaFormat.perFrameTime * 1000)
+            val nesc = System.nanoTime() - startTime
+            try {
+                logS.write("surfaceTime : ${surfaceTexture.timestamp} & nesc :$nesc \r\n".toByteArray())
+            } catch (e: Exception) {
+                
+            }
+            encodeCore.swapData(nesc)
         }
         drainEncoder(true)
+        logS.close()
         codec.release()
         encodeCore.release()
         inputSurface.release()

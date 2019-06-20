@@ -60,6 +60,25 @@ fun Size.maxChoose(other: Size): Size {
     return Size(max(width, other.width), max(height, other.height))
 }
 
+val <D> ConcurrentLinkedDeque<D>.firstSafe: D?
+    get() {
+        return try {
+            first
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+val <D> ConcurrentLinkedDeque<D>.lastSafe: D?
+    get() {
+        return try {
+            last
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+
 fun <D> ConcurrentLinkedDeque<D>.popSafe(): D? {
     if (isEmpty()) {
         return null

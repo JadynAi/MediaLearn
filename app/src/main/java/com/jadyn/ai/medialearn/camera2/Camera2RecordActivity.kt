@@ -63,10 +63,11 @@ class Camera2RecordActivity : AppCompatActivity() {
         }
 
         record_video.setOnClickListener {
+            record_time.visibility = View.GONE
             RxPermissions(this).request(Manifest.permission.RECORD_AUDIO).doOnNext {
                 val instance = Calendar.getInstance()
                 val file = File(Environment.getExternalStorageDirectory(),
-                        "test${instance.get(Calendar.DAY_OF_WEEK_IN_MONTH)}" +
+                        "test${instance.get(Calendar.DAY_OF_MONTH)}" +
                                 ":${instance.get(Calendar.HOUR_OF_DAY)}" +
                                 ":${instance.get(Calendar.MINUTE)}.mp4")
                 videoRecorder.start(1080, 1920, 2000000, surfaceCallback = {
@@ -85,7 +86,12 @@ class Camera2RecordActivity : AppCompatActivity() {
 
         stop_video.setOnClickListener {
             videoRecorder.stop()
-            cameraMgr.stopRecord()
+            cameraMgr.stopRecord { t ->
+                runOnUiThread {
+                    record_time.visibility = View.VISIBLE
+                    record_time.text = t.toString()
+                }
+            }
             record_video.visibility = View.VISIBLE
             take_photo.visibility = View.VISIBLE
             stop_video.visibility = View.GONE

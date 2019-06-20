@@ -52,14 +52,27 @@
 
     <ImageView
         android:id="@+id/stop_video"
-        android:visibility="gone"
         android:layout_width="60dp"
         android:layout_height="60dp"
         android:layout_marginBottom="20dp"
         android:src="@drawable/ic_stop"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        />
+
+    <TextView
+        android:id="@+id/record_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:background="#7D00BFFF"
+        android:text="sfasfsafafasfasfaf"
+        android:visibility="gone"
+        android:textColor="@android:color/black"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         />
 
 </android.support.constraint.ConstraintLayout>

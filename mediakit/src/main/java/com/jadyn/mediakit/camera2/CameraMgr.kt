@@ -196,6 +196,7 @@ class CameraMgr(private val activity: Activity, size: Size) {
     //------------Record--------------
     private var isRecordingVideo = false
 
+    private var startRecordTime = 0L
 
     fun startRecord(recordSurface: Surface) {
         Log.d(TAG, "record thread : ${Thread.currentThread().name} ")
@@ -219,6 +220,8 @@ class CameraMgr(private val activity: Activity, size: Size) {
 
                     override fun onConfigured(session: CameraCaptureSession?) {
                         Log.d(TAG, "record configure ${Thread.currentThread().name}")
+                        startRecordTime = System.currentTimeMillis()
+                        Log.d(TAG, "start record $startRecordTime")
                         cameraSession = session
                         updatePreview()
                         isRecordingVideo = true
@@ -231,10 +234,13 @@ class CameraMgr(private val activity: Activity, size: Size) {
         }
     }
 
-    fun stopRecord() {
+    fun stopRecord(callback: (duration: Long) -> Unit = {}) {
         stopPreview()
+        val endTime = System.currentTimeMillis()
+        callback.invoke(endTime - startRecordTime)
         startPreview()
     }
+
     //-----------Destroy--------------
     fun onDestory() {
 

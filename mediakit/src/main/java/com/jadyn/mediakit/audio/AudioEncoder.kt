@@ -37,6 +37,7 @@ class AudioEncoder(
         codec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
         codec.start()
 
+        //两种计算时间的方式。一种使用Bytes计算，一种使用FrameCount计算
         var totalBytes = 0
         var presentationTimeUs = 0L
         var frameCount = 0
@@ -57,6 +58,7 @@ class AudioEncoder(
                     codec.queueInputBuffer(id, 0, size
                             , frameCount * format.aacPerFrameTime,
                             if (isEmpty()) MediaCodec.BUFFER_FLAG_END_OF_STREAM else 0)
+                    // 1000000L/ 总数据 / audio channel / sampleRate
                     presentationTimeUs = 1000000L * (totalBytes / 2) / format.sampleRate
                 }
             }

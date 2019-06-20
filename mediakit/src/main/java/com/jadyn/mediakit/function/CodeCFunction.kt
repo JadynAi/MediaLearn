@@ -3,6 +3,7 @@ package com.jadyn.mediakit.function
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
+import android.support.annotation.IntRange
 import android.util.Log
 import android.util.Size
 import java.nio.ByteBuffer
@@ -109,9 +110,10 @@ fun createVideoFormat(size: Size, colorFormat: Int = MediaCodecInfo.CodecCapabil
  * MPEG-4 AAC LD 低延迟规格（Low Delay）
  * MPEG-4 AAC HE 高效率规格（High Efficiency）
  * */
-fun createAACFormat(bitRate: Int = 128000, sampleRate: Int = 44100): MediaFormat {
+fun createAACFormat(bitRate: Int = 128000, sampleRate: Int = 44100,
+                    @IntRange(from = 1, to = 2) channel: Int = 1): MediaFormat {
     return MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, sampleRate,
-            1).apply {
+            channel).apply {
         setInteger(MediaFormat.KEY_BIT_RATE, bitRate)
         // 默认使用LC底规格
         setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC)

@@ -5,12 +5,15 @@ import android.media.MediaMuxer
 import android.os.Environment
 import android.os.Handler
 import android.os.HandlerThread
-import android.util.Log
 import com.jadyn.mediakit.audio.AudioPacket
 import com.jadyn.mediakit.camera2.VideoPacket
+import com.jadyn.mediakit.function.firstSafe
 import com.jadyn.mediakit.function.popSafe
 import com.jadyn.mediakit.function.toS
+import java.io.File
+import java.io.FileOutputStream
 import java.nio.ByteBuffer
+import java.util.*
 import java.util.concurrent.ConcurrentLinkedDeque
 
 /**
@@ -44,6 +47,8 @@ class Muxer {
 
     private var mediaMuxer: MediaMuxer? = null
 
+    private var loggerStream: FileOutputStream? = null
+
     fun start(isRecording: List<Any>, outputPath: String?,
               videoTracks: List<MediaFormat>,
               audioTracks: List<MediaFormat>) {
@@ -65,28 +70,69 @@ class Muxer {
             if (mediaMuxer != null) {
                 throw RuntimeException("MediaMuxer already init")
             }
-            val defP = Environment.getExternalStorageDirectory().toString() + "/${System.currentTimeMillis()}.mp4"
+            val defP = Environment.getExternalStorageDirectory().toString() + "/music${System.currentTimeMillis()}.aac"
             val p = if (outputPath.isNullOrBlank()) defP else outputPath.trim()
+
+            val instance = Calendar.getInstance()
+            val log = File(Environment.getExternalStorageDirectory().toString()
+                    + "/log:${instance.get(Calendar.HOUR_OF_DAY)}" +
+                    ":${instance.get(Calendar.MINUTE)}.txt")
+            log.setWritable(true)
+            log.createNewFile()
+            loggerStream = FileOutputStream(log)
+
             mediaMuxer = MediaMuxer(p, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
             val videoTrackId = mediaMuxer!!.addTrack(videoTrack)
             val audioTrackId = mediaMuxer!!.addTrack(audioTrack)
             mediaMuxer!!.start()
+
             while (isRecording.isNotEmpty()) {
-                val videoFrame = videoQueue.popSafe()
-                val audioFrame = audioQueue.popSafe()
-                videoFrame?.apply {
-                    Log.d(TAG, "video frame : ${bufferInfo?.toS()} ")
-                    val data = ByteBuffer.wrap(videoFrame.buffer)
-                    Log.d(TAG, "video1 muxer : $data ")
-                    mediaMuxer!!.writeSampleData(videoTrackId, data, videoFrame.bufferInfo)
-                }
-                audioFrame?.apply {
-                    Log.d(TAG, "audio frame : ${bufferInfo?.toS()} ")
-                    mediaMuxer!!.writeSampleData(audioTrackId, ByteBuffer.wrap(audioFrame.buffer), audioFrame.bufferInfo)
+                val videoFrame = videoQueue.firstSafe
+                val audioFrame = audioQueue.firstSafe
+
+                val videoTime = videoFrame?.bufferInfo?.presentationTimeUs ?: -1L
+                val audioTime = audioFrame?.bufferInfo?.presentationTimeUs ?: -1L
+
+                if (videoTime == -1L && audioTime != -1L) {
+                    writeAudio(audioTrackId)
+                } else if (audioTime == -1L && videoTime != -1L) {
+                    writeVideo(videoTrackId)
+                } else if (audioTime != -1L && videoTime != -1L) {
+                    // 先写小一点的时间戳的数据
+                    if (audioTime < videoTime) {
+                        writeAudio(audioTrackId)
+                    } else {
+                        writeVideo(videoTrackId)
+                    }
+                } else {
+                    // do nothing
                 }
             }
+            loggerStream?.close()
             mediaMuxer!!.stop()
             mediaMuxer!!.release()
+        }
+    }
+
+    private fun writeVideo(id: Int) {
+        videoQueue.popSafe()?.apply {
+            try {
+                loggerStream?.write("video frame : ${bufferInfo?.toS()} \r\n".toByteArray())
+            } catch (e: Exception) {
+
+            }
+            mediaMuxer!!.writeSampleData(id, ByteBuffer.wrap(buffer), bufferInfo)
+        }
+    }
+
+    private fun writeAudio(id: Int) {
+        audioQueue.popSafe()?.apply {
+            try {
+                loggerStream?.write("audio frame : ${bufferInfo?.toS()} \r\n".toByteArray())
+            } catch (e: Exception) {
+
+            }
+            mediaMuxer!!.writeSampleData(id, ByteBuffer.wrap(buffer), bufferInfo)
         }
     }
 
