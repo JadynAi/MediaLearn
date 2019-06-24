@@ -27,7 +27,7 @@ class SurfaceEncodeCore(private val width: Int, private val height: Int) {
     private var surfaceTexture: SurfaceTexture? = null
 
     private val encodeProgram by lazy {
-        SurfaceProgram()
+        Texture2dProgram()
     }
 
     private val frameSyncObject = Object()
@@ -56,7 +56,7 @@ class SurfaceEncodeCore(private val width: Int, private val height: Int) {
     fun draw() {
         Log.d(TAG, "core draw thread ${Thread.currentThread().name}")
         awaitNewImage()
-        encodeProgram.drawFrame(surfaceTexture!!)
+        encodeProgram.drawFrame(surfaceTexture!!, false)
     }
 
     fun swapData(nesc: Long) {
@@ -90,32 +90,14 @@ class SurfaceEncodeCore(private val width: Int, private val height: Int) {
     }
 }
 
-//class SurfaceProgram {
-//    private var textureId: Int = 0
-//
-//    private val textureDraw: TextureDraw
-//
-//    init {
-//        Log.d(this.javaClass.name, " create texture 2d program ")
-//        val program = createCommoneProgram()
-//        textureDraw = TextureDraw(program)
-//    }
-//
-//    fun genTextureId(): Int {
-//        textureId = buildTextureId()
-//        return textureId
-//    }
-//
-//    fun drawFrame(st: SurfaceTexture) {
-//        textureDraw.drawFromSurfaceTexture(st, textureId)
-//    }
-//}
 
 /**
  * 使用 作为数据传递介质 Surface 绘制
  *
  * 每一帧的数据从SurfaceTexture 中获取
  * */
+
+@Deprecated("please use Texture2dProgram")
 class SurfaceProgram {
     private val FLOAT_SIZE_BYTES = 4
     private val TRIANGLE_VERTICES_DATA_STRIDE_BYTES = 5 * FLOAT_SIZE_BYTES
@@ -172,7 +154,7 @@ class SurfaceProgram {
         triangleVertices.put(triangleVerticesData).position(0)
 
         Matrix.setIdentityM(stMatrix, 0)
-        
+
         Log.d(this.javaClass.name, " create texture 2d program ")
         program = createProgram(VERTEX_SHADER, FRAGMENT_SHADER)
         maPositionHandle = GLES20.glGetAttribLocation(program, "aPosition")
@@ -180,6 +162,11 @@ class SurfaceProgram {
         maTextureHandle = GLES20.glGetAttribLocation(program, "aTextureCoord")
         checkLocation(maTextureHandle, "aTextureCoord")
 
+        /**
+         * uniform :代表从CPU传递到GPU的数据；
+         * 以下就是获取特定uniform的的索引值，方便后续更新
+         * 更新使用的函数是 @glUniform4f
+         * */
         muMVPMatrixHandle = GLES20.glGetUniformLocation(program, "uMVPMatrix")
         checkLocation(muMVPMatrixHandle, "uMVPMatrix")
         muSTMatrixHandle = GLES20.glGetUniformLocation(program, "uSTMatrix")
@@ -226,6 +213,6 @@ class SurfaceProgram {
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
         checkGlError("glDrawArrays")
 
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0)
+        unBindTexture()
     }
 }

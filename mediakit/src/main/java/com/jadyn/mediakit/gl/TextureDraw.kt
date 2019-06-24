@@ -24,7 +24,8 @@ class TextureDraw(private val program: Int) {
      * 绘制的区域尺寸
      */
     private val squareSize = 1.0f
-    private val squareCoords = floatArrayOf(-squareSize, squareSize, //left top
+    private val squareCoords = floatArrayOf(
+            -squareSize, squareSize, //left top
             -squareSize, -squareSize, //left bottom
             squareSize, -squareSize, //right bottom
             squareSize, squareSize      //right top
@@ -105,10 +106,15 @@ class TextureDraw(private val program: Int) {
     }
 
 
-    fun drawFromSurfaceTexture(st: SurfaceTexture, textureId: Int) {
+    /**
+     * @param isRevert 是否需要翻转图像 。录制视频时，应设置为false。否则会花屏
+     * */
+    fun drawFromSurfaceTexture(st: SurfaceTexture, textureId: Int, isRevert: Boolean = true) {
         st.getTransformMatrix(stMatrix)
-        stMatrix[5] = -stMatrix[5]
-        stMatrix[13] = 1.0f - stMatrix[13]
+        if (isRevert) {
+            stMatrix[5] = -stMatrix[5]
+            stMatrix[13] = 1.0f - stMatrix[13]
+        }
 
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f)
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
@@ -131,9 +137,5 @@ class TextureDraw(private val program: Int) {
         GLES20.glDisableVertexAttribArray(positionAttr)
         GLES20.glDisableVertexAttribArray(textureCoordinateAttr)
         unBindTexture()
-    }
-
-    private fun unBindTexture() {
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0)
     }
 }

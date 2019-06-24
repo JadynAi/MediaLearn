@@ -25,7 +25,7 @@ class Texture2dProgram {
         }
         """
 
-    //片元着色器
+    //片元着色器. 替换黑色背景
     private val FRAGMENT_SHADER = """
         #extension GL_OES_EGL_image_external : require
         precision highp float;
@@ -77,7 +77,7 @@ class Texture2dProgram {
         return textureId
     }
 
-    fun drawFrame(st: SurfaceTexture) {
-        textureDraw.drawFromSurfaceTexture(st, textureId)
+    fun drawFrame(st: SurfaceTexture, isRevert: Boolean = true) {
+        textureDraw.drawFromSurfaceTexture(st, textureId, isRevert)
     }
 }

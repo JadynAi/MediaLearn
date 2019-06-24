@@ -70,8 +70,9 @@ class Camera2RecordActivity : AppCompatActivity() {
                         "test${instance.get(Calendar.DAY_OF_MONTH)}" +
                                 ":${instance.get(Calendar.HOUR_OF_DAY)}" +
                                 ":${instance.get(Calendar.MINUTE)}.mp4")
-                videoRecorder.start(1080, 1920, 2000000, surfaceCallback = {
-                    cameraMgr.startRecord(it)
+                videoRecorder.start(720, 1080, 2000000, surfaceCallback = {
+                    // 录制的时候根据，定制的视频尺寸，重新调整PreviewSurface的数据
+                    cameraMgr.startRecord(it, Size(1080, 1920))
                     runOnUiThread {
                         record_video.visibility = View.GONE
                         take_photo.visibility = View.GONE

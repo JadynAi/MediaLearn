@@ -198,7 +198,7 @@ class CameraMgr(private val activity: Activity, size: Size) {
 
     private var startRecordTime = 0L
 
-    fun startRecord(recordSurface: Surface) {
+    fun startRecord(recordSurface: Surface, recordSize: Size) {
         Log.d(TAG, "record thread : ${Thread.currentThread().name} ")
         stopPreview()
         try {

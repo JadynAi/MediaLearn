@@ -87,15 +87,15 @@ class VideoRecorder(private val width: Int, private val height: Int,
             frameCount++
 
             encodeCore.draw()
-            
+
 //            encodeCore.swapData(frameCount * mediaFormat.perFrameTime * 1000)
-            val nesc = System.nanoTime() - startTime
+            val curFrameTime = System.nanoTime() - startTime
             try {
-                logS.write("surfaceTime : ${surfaceTexture.timestamp} & nesc :$nesc \r\n".toByteArray())
+                logS.write("surfaceTime : ${surfaceTexture.timestamp} & nesc :$curFrameTime \r\n".toByteArray())
             } catch (e: Exception) {
-                
+
             }
-            encodeCore.swapData(nesc)
+            encodeCore.swapData(curFrameTime)
         }
         drainEncoder(true)
         logS.close()

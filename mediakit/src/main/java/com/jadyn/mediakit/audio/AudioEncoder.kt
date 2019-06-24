@@ -60,7 +60,7 @@ class AudioEncoder(
                     it.limit(size)
                     // 当输入数据全部处理完，需要向Codec发送end——stream的Flag
                     codec.queueInputBuffer(id, 0, size
-                            , (System.nanoTime() - startTime) / 1000,
+                            , presentationTimeUs,
                             if (isEmpty()) MediaCodec.BUFFER_FLAG_END_OF_STREAM else 0)
                     // 1000000L/ 总数据 / audio channel / sampleRate
                     presentationTimeUs = 1000000L * (totalBytes / 2) / format.sampleRate
