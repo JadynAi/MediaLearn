@@ -182,8 +182,10 @@ class VideoDecoder2(dataSource: String) {
             var curExtraNum = -1
             while (!outputDone) {
                 if (!inputDone) {
-                    decoder.dequeueValidInputBuffer(DEF_TIME_OUT) { inputBufferId, inputBuffer ->
-                        val sampleSize = videoAnalyze.mediaExtractor.readSampleData(inputBuffer, 0)
+                    
+                    val (inputBufferId, inputBuffer1) = decoder.dequeueValidInputBuffer(DEF_TIME_OUT)
+                    inputBuffer1?.apply {
+                        val sampleSize = videoAnalyze.mediaExtractor.readSampleData(this, 0)
                         if (sampleSize < 0) {
                             decoder.queueInputBuffer(inputBufferId, 0, 0, 0L,
                                     MediaCodec.BUFFER_FLAG_END_OF_STREAM)

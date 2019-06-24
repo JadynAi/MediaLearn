@@ -115,7 +115,8 @@ class VideoDecoder2Compat(private val success: (Bitmap) -> Unit) {
         while (!outputEnd && isStart) {
             if (!inputEnd) {
                 // 获得可用输入队列，并填充数据
-                decoder.dequeueValidInputBuffer(DEF_TIME_OUT) { inputBufferId, inputBuffer ->
+                val (inputBufferId, inputBuffer) = decoder.dequeueValidInputBuffer(DEF_TIME_OUT)
+                inputBuffer?.apply {
                     // 使用MediaExtractor读取数据
                     val sampleSize = videoAnalyze.mediaExtractor.readSampleData(inputBuffer, 0)
                     if (sampleSize < 0) {

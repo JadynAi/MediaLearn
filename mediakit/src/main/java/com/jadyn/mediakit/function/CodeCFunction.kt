@@ -36,20 +36,8 @@ fun MediaCodec.disposeOutput(bufferInfo: MediaCodec.BufferInfo, defTimeOut: Long
             render.invoke(outputBufferId)
         }
         outputBufferId == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> formatChanged.invoke()
-        outputBufferId == MediaCodec.INFO_TRY_AGAIN_LATER -> endStream.invoke()
+//        outputBufferId == MediaCodec.INFO_TRY_AGAIN_LATER -> endStream.invoke()
     }
-}
-
-/*
-* 硬编码获得可用的输入队列
-* */
-fun MediaCodec.dequeueValidInputBuffer(timeOutUs: Long, input: (inputBufferId: Int, inputBuffer: ByteBuffer) -> Unit): Boolean {
-    val inputBufferId = dequeueInputBuffer(timeOutUs)
-    if (inputBufferId >= 0) {
-        input.invoke(inputBufferId, getInputBuffer(inputBufferId))
-        return true
-    }
-    return false
 }
 
 fun MediaCodec.dequeueValidInputBuffer(timeOutUs: Long): InputCodeCData {
