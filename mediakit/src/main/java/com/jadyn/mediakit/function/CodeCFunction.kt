@@ -36,7 +36,6 @@ fun MediaCodec.disposeOutput(bufferInfo: MediaCodec.BufferInfo, defTimeOut: Long
             render.invoke(outputBufferId)
         }
         outputBufferId == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> formatChanged.invoke()
-//        outputBufferId == MediaCodec.INFO_TRY_AGAIN_LATER -> endStream.invoke()
     }
 }
 

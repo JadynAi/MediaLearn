@@ -90,6 +90,92 @@ class SurfaceEncodeCore(private val width: Int, private val height: Int) {
     }
 }
 
+class SurfaceProgram1 {
+    private val VERTEX_SHADER =
+            """
+            uniform mat4 uMVPMatrix;
+            attribute vec4 vPosition;
+            attribute vec2 a_texCoord;
+            varying vec2 v_texCoord;
+            void main() {
+                gl_Position = uMVPMatrix * vPosition;
+                v_texCoord = a_texCoord;
+            }
+            """
+    private val FRAGMENT_SHADER =
+            """
+            precision mediump float;
+            varying vec2 v_texCoord;
+            uniform sampler2D s_texture;
+            void main() {
+                gl_FragColor = texture2D(s_texture, v_texCoord);
+            }
+            """
+    private val VERTEX = floatArrayOf(
+            1f, 1f, 0f,
+            -1f, 1f, 0f,
+            -1f, -1f, 0f,
+            1f, -1f, 0f
+    )
+
+    private val VERTEX_INDEX = shortArrayOf(0, 1, 2, 0, 2, 3)
+
+
+    private val TEX_VERTEX = floatArrayOf(
+            1f, 0f,
+            0f, 0f,
+            0f, 1f,
+            1f, 1f)
+
+    private val texVertexBuffer: FloatBuffer
+    private val vertexBuffer: FloatBuffer
+
+    private val mPositionHandle: Int
+    private val mTexCoordHandle: Int
+    private val mMatrixHandle: Int
+    private val mTexSamplerHandle: Int
+
+    private var mProgram: Int
+
+    init {
+        vertexBuffer = ByteBuffer.allocate(VERTEX.size * 4)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer().put(VERTEX)
+        vertexBuffer.position(0)
+
+        texVertexBuffer = ByteBuffer.allocate(TEX_VERTEX.size * 4)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer().put(TEX_VERTEX)
+        texVertexBuffer.position(0)
+
+        mProgram = createProgram(VERTEX_SHADER, FRAGMENT_SHADER)
+
+        mPositionHandle = GLES20.glGetAttribLocation(mProgram, "vPosition");
+        mTexCoordHandle = GLES20.glGetAttribLocation(mProgram, "a_texCoord");
+        mMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uMVPMatrix");
+        mTexSamplerHandle = GLES20.glGetUniformLocation(mProgram, "s_texture");
+
+        GLES20.glEnableVertexAttribArray(mPositionHandle);
+        GLES20.glVertexAttribPointer(mPositionHandle, 3, GLES20.GL_FLOAT, false,
+                12, vertexBuffer)
+
+        GLES20.glEnableVertexAttribArray(mTexCoordHandle);
+        GLES20.glVertexAttribPointer(mTexCoordHandle, 2, GLES20.GL_FLOAT, false, 0,
+                texVertexBuffer)
+    }
+
+    private var textureId: Int = 0
+
+    fun genTextureId(): Int {
+        textureId = buildTextureId()
+        return textureId
+    }
+
+    fun drawFrame(st: SurfaceTexture){
+        
+    }
+}
+
 
 /**
  * 使用 作为数据传递介质 Surface 绘制
@@ -134,7 +220,11 @@ class SurfaceProgram {
 
     private val triangleVerticesData = floatArrayOf(
             // X, Y, Z, U, V
-            -1.0f, -1.0f, 0f, 0f, 0f, 1.0f, -1.0f, 0f, 1f, 0f, -1.0f, 1.0f, 0f, 0f, 1f, 1.0f, 1.0f, 0f, 1f, 1f)
+            -1.0f, -1.0f, 0f, 0f, 0f,
+            1.0f, -1.0f, 0f, 1f,
+            0f, -1.0f, 1.0f, 0f,
+            0f, 1f, 1.0f, 1.0f,
+            0f, 1f, 1f)
 
     private val triangleVertices: FloatBuffer
 

@@ -66,20 +66,17 @@ class DecodeActivity : AppCompatActivity() {
                 toast("正在解码中")
                 return@setOnClickListener
             }
-            videoDecoder = videoDecoderBuilder.makeFile(filePath)
-                    .saveDirectory(outputPath)
-                    .setUseSurfaceOutput(switch_iv.isSelected)
-                    .build()
 
-            videoDecoder!!.decoding = {
+            videoDecoder = VideoDecoder(filePath, outputPath)
+            videoDecoder!!.start({
+                videoDecoder = null
+            }, {
+                videoDecoder = null
+            }, {
                 this@DecodeActivity.runOnUiThread {
                     val s = if (switch_iv.isSelected) "OpenGL渲染" else "YUV存储"
                     output_loading_tv.text = TextUtils.concat(s, "解码中，第${it}张")
                 }
-            }
-
-            videoDecoder!!.start({
-                videoDecoder = null
             })
         }
     }
@@ -124,7 +121,6 @@ class DecodeActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        videoDecoder?.stop()
         videoDecoder?.release()
     }
 }

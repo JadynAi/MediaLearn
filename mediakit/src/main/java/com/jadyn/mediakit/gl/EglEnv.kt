@@ -41,9 +41,9 @@ class EglEnv(private val width: Int, private val height: Int) {
                 EGL14.EGL_BLUE_SIZE, 8,
                 EGL14.EGL_GREEN_SIZE, 8,
                 EGL14.EGL_RED_SIZE, 8,
-                EGL14.EGL_RENDERABLE_TYPE, 
+                EGL14.EGL_RENDERABLE_TYPE,
                 EGL14.EGL_OPENGL_ES2_BIT,
-                EGL14.EGL_SURFACE_TYPE, 
+                EGL14.EGL_SURFACE_TYPE,
                 EGL14.EGL_WINDOW_BIT,
                 EGL14.EGL_NONE)
 //        val attribs = intArrayOf(EGL14.EGL_RED_SIZE, 8,
@@ -90,7 +90,7 @@ class EglEnv(private val width: Int, private val height: Int) {
 
     /**
      * 创建一个可实际显示的windowSurface
-     * 
+     *
      * @param surface 本地设备屏幕
      * */
     fun buildWindowSurface(surface: Surface) {

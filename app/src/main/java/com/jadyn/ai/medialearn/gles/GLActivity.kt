@@ -1,6 +1,7 @@
 package com.jadyn.ai.medialearn.gles
 
 import android.graphics.SurfaceTexture
+import android.opengl.GLSurfaceView
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.Surface
@@ -23,6 +24,8 @@ class GLActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_gles)
+        
+        GLSurfaceView(this)
         gl_texture_view.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
             override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture?, width: Int, height: Int) {
             }

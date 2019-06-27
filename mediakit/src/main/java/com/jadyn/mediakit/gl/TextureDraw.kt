@@ -126,7 +126,7 @@ class TextureDraw(private val program: Int) {
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId)
         GLES20.glUniform1i(textureUniform, 0)
-
+        
         GLES20.glEnableVertexAttribArray(textureCoordinateAttr)
         GLES20.glVertexAttribPointer(textureCoordinateAttr, 4, GLES20.GL_FLOAT, false, 0, textureBuffer)
 
