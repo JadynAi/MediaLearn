@@ -47,7 +47,6 @@ class Texture2dProgram {
 
             float blendValue = smoothstep(thresholdSensitivity, thresholdSensitivity + smoothing, distance(vec2(Cr, Cb), vec2(maskCr, maskCb)));
             gl_FragColor = vec4(color.rgb, color.a * blendValue);
-//            gl_FragColor = vec4(color.rgb * blendValue, 1.0 * blendValue);
         }
         """
 
@@ -68,7 +67,7 @@ class Texture2dProgram {
 
     init {
         Log.d(this.javaClass.name, " create texture 2d program ")
-        val program = createProgram(VERTEX_SHADER, NORMAL_FRAGMENT_SHADER)
+        val program = createProgram(VERTEX_SHADER, FRAGMENT_SHADER)
         textureDraw = TextureDraw(program)
     }
 

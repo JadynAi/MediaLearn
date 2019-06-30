@@ -5,12 +5,8 @@ import android.graphics.Bitmap
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
-import android.os.Environment
 import android.util.Log
 import com.jadyn.mediakit.function.*
-import io.reactivex.Observable
-import io.reactivex.disposables.Disposable
-import io.reactivex.schedulers.Schedulers
 import java.io.File
 import java.util.concurrent.Executors
 
@@ -35,7 +31,7 @@ class VideoDecoder(private val dataSource: String?,
             } else {
                 success.invoke()
             }
-        }) { index, bmp ->
+        }) { index, bmp, videoInfo ->
             process.invoke(index)
             val file = File(outputFiles, String.format("frame-%02d.jpg", index))
             bmp.saveFrame(file.toString())
@@ -54,7 +50,7 @@ class VideoDecoder(private val dataSource: String?,
  * */
 class VideoDecoderRunnable(private val dataSource: String?,
                            private val observer: (Any) -> Unit = {},
-                           private val callBack: (index: Int, bmp: Bitmap) -> Unit) : Runnable {
+                           private val callBack: (index: Int, bmp: Bitmap, videoInfo: MediaFormat) -> Unit) : Runnable {
 
     override fun run() {
         try {
@@ -117,7 +113,7 @@ class VideoDecoderRunnable(private val dataSource: String?,
                     val bitmap = decodeCore.codeToFrame(bufferInfo, it, decoder)
                     bitmap?.apply {
                         outputFrameCount++
-                        callBack.invoke(outputFrameCount, bitmap)
+                        callBack.invoke(outputFrameCount, bitmap, mediaFormat)
                     }
                 }
             }

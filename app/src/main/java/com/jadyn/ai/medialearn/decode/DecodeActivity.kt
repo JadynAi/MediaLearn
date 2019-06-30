@@ -22,10 +22,6 @@ class DecodeActivity : AppCompatActivity() {
     private val decodeMP4Path = TextUtils.concat(Environment.getExternalStorageDirectory().path,
             "/yazi.mp4").toString()
 
-    private val videoDecoderBuilder by lazy {
-        VideoDecoder.DecoderBuilder()
-    }
-
     private var videoDecoder: VideoDecoder? = null
 
     private var filePath = ""
