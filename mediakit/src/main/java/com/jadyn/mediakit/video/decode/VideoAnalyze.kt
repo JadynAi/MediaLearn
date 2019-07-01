@@ -71,15 +71,12 @@ class VideoAnalyze(val dataSource: String) {
         (mediaFormat.duration.toFloat() / 1000000f * mediaFormat.fps).toInt()
     }
 
-
-    /*
-    * 比较两个时间戳是否为同一帧
-    * fixedTime: 目标时间戳
-    * sampleTime:被比较时间戳
-    * */
-    fun sameFrame(fixedTime: Long, sampleTime: Long): Boolean {
-        return sampleTime >= fixedTime - firstFrameTime && sampleTime < fixedTime +
-                mediaFormat.perFrameTime - firstFrameTime
+    
+    /**
+     * @param time: 毫秒
+     * */
+    fun getSafeTimeUs(time: Long): Long {
+        return mediaFormat.getSafeTimeUS(time)
     }
 
     /*
@@ -94,7 +91,6 @@ class VideoAnalyze(val dataSource: String) {
         checkExtractor.seekTo(time, MediaExtractor.SEEK_TO_PREVIOUS_SYNC)
         var sampleTime = checkExtractor.sampleTime
         val topTime = time + 2000000
-        Log.d("getValidSampleTime", "sampleTime $sampleTime perFrameTime ${mediaFormat.perFrameTime}")
         var isFind = false
         while (!isFind) {
             checkExtractor.advance()

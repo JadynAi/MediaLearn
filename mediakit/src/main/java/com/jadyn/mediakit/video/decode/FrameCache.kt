@@ -18,14 +18,14 @@ class FrameCache(dataSource: String) {
     private val TAG = "FrameCache"
     private val mainKey = md5(dataSource)
     private val lruCache by lazy {
-        val maxMemory = (Runtime.getRuntime().maxMemory() / 1024).toInt()
+        val maxMemory = (Runtime.getRuntime().maxMemory()).toInt()
 
         // Use 1/8th of the available memory for this memory cache.
         val cacheSize = maxMemory / 12
         object : LruCache<String, Bitmap>(cacheSize) {
             override fun sizeOf(key: String?, value: Bitmap?): Int {
                 value?.apply {
-                    return byteCount / 1024
+                    return byteCount
                 }
                 return super.sizeOf(key, value)
             }
@@ -50,7 +50,7 @@ class FrameCache(dataSource: String) {
     }
 
     private fun cacheDisk(target: Long, b: Bitmap) {
-        diskCache.writeBitmap(getDiskKey(target), b)
+//        diskCache.writeBitmap(getDiskKey(target), b)
     }
 
     fun asyncGetTarget(target: Long, isNeedCache: Boolean = true, success: (time: Long, Bitmap) -> Unit, failed: (Throwable) -> Unit) {
@@ -58,16 +58,18 @@ class FrameCache(dataSource: String) {
             failed.invoke(Throwable("function set not need cache"))
             return
         }
-        getLruBitmap(target)?.apply {
+        val lruBitmap = getLruBitmap(target)
+        if (lruBitmap != null) {
             Log.d(TAG, "get cache from lru $target ")
-            success.invoke(target, this)
-            return
+            success.invoke(target, lruBitmap)
+        } else {
+            failed.invoke(Throwable("has not lru"))
         }
         //异步读取Disk缓存，Disk读取Bitmap的success是在子线程执行的，所以回调主线程
-        diskCache.asyncReadBitmap(getDiskKey(target), {
-            Log.d(TAG, "get disk cache ${getDiskKey(target)} ")
-            success.invoke(target, it)
-        }, failed)
+//        diskCache.asyncReadBitmap(getDiskKey(target), {
+//            Log.d(TAG, "get disk cache ${getDiskKey(target)} ")
+//            success.invoke(target, it)
+//        }, failed)
     }
 
     fun getLruBitmap(target: Long): Bitmap? {

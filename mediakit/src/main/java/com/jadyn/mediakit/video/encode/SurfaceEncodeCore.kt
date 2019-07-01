@@ -183,7 +183,6 @@ class SurfaceProgram1 {
  * 每一帧的数据从SurfaceTexture 中获取
  * */
 
-@Deprecated("please use Texture2dProgram")
 class SurfaceProgram {
     private val FLOAT_SIZE_BYTES = 4
     private val TRIANGLE_VERTICES_DATA_STRIDE_BYTES = 5 * FLOAT_SIZE_BYTES

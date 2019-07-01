@@ -76,7 +76,7 @@ class DecodeFrameActivity : AppCompatActivity() {
                     updateTime(seekBar.progress, mediaFormat.durationSecond * 1000)
                 }
                 videoDecoder2?.apply {
-                    getFrame(seekBar.progress.toLong(), {
+                    getFrameMs(seekBar.progress.toLong(), {
                         frame_img.setImageBitmap(it)
                     }, {
                         Log.d("cece", "throwable ${it.message}: ")
