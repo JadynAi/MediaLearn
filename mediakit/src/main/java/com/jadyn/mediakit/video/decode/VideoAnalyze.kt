@@ -3,7 +3,11 @@ package com.jadyn.mediakit.video.decode
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.util.Log
-import com.jadyn.mediakit.function.*
+import com.jadyn.ai.kotlind.utils.minDifferenceValue
+import com.jadyn.mediakit.function.duration
+import com.jadyn.mediakit.function.fps
+import com.jadyn.mediakit.function.getSafeTimeUS
+import com.jadyn.mediakit.function.selectVideoTrack
 
 /**
  *@version:

@@ -213,7 +213,3 @@ fun String.hashKeyForDisk(): String {
         hashCode().toString()
     }
 }
-
-fun String?.getReal(): String {
-    return if (isNullOrBlank()) "" else this!!
-}

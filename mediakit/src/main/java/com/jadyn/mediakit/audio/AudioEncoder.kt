@@ -4,7 +4,11 @@ import android.media.MediaCodec
 import android.media.MediaFormat
 import android.os.Process
 import android.util.Log
-import com.jadyn.mediakit.function.*
+import com.jadyn.ai.kotlind.utils.popSafe
+import com.jadyn.mediakit.function.dequeueValidInputBuffer
+import com.jadyn.mediakit.function.handleOutputBuffer
+import com.jadyn.mediakit.function.sampleRate
+import com.jadyn.mediakit.function.toS
 import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentLinkedDeque
 
@@ -50,7 +54,7 @@ class AudioEncoder(
         // 循环的拿取PCM数据，编码为AAC数据。
         while (isRecording.isNotEmpty() || pcmDataQueue.isNotEmpty()) {
             Log.d(TAG, "audio encoder $pcmDataQueue")
-            val bytes = pcmDataQueue.popSafe()
+            val bytes = pcmDataQueue.popSafe
             bytes?.apply {
                 val (id, inputBuffer) = codec.dequeueValidInputBuffer(1000)
                 inputBuffer?.let {

@@ -2,17 +2,13 @@ package com.jadyn.mediakit.video.encode
 
 import android.media.MediaCodec
 import android.media.MediaFormat
-import android.os.Environment
 import android.util.Log
 import android.util.Size
 import android.view.Surface
 import com.jadyn.mediakit.function.createVideoFormat
 import com.jadyn.mediakit.function.handleOutputBuffer
-import java.io.File
-import java.io.FileOutputStream
 import java.io.IOException
 import java.nio.ByteBuffer
-import java.util.*
 
 /**
  *@version:
@@ -30,7 +26,7 @@ import java.util.*
  * */
 class VideoRecorder(private val width: Int, private val height: Int,
                     bitRate: Int,
-                    frameRate: Int = 24,
+                    frameRate: Int = 25,
                     frameInterval: Int = 5,
                     private val isRecording: List<Any>,
                     private val readySurface: (Surface) -> Unit,
@@ -39,7 +35,7 @@ class VideoRecorder(private val width: Int, private val height: Int,
                     private val outputFormatChanged: (MediaFormat) -> Unit = {}) : Runnable {
     private val TAG = "VideoRecorder"
 
-    val mediaFormat = createVideoFormat(Size(width, height), bitRate = bitRate, frameRate = frameRate,
+    private val mediaFormat = createVideoFormat(Size(width, height), bitRate = bitRate, frameRate = frameRate,
             iFrameInterval = frameInterval)
 
     private val encodeCore by lazy {
@@ -73,32 +69,14 @@ class VideoRecorder(private val width: Int, private val height: Int,
         codec.start()
 
         val startTime = System.nanoTime()
-        //日志记录文件
-        val instance = Calendar.getInstance()
-        val log = File(Environment.getExternalStorageDirectory().toString()
-                + "/videoTime:${instance.get(Calendar.DAY_OF_MONTH)}:${instance.get(Calendar.HOUR_OF_DAY)}" +
-                ":${instance.get(Calendar.MINUTE)}.txt")
-        log.setWritable(true)
-        log.createNewFile()
-        val logS = FileOutputStream(log)
-
         while (isRecording.isNotEmpty()) {
             drainEncoder(false)
             frameCount++
-
             encodeCore.draw()
-
-//            encodeCore.swapData(frameCount * mediaFormat.perFrameTime * 1000)
             val curFrameTime = System.nanoTime() - startTime
-            try {
-                logS.write("surfaceTime : ${surfaceTexture.timestamp} & nesc :$curFrameTime \r\n".toByteArray())
-            } catch (e: Exception) {
-
-            }
             encodeCore.swapData(curFrameTime)
         }
         drainEncoder(true)
-        logS.close()
         codec.release()
         encodeCore.release()
         inputSurface.release()

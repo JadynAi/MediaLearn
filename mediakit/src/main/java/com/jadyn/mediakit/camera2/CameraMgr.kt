@@ -7,13 +7,17 @@ import android.graphics.ImageFormat
 import android.graphics.Point
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.*
-import android.media.ImageReader
+import android.media.MediaRecorder
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.util.Size
 import android.view.Surface
-import com.jadyn.mediakit.function.*
+import com.jadyn.ai.kotlind.utils.maxChoose
+import com.jadyn.ai.kotlind.utils.swap
+import com.jadyn.mediakit.function.CompareSizesByArea
+import com.jadyn.mediakit.function.areDimensionsSwapped
+import com.jadyn.mediakit.function.chooseOptimalSize
 import java.util.*
 
 /**
@@ -50,7 +54,7 @@ class CameraMgr(private val activity: Activity, size: Size) {
     private var cameraDevice: CameraDevice? = null
     private var builder: CaptureRequest.Builder? = null
     private var cameraSession: CameraCaptureSession? = null
-    private var imageReader: ImageReader? = null
+    //    private var imageReader: ImageReader? = null
     private val stateCallback by lazy {
         object : CameraDevice.StateCallback() {
             override fun onOpened(camera: CameraDevice?) {
@@ -95,9 +99,9 @@ class CameraMgr(private val activity: Activity, size: Size) {
 
                 val displaySize = Point()
                 activity.windowManager.defaultDisplay.getSize(displaySize)
-                val rotatedPreviewSize = if (swappedDimensions) size.swapp() else size
+                val rotatedPreviewSize = if (swappedDimensions) size.swap() else size
                 val displaySize1 = Size(displaySize.x, displaySize.y)
-                var maxPreviewSize = if (swappedDimensions) displaySize1.swapp() else displaySize1
+                var maxPreviewSize = if (swappedDimensions) displaySize1.swap() else displaySize1
                 maxPreviewSize = maxPreviewSize.maxChoose(DEF_MAX_PREVIEW_SIZE)
 
                 previewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture::class.java),
@@ -105,18 +109,20 @@ class CameraMgr(private val activity: Activity, size: Size) {
                         maxPreviewSize.width, maxPreviewSize.height, largest, displayRotation)
                 this.cameraId = cameraId
 
-                imageReader = ImageReader.newInstance(previewSize.width, previewSize.height
-                        , ImageFormat.JPEG, 2).apply {
-                    setOnImageAvailableListener({
-
-                    }, null)
-                }
+//                imageReader = ImageReader.newInstance(previewSize.width, previewSize.height
+//                        , ImageFormat.JPEG, 2).apply {
+//                    setOnImageAvailableListener({
+//
+//                    }, null)
+//                }
                 flashSupported =
                         characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
                 Log.d(TAG, "phone width ${activity.resources.displayMetrics.widthPixels} " +
                         "height ${activity.resources.displayMetrics.heightPixels}")
                 Log.d(TAG, "display rotation $displayRotation  sensor $sensorOrientation: ")
                 Log.d(TAG, "preview size $previewSize  largest size is $largest")
+                Log.d(TAG, "all size ${Arrays.toString(map.getOutputSizes(SurfaceTexture::class.java))}")
+                Log.d(TAG, "all video size ${Arrays.toString(map.getOutputSizes(MediaRecorder::class.java))}")
                 break
             }
         } catch (e: CameraAccessException) {
@@ -198,21 +204,25 @@ class CameraMgr(private val activity: Activity, size: Size) {
 
     private var startRecordTime = 0L
 
-    fun startRecord(recordSurface: Surface, recordSize: Size) {
+    fun startRecord(recordSurface: Surface) {
         Log.d(TAG, "record thread : ${Thread.currentThread().name} ")
         stopPreview()
         try {
             cameraDevice?.apply {
-                builder = createCaptureRequest(CameraDevice.TEMPLATE_RECORD)
+                builder = createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
                 // 自动对焦 
-                builder?.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
+                builder?.set(CaptureRequest.CONTROL_AF_MODE, 
+                        CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
                 val list = arrayListOf<Surface>()
+
+
+                builder?.addTarget(recordSurface)
+                list.add(recordSurface)
+
                 previewSurface?.apply {
                     list.add(this)
                     builder?.addTarget(this)
                 }
-                builder?.addTarget(recordSurface)
-                list.add(recordSurface)
                 createCaptureSession(list, object : CameraCaptureSession.StateCallback() {
                     override fun onConfigureFailed(session: CameraCaptureSession?) {
                         Log.d(TAG, "record failed ${Thread.currentThread().name}")

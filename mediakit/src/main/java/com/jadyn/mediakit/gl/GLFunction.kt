@@ -85,6 +85,7 @@ fun createProgram(vertexSource: String, fragmentSource: String): Int {
     if (program == 0) {
         throw RuntimeException("create GPU program failed")
     }
+    GLES20.glUseProgram(program)
     return program
 }
 
@@ -110,13 +111,13 @@ fun loadShader(shaderType: Int, source: String): Int {
     return shader
 }
 
-fun getAttrib(program: Int, name: String): Int {
+fun getAttribLocation(program: Int, name: String): Int {
     val location = GLES20.glGetAttribLocation(program, name)
     checkLocation(location, name)
     return location
 }
 
-fun getUniform(program: Int, name: String): Int {
+fun getUniformLocation(program: Int, name: String): Int {
     val uniform = GLES20.glGetUniformLocation(program, name)
     checkLocation(uniform, name)
     return uniform

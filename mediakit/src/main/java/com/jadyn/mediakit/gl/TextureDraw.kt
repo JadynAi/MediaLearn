@@ -3,6 +3,7 @@ package com.jadyn.mediakit.gl
 import android.graphics.SurfaceTexture
 import android.opengl.GLES11Ext
 import android.opengl.GLES20
+import android.util.Log
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
@@ -72,14 +73,10 @@ class TextureDraw(private val program: Int) {
         setUpTexture()
         setupVertexBuffer()
 
-        positionAttr = GLES20.glGetAttribLocation(program, "vPosition")
-        checkLocation(positionAttr, "check vPosition")
-        textureCoordinateAttr = GLES20.glGetAttribLocation(program, "vTexCoordinate")
-        checkLocation(textureCoordinateAttr, "check vTexCoordinate")
-        textureUniform = GLES20.glGetUniformLocation(program, "texture")
-        checkLocation(textureUniform, "check texture")
-        textureTransformUniform = GLES20.glGetUniformLocation(program, "textureTransform")
-        checkLocation(textureTransformUniform, "check textureTransform")
+        positionAttr = getAttribLocation(program, "vPosition")
+        textureCoordinateAttr = getAttribLocation(program, "vTexCoordinate")
+        textureUniform = getUniformLocation(program, "texture")
+        textureTransformUniform = getUniformLocation(program, "textureTransform")
     }
 
     private fun setupVertexBuffer() {
@@ -111,6 +108,7 @@ class TextureDraw(private val program: Int) {
      * */
     fun drawFromSurfaceTexture(st: SurfaceTexture, textureId: Int, isRevert: Boolean = true) {
         st.getTransformMatrix(stMatrix)
+        Log.d("cece", " matrix : ${stMatrix.toS()}")
         if (isRevert) {
             stMatrix[5] = -stMatrix[5]
             stMatrix[13] = 1.0f - stMatrix[13]
@@ -118,7 +116,6 @@ class TextureDraw(private val program: Int) {
 
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f)
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
-        GLES20.glUseProgram(program)
 
         GLES20.glEnableVertexAttribArray(positionAttr)
         GLES20.glVertexAttribPointer(positionAttr, 2, GLES20.GL_FLOAT, false, 0, vertexBuffer)
@@ -126,7 +123,7 @@ class TextureDraw(private val program: Int) {
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId)
         GLES20.glUniform1i(textureUniform, 0)
-        
+
         GLES20.glEnableVertexAttribArray(textureCoordinateAttr)
         GLES20.glVertexAttribPointer(textureCoordinateAttr, 4, GLES20.GL_FLOAT, false, 0, textureBuffer)
 
@@ -138,4 +135,13 @@ class TextureDraw(private val program: Int) {
         GLES20.glDisableVertexAttribArray(textureCoordinateAttr)
         unBindTexture()
     }
+}
+
+
+fun FloatArray.toS(): String {
+    val s = StringBuffer("[")
+    this.forEach {
+        s.append("$it:")
+    }
+    return s.toString()
 }

@@ -112,3 +112,16 @@ fun MediaCodec.BufferInfo.copy(): MediaCodec.BufferInfo {
     copy.set(offset, size, presentationTimeUs, flags)
     return copy
 }
+
+/**
+ *  use ByteBuffer data to generate VideoPacket
+ * */
+fun ByteBuffer.genData(): ByteArray {
+    val byteArray = ByteArray(remaining())
+    get(byteArray, 0, byteArray.size)
+//    Log.d(TAG, "video callback present: ${bufferInfo.presentationTimeUs}")
+//    Log.d(TAG, "video1 recorder data: $data")
+    return byteArray
+}
+
+fun MediaCodec.BufferInfo.toS() = "size: $size offset: $offset present: $presentationTimeUs"

@@ -4,7 +4,7 @@ import android.graphics.Bitmap
 import android.opengl.GLES20
 import android.opengl.GLUtils
 import android.util.Size
-import com.jadyn.mediakit.function.createFloatBuffer
+import com.jadyn.ai.kotlind.utils.createFloatBuffer
 import com.jadyn.mediakit.gl.*
 import java.nio.FloatBuffer
 import javax.microedition.khronos.opengles.GL10
@@ -92,11 +92,11 @@ class EncodeProgram(private val size: Size) {
     }
 
     private fun initLocation() {
-        mAPositionLocation = getAttrib(program, "a_Position")
-        val uMatrixLocation = getUniform(program, "u_Matrix")
+        mAPositionLocation = getAttribLocation(program, "a_Position")
+        val uMatrixLocation = getUniformLocation(program, "u_Matrix")
 
-        aTextCoordLocation = getAttrib(program, "a_TexCoord")
-        uTextureUnitLocation = getUniform(program, "u_TextureUnit")
+        aTextCoordLocation = getAttribLocation(program, "a_TexCoord")
+        uTextureUnitLocation = getUniformLocation(program, "u_TextureUnit")
 
         textureID = buildTextureId(GLES20.GL_TEXTURE_2D)
 

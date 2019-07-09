@@ -13,8 +13,8 @@ import android.view.TextureView
 import android.view.View
 import com.jadyn.ai.medialearn.R
 import com.jadyn.ai.medialearn.permissions.RxPermissions
-import com.jadyn.mediakit.camera2.Camera2Recorder
 import com.jadyn.mediakit.camera2.CameraMgr
+import com.jadyn.mediakit.camera2.VideoGen
 import kotlinx.android.synthetic.main.activity_camera2_record.*
 import java.io.File
 import java.util.*
@@ -50,7 +50,7 @@ class Camera2RecordActivity : AppCompatActivity() {
 
     private val videoRecorder by lazy {
         //        1080, 1920, 4000000
-        Camera2Recorder()
+        VideoGen()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,9 +70,10 @@ class Camera2RecordActivity : AppCompatActivity() {
                         "test${instance.get(Calendar.DAY_OF_MONTH)}" +
                                 ":${instance.get(Calendar.HOUR_OF_DAY)}" +
                                 ":${instance.get(Calendar.MINUTE)}.mp4")
-                videoRecorder.start(720, 1080, 2000000, surfaceCallback = {
+                
+                videoRecorder.start(1080, 1440, 8000000, surfaceCallback = {
                     // 录制的时候根据，定制的视频尺寸，重新调整PreviewSurface的数据
-                    cameraMgr.startRecord(it, Size(1080, 1920))
+                    cameraMgr.startRecord(it)
                     runOnUiThread {
                         record_video.visibility = View.GONE
                         take_photo.visibility = View.GONE
@@ -112,14 +113,14 @@ class Camera2RecordActivity : AppCompatActivity() {
         if (!::cameraMgr.isInitialized) {
             cameraMgr = CameraMgr(this@Camera2RecordActivity, Size(width, height))
         }
-        val surface = camera2_record_texture.surfaceTexture
+        val texture = camera2_record_texture.surfaceTexture
         // texture view 自动配置宽高
         camera2_record_texture.setAspectRatio(cameraMgr.previewSize)
         configureTextureTransform(camera2_record_texture.width,
                 camera2_record_texture.height)
-        cameraMgr.openCamera(Surface(surface))
-        surface?.setDefaultBufferSize(cameraMgr.previewSize.height,
-                cameraMgr.previewSize.width)
+        cameraMgr.openCamera(Surface(texture))
+        texture?.setDefaultBufferSize(cameraMgr.previewSize.width,
+                cameraMgr.previewSize.height)
     }
 
 

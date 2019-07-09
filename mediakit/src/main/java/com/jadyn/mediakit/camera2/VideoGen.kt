@@ -3,12 +3,13 @@ package com.jadyn.mediakit.camera2
 import android.media.MediaFormat
 import android.util.Log
 import android.view.Surface
+import com.jadyn.ai.kotlind.utils.safeList
 import com.jadyn.mediakit.audio.AudioEncoder
 import com.jadyn.mediakit.audio.AudioPacket
 import com.jadyn.mediakit.audio.AudioRecorder
 import com.jadyn.mediakit.function.copy
 import com.jadyn.mediakit.function.createAACFormat
-import com.jadyn.mediakit.function.safeList
+import com.jadyn.mediakit.function.genData
 import com.jadyn.mediakit.mux.Muxer
 import com.jadyn.mediakit.video.encode.VideoRecorder
 import java.util.concurrent.ConcurrentLinkedDeque
@@ -23,16 +24,12 @@ import java.util.concurrent.Executors
  */
 
 
-/**
- *
- *  isRecording 使用数组来判定是否需要停止
- * */
-class Camera2Recorder {
+class VideoGen {
 
     private val TAG = "Camera2Recorder"
     private val isRecording = arrayListOf<Int>()
     //-----video-------
-    private val recoderThread by lazy {
+    private val recorderThread by lazy {
         Executors.newFixedThreadPool(3)
     }
     //-----audio-------
@@ -61,10 +58,7 @@ class Camera2Recorder {
 
         val videoRecorder = VideoRecorder(width, height, bitRate, frameRate,
                 frameInterval, isRecording, surfaceCallback, { frame, timeStamp, bufferInfo, data ->
-            val byteArray = ByteArray(data.remaining())
-            data.get(byteArray, 0, byteArray.size)
-            Log.d(TAG, "video callback present: ${bufferInfo.presentationTimeUs}")
-            Log.d(TAG, "video1 recorder data: $data")
+            val byteArray = data.genData()
             val videoPacket = VideoPacket(byteArray, data.remaining(), timeStamp, frame, bufferInfo.copy())
             mux.pushVideo(videoPacket)
         }) {
@@ -72,17 +66,15 @@ class Camera2Recorder {
             videoFormats.add(it)
         }
         // 执行视频录制
-        recoderThread.execute(videoRecorder)
+        recorderThread.execute(videoRecorder)
         // 执行音频录制，回调PCM数据
-        recoderThread.execute(AudioRecorder(isRecoding = isRecording, dataCallBack = { size, data ->
+        recorderThread.execute(AudioRecorder(isRecoding = isRecording, dataCallBack = { size, data ->
             Log.d(TAG, "audio pcm size : $size data :${data.size}: ")
             audioQueue.add(data)
         }))
         // 执行音频编码，将PCM数据编码为AAC数据
-        recoderThread.execute(AudioEncoder(isRecording, createAACFormat(128000),
+        recorderThread.execute(AudioEncoder(isRecording, createAACFormat(128000),
                 audioQueue, { byteBuffer, bufferInfo ->
-            byteBuffer.position(bufferInfo.offset)
-            byteBuffer.limit(bufferInfo.offset + bufferInfo.size)
             val data = ByteArray(byteBuffer.remaining())
             byteBuffer.get(data, 0, data.size)
             val audioPacket = AudioPacket(data, data.size, bufferInfo.copy())
@@ -100,7 +92,8 @@ class Camera2Recorder {
     }
 
     fun release() {
-        recoderThread.shutdownNow()
+        stop()
+        recorderThread.shutdown()
         mux.release()
     }
 } 

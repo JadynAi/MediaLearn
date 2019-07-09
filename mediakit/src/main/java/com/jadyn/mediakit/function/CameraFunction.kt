@@ -4,6 +4,7 @@ import android.hardware.Camera
 import android.util.Log
 import android.util.Size
 import android.view.Surface
+import com.jadyn.ai.kotlind.utils.swap
 import java.lang.Long
 import java.util.*
 
@@ -79,7 +80,7 @@ fun chooseOptimalSize(choices: Array<Size>, textureViewWidth: Int, textureViewHe
     ) else choices[0])
     // 如果window的旋转是0 或者 180，那么就将size的width和height置换
     return if (displayRotation == Surface.ROTATION_0 || displayRotation == Surface.ROTATION_180) 
-        s.swapp() else s
+        s.swap() else s
 }
 
 /**
