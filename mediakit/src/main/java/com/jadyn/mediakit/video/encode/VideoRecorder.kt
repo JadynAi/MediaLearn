@@ -57,6 +57,7 @@ class VideoRecorder(private val width: Int, private val height: Int,
 
     override fun run() {
         try {
+            // Mime 决定输出数据格式，这里的AVC代表H264
             codec = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_VIDEO_AVC)
         } catch (e: IOException) {
             throw RuntimeException("code c init failed $e")

@@ -209,12 +209,11 @@ class CameraMgr(private val activity: Activity, size: Size) {
         stopPreview()
         try {
             cameraDevice?.apply {
-                builder = createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
+                builder = createCaptureRequest(CameraDevice.TEMPLATE_RECORD)
                 // 自动对焦 
                 builder?.set(CaptureRequest.CONTROL_AF_MODE, 
                         CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
                 val list = arrayListOf<Surface>()
-
 
                 builder?.addTarget(recordSurface)
                 list.add(recordSurface)
