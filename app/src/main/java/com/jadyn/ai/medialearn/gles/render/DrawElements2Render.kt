@@ -8,18 +8,17 @@ import com.jadyn.mediakit.gl.createProgram
 import com.jadyn.mediakit.gl.getAttribLocation
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.nio.IntBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
 /**
  *@version:
- *@FileDescription: 测试DrawElements
+ *@FileDescription: DrawElements，使用索引缓冲对象
  *@Author:Jing
  *@Since:2019-07-09
  *@ChangeList:
  */
-class DrawElementsRender : GLSurfaceView.Renderer {
+class DrawElements2Render : GLSurfaceView.Renderer {
     private val VERTEX_SHADER =
             """
                 attribute vec4 position;
@@ -35,21 +34,6 @@ class DrawElementsRender : GLSurfaceView.Renderer {
                     gl_FragColor = vec4(0, 1, 0, 1);
                 }
             """.trimIndent()
-
-    // 最原始的写法，要绘制6个顶点，两个三角形。但是有两个重复值
-    private val rawVertex by lazy {
-        floatArrayOf(
-                // 左侧三角
-                -0.8f, 1f, 0f,
-                -0.8f, -1f, 0f,
-                0.8f, -1f, 0f,
-
-                // 右侧三角，两个三角拼成一个长方形
-                0.8f, -1f, 0f,
-                0.8f, 1f, 0f,
-                -0.8f, 1f, 0f
-        )
-    }
 
     private val vertex by lazy {
         floatArrayOf(
@@ -76,19 +60,10 @@ class DrawElementsRender : GLSurfaceView.Renderer {
         buffer
     }
 
-    //------IntBuffer测试-----    
-     private val indicesInts by lazy {
-        intArrayOf(0, 1, 2, 2, 3, 0)
+    private val EBO by lazy {
+        IntArray(1)
     }
 
-    private val indicesIntBuffer by lazy {
-        val buffer = IntBuffer.allocate(indices.size)
-                .put(indicesInts)
-        buffer.position(0)
-        buffer
-    }
-    
-    
     private val vertexBuffer by lazy {
         val floatBuffer = createFloatBuffer(vertex)
         Log.d("cece", "buffer pos : ${floatBuffer.position()}")
@@ -98,16 +73,8 @@ class DrawElementsRender : GLSurfaceView.Renderer {
     override fun onDrawFrame(gl: GL10?) {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
 
-        /**
-         * 使用索引缓冲渲染
-         * */
-        // Type 设置为GL_UNSIGNED_BYTE，那么indicesBuffer的数据类型就为ByteBuffer
         GLES20.glDrawElements(GLES20.GL_TRIANGLES,
-                indices.size, GLES20.GL_UNSIGNED_BYTE, indicesBuffer)
-
-        // Int 类型次序，测试可行
-//        GLES20.glDrawElements(GLES20.GL_TRIANGLES,
-//                indicesInts.size, GLES20.GL_UNSIGNED_INT, indicesIntBuffer)
+                6, GLES20.GL_UNSIGNED_BYTE, 0)
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -126,5 +93,12 @@ class DrawElementsRender : GLSurfaceView.Renderer {
         GLES20.glVertexAttribPointer(pos, 3, GLES20.GL_FLOAT, false,
                 12, vertexBuffer)
 
+        // 创建索引缓冲对象
+        GLES20.glGenBuffers(1, EBO, 0)
+
+        // 复制索引数组到索引缓冲
+        GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, EBO[0])
+        GLES20.glBufferData(GLES20.GL_ELEMENT_ARRAY_BUFFER, indices.size,
+                indicesBuffer, GLES20.GL_STATIC_DRAW)
     }
 }

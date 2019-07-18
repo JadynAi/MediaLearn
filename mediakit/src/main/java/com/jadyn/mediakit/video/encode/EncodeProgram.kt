@@ -67,9 +67,11 @@ class EncodeProgram(private val size: Size) {
      */
     private val texVertex = floatArrayOf(0f, 1f, 0f, 0f, 1f, 0f, 1f, 1f)
     private val projectionMatrix = floatArrayOf(
-            1f, 0f, 0f, 0f, 0f,
-            1f, 0f, 0f, 0f, 0f,
-            1f, 0f, 0f, 0f, 0f, 1f)
+            1f, 0f, 0f, 
+            0f, 0f, 1f,
+            0f, 0f, 0f,
+            0f, 1f, 0f,
+            0f, 0f, 0f, 1f)
     private var vertexData: FloatBuffer
     private var texVertexBuffer: FloatBuffer
     private var mAPositionLocation = 0
@@ -87,7 +89,6 @@ class EncodeProgram(private val size: Size) {
 
     fun build() {
         program = createProgram(VERTEX_SHADER, FRAGMENT_SHADER)
-        GLES20.glUseProgram(program)
         initLocation()
     }
 

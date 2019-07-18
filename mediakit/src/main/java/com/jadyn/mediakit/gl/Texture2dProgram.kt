@@ -1,6 +1,7 @@
 package com.jadyn.mediakit.gl
 
 import android.graphics.SurfaceTexture
+import android.opengl.GLES20
 import android.util.Log
 
 /**
@@ -78,5 +79,9 @@ class Texture2dProgram {
 
     fun drawFrame(st: SurfaceTexture, isRevert: Boolean = true) {
         textureDraw.drawFromSurfaceTexture(st, textureId, isRevert)
+    }
+
+    fun release() {
+        GLES20.glDeleteTextures(1, intArrayOf(textureId), 0)
     }
 }

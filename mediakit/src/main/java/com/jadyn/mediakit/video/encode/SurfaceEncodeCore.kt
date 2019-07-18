@@ -10,6 +10,8 @@ import com.jadyn.mediakit.gl.*
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
+import java.util.concurrent.Semaphore
+import java.util.concurrent.TimeUnit
 
 /**
  *@version:
@@ -30,8 +32,9 @@ class SurfaceEncodeCore(private val width: Int, private val height: Int) {
         Texture2dProgram()
     }
 
-    private val frameSyncObject = Object()
-    private var frameAvailable: Boolean = false
+    private val semaphore by lazy {
+        Semaphore(0)
+    }
 
     fun buildEGLSurface(surface: Surface): SurfaceTexture {
         Log.d(TAG, "build egl thread: ${Thread.currentThread().name}")
@@ -39,16 +42,14 @@ class SurfaceEncodeCore(private val width: Int, private val height: Int) {
         eglEnv.setUpEnv().buildWindowSurface(surface)
         val textureId = encodeProgram.genTextureId()
         surfaceTexture = SurfaceTexture(textureId)
-        surfaceTexture!!.setDefaultBufferSize(width, height)
+        /**
+         * 这里必须着重标识！
+         * 解决Camera2画面变形的原因，只需要把设置的宽高反过来，因为camera2返回来的匹配列表本来就是宽高反过来的
+         * */
+        surfaceTexture!!.setDefaultBufferSize(height, width)
         // 监听获取新的图像帧
         surfaceTexture!!.setOnFrameAvailableListener {
-            synchronized(frameSyncObject) {
-                if (frameAvailable) {
-                    throw RuntimeException("mFrameAvailable already set, frame could be dropped")
-                }
-                frameAvailable = true
-                frameSyncObject.notifyAll()
-            }
+            semaphore.release()
         }
         return surfaceTexture!!
     }
@@ -65,25 +66,15 @@ class SurfaceEncodeCore(private val width: Int, private val height: Int) {
     }
 
     private fun awaitNewImage() {
-        val timeoutMs: Long = 2500
-        synchronized(frameSyncObject) {
-            while (!frameAvailable) {
-                try {
-                    frameSyncObject.wait(timeoutMs)
-                    if (!frameAvailable) {
-                        throw RuntimeException("Camera frame wait timed out")
-                    }
-                } catch (e: InterruptedException) {
-                    throw RuntimeException(e)
-                }
-            }
-            frameAvailable = false
+        if (!semaphore.tryAcquire(500, TimeUnit.MILLISECONDS)) {
+            throw RuntimeException("Camera frame wait timed out")
         }
         checkGlError("before updateTexImage")
         surfaceTexture!!.updateTexImage()
     }
 
     fun release() {
+        encodeProgram.release()
         eglEnv.release()
         surfaceTexture?.release()
         surfaceTexture = null
@@ -217,11 +208,11 @@ class SurfaceProgram {
 
     private val triangleVerticesData = floatArrayOf(
             // X, Y, Z, U, V
-            -1.0f, -1.0f, 0f, 0f, 0f,
-            1.0f, -1.0f, 0f, 1f,
-            0f, -1.0f, 1.0f, 0f,
-            0f, 1f, 1.0f, 1.0f,
-            0f, 1f, 1f)
+            -1.0f, -1.0f, 0f, 0f,
+            0f, 1.0f, -1.0f, 0f,
+            1f, 0f, -1.0f, 1.0f,
+            0f, 0f, 1f, 1.0f,
+            1.0f, 0f, 1f, 1f)
 
     private val triangleVertices: FloatBuffer
 

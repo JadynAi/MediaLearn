@@ -73,6 +73,16 @@ class EglEnv(private val width: Int, private val height: Int) {
         return this
     }
 
+    fun buildEGLSurface(surface: Surface? = null) {
+        surface?.apply {
+            Log.d("EGLSurface", "build window surface")
+            buildWindowSurface(this)
+            return
+        }
+        Log.d("EGLSurface", "build off screen surface")
+        buildOffScreenSurface()
+    }
+
     /**
      * 创建离线Surface
      * */
@@ -128,6 +138,10 @@ class EglEnv(private val width: Int, private val height: Int) {
         checkEglError("eglPresentationTimeANDROID")
     }
 
+    /**
+     * EGL是双缓冲机制，Back Frame Buffer和Front Frame Buffer，正常绘制目标都是Back Frame Buffer
+     * 将绘制完毕的FrameBuffer交换到Front Frame Buffer 并显示出来
+     * */
     fun swapBuffers(): Boolean {
         val result = EGL14.eglSwapBuffers(eglDisplay, eglSurface)
         checkEglError("eglSwapBuffers")

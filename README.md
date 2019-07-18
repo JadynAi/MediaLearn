@@ -1,5 +1,5 @@
 # MediaLearn
-`MediaLearn`是一个旨在分享音视频开发知识的项目，目前仅仅局限于Android平台，后续会逐步扩展。<br>因为项目是以学习为目的，所以暂时不支持作为开发工具库使用，因为有少部分的代码具有一点实验性质，并没有特别好地进行封装。但大部分的功能我都讲耦合性处理地很低，譬如[Audio模块](https://github.com/JadynAi/MediaLearn/tree/master/mediakit/src/main/java/com/jadyn/mediakit/audio)。而[视频模块中](https://github.com/JadynAi/MediaLearn/tree/master/mediakit/src/main/java/com/jadyn/mediakit/video)，解码相关的功能趋近完整，但有些许功能我仍在持续不断地优化。<br>**本项目仅供学习参考使用**
+`MediaLearn`是一个旨在分享音视频开发知识的项目，目前仅仅局限于Android平台，后续会逐步扩展。<br>因为项目是以学习为目的，所以暂时不支持作为开发工具库使用，因为有少部分的代码具有一点实验性质，并没有特别好地进行封装。但大部分的功能我都将耦合性处理地很低，譬如[Audio模块](https://github.com/JadynAi/MediaLearn/tree/master/mediakit/src/main/java/com/jadyn/mediakit/audio)。而[视频模块中](https://github.com/JadynAi/MediaLearn/tree/master/mediakit/src/main/java/com/jadyn/mediakit/video)，解码以及录制相关的功能趋近完整，可以做参考使用。但有一些功能我仍在持续不断地优化。<br>**本项目仅供学习参考使用**
 
 ## Camera2 视频录制
 

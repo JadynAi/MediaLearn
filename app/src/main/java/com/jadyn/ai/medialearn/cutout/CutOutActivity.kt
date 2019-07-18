@@ -5,6 +5,7 @@ import android.os.Environment
 import android.support.v7.app.AppCompatActivity
 import android.text.TextUtils
 import android.widget.ArrayAdapter
+import com.jadyn.ai.kotlind.function.ui.getResDrawable
 import com.jadyn.ai.medialearn.R
 import com.jadyn.mediakit.video.decode.VideoDecoder2Compat
 import kotlinx.android.synthetic.main.activity_cutout.*
@@ -31,6 +32,8 @@ class CutOutActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_cutout)
+        
+        bg.setImageDrawable(getResDrawable(R.drawable.girl))
 
         val listFiles = File(effects).listFiles().map {
             it.absolutePath

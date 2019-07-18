@@ -13,6 +13,8 @@ import com.jadyn.mediakit.gl.Texture2dProgram
 import com.jadyn.mediakit.gl.checkGlError
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.concurrent.Semaphore
+import java.util.concurrent.TimeUnit
 
 /**
  *@version:
@@ -21,7 +23,7 @@ import java.nio.ByteOrder
  *@Since:2019/2/18
  *@ChangeList:
  */
-class GLCore{
+class GLCore {
 
     private lateinit var surface: Surface
     private lateinit var surfaceTexture: SurfaceTexture
@@ -33,8 +35,9 @@ class GLCore{
         Texture2dProgram()
     }
 
-    private val frameSyncObject = java.lang.Object()
-    private var frameAvailable: Boolean = false
+    private val semaphore by lazy {
+        Semaphore(0)
+    }
 
     fun fkOutputSurface(width: Int, height: Int): Surface? {
         if (::surface.isInitialized) {
@@ -45,22 +48,17 @@ class GLCore{
         surfaceTexture = SurfaceTexture(texture2dProgram.genTextureId())
         surfaceTexture.setOnFrameAvailableListener {
             Log.d(TAG, "new frame available")
-            synchronized(frameSyncObject) {
-                if (frameAvailable) {
-                    throw RuntimeException("mFrameAvailable already set, frame could be dropped")
-                }
-                frameAvailable = true
-                frameSyncObject.notifyAll()
-            }
+            semaphore.release()
         }
         surface = Surface(surfaceTexture)
+        // ARGB——8888，Each pixel is stored on 4 bytes
         pixelBuf = ByteBuffer.allocate(width * height * 4)
         pixelBuf.order(ByteOrder.LITTLE_ENDIAN)
         return surface
     }
 
     fun codeToFrame(bufferInfo: MediaCodec.BufferInfo, outputBufferId: Int,
-                             decoder: MediaCodec): Bitmap? {
+                    decoder: MediaCodec): Bitmap? {
         val doRender = bufferInfo.size != 0
         // CodeC搭配输出Surface时，调用此方法将数据及时渲染到Surface上
         decoder.releaseOutputBuffer(outputBufferId, doRender)
@@ -93,19 +91,10 @@ class GLCore{
     fun generateFrame() = produceBitmap()
 
     private fun awaitNewImage() {
-        val timeout_ms = 500L
-        synchronized(frameSyncObject) {
-            while (!frameAvailable) {
-                try {
-                    frameSyncObject.wait(timeout_ms)
-                    if (!frameAvailable) {
-                        throw RuntimeException("Camera frame wait timed out")
-                    }
-                } catch (e: InterruptedException) {
-                    throw RuntimeException(e)
-                }
-            }
-            frameAvailable = false
+        try {
+            semaphore.tryAcquire(500, TimeUnit.MILLISECONDS)
+        } catch (e: Exception) {
+            throw RuntimeException(e)
         }
         checkGlError("before updateTexImage")
         surfaceTexture.updateTexImage()
@@ -119,12 +108,14 @@ class GLCore{
     }
 
     private fun produceBitmap(): Bitmap {
+        val s = System.currentTimeMillis()
         pixelBuf.rewind()
         GLES20.glReadPixels(0, 0, size.width, size.height, GLES20.GL_RGBA,
                 GLES20.GL_UNSIGNED_BYTE, pixelBuf)
         val bmp = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
         pixelBuf.rewind()
         bmp.copyPixelsFromBuffer(pixelBuf)
+        Log.d(TAG, "produce bitmap cost : ${System.currentTimeMillis() - s}")
         return bmp
     }
 

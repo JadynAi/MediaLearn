@@ -14,6 +14,7 @@ import com.jadyn.ai.medialearn.encode.EncodeFrameActivity
 import com.jadyn.ai.medialearn.gles.GLActivity
 import com.jadyn.ai.medialearn.permissions.RxPermissions
 import kotlinx.android.synthetic.main.activity_main.*
+import java.util.concurrent.Semaphore
 
 class MainActivity : AppCompatActivity() {
 
@@ -88,20 +89,20 @@ class MainActivity : AppCompatActivity() {
 
         }
 
+        val semaphore = Semaphore(0)
+        
         tv_gl.setOnClickListener {
             start<GLActivity>()
+//            semaphore.release()
         }
         
         tv_cutout.click {
             start<CutOutActivity>()
 //            val s = System.currentTimeMillis()
-//            Log.d("cece", "start :$s ")
 //            val get = Single.fromCallable {
-//                Thread.sleep(5000)
 //                Log.d("cece", "blocking : ${Thread.currentThread().name}")
 //                1
-//            }.subscribeOn(Schedulers.io()).blockingGet()
-//            Log.d("cece", "start :${System.currentTimeMillis() - s} and $get")
+//            }.subscribeOn(Schedulers.io()).subscribe()
         }
         
     }

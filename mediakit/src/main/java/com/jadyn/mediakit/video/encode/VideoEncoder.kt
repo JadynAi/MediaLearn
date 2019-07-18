@@ -57,7 +57,7 @@ class VideoEncoder(private val width: Int, private val height: Int,
 
     fun start(outputPath: String) {
         val file = File(outputPath)
-        if (file?.exists()) {
+        if (file.exists()) {
             file.delete()
         }
         codec.configure(mediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)

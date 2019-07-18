@@ -30,6 +30,8 @@ fun buildTextureId(target: Int = GLES11Ext.GL_TEXTURE_EXTERNAL_OES): Int {
 }
 
 private fun bindSetTexture(target: Int, id: Int) {
+    // 这里的绑定纹理是将GPU的纹理数据和ID对应起来，载入纹理到此ID处
+    // 渲染时绑定纹理，是绑定纹理ID到激活的纹理单元
     GLES20.glBindTexture(target, id)
     checkGlError("bind texture : $id check")
 
