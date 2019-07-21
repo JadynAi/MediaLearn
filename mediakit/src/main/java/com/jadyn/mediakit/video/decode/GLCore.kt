@@ -10,6 +10,7 @@ import android.view.Surface
 import com.jadyn.mediakit.gl.EglEnv
 import com.jadyn.mediakit.gl.Texture2dProgram
 import com.jadyn.mediakit.gl.checkGlError
+import com.jadyn.mediakit.gl.isSupportPBO
 import com.jadyn.mediakit.video.decode.pixg.FBOPixelsGen
 import com.jadyn.mediakit.video.decode.pixg.PixelsGen
 import java.util.concurrent.Semaphore
@@ -45,7 +46,7 @@ class GLCore {
         }
         size = Size(width, height)
         EglEnv(width, height).setUpEnv().buildOffScreenSurface()
-        pixelGen = FBOPixelsGen(size, false)
+        pixelGen = FBOPixelsGen(size, isSupportPBO())
         surfaceTexture = SurfaceTexture(texture2dProgram.genTextureId())
         surfaceTexture.setOnFrameAvailableListener {
             Log.d(TAG, "new frame available")
