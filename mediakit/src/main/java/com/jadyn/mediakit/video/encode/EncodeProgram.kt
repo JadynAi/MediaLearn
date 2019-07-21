@@ -6,7 +6,7 @@ import android.opengl.GLUtils
 import android.util.Size
 import com.jadyn.ai.kotlind.utils.createFloatBuffer
 import com.jadyn.mediakit.gl.*
-import java.nio.FloatBuffer
+import java.nio.IntBuffer
 import javax.microedition.khronos.opengles.GL10
 
 /**
@@ -28,13 +28,12 @@ class EncodeProgram(private val size: Size) {
      *
      * */
     private val VERTEX_SHADER = """
-                uniform mat4 u_Matrix;
-                attribute vec4 a_Position;
-                attribute vec2 a_TexCoord;
-                varying vec2 v_TexCoord;
+                attribute vec4 position;
+                attribute vec2 aTexCoord;
+                varying vec2 vTexCoord;
                 void main() {
-                    v_TexCoord = a_TexCoord;
-                    gl_Position = u_Matrix * a_Position;
+                    vTexCoord = aTexCoord;
+                    gl_Position = position;
                 }
         """
 
@@ -49,43 +48,53 @@ class EncodeProgram(private val size: Size) {
      * */
     private val FRAGMENT_SHADER = """
                 precision mediump float;
-                varying vec2 v_TexCoord;
-                uniform sampler2D u_TextureUnit;
+                varying vec2 vTexCoord;
+                uniform sampler2D texture;
                 void main() {
-                    gl_FragColor = texture2D(u_TextureUnit, v_TexCoord);
+                    gl_FragColor = texture2D(texture, vTexCoord);
                 }
                 """
 
-    private val pointData = floatArrayOf(
-            2 * -0.5f, -0.5f * 2,
-            2 * -0.5f, 0.5f * 2,
-            2 * 0.5f, 0.5f * 2,
-            2 * 0.5f, -0.5f * 2)
 
-    /**
-     * 纹理坐标
-     */
-    private val texVertex = floatArrayOf(0f, 1f, 0f, 0f, 1f, 0f, 1f, 1f)
-    private val projectionMatrix = floatArrayOf(
-            1f, 0f, 0f, 
-            0f, 0f, 1f,
-            0f, 0f, 0f,
-            0f, 1f, 0f,
-            0f, 0f, 0f, 1f)
-    private var vertexData: FloatBuffer
-    private var texVertexBuffer: FloatBuffer
-    private var mAPositionLocation = 0
-    private var uTextureUnitLocation = 0
     private var program: Int = 0
-    private var aTextCoordLocation = 0
-    
+
+    private val vertexBuffer by lazy {
+        val data = floatArrayOf(
+                -1f, 1f, 0f,
+                -1f, -1f, 0f,
+                1f, -1f, 0f,
+                1f, 1f, 0f
+        )
+        val buffer = createFloatBuffer(data)
+        buffer.position(0)
+        buffer
+    }
+
+    private val indexBuffer by lazy {
+        val data = intArrayOf(0, 1, 2, 0, 3, 2)
+        val allocate = IntBuffer.allocate(data.size).put(data)
+        allocate.position(0)
+        allocate
+    }
+
+    private val texBuffer by lazy {
+        val buffer = createFloatBuffer(floatArrayOf(
+                0f, 0f,
+                0f, 1f,
+                1f, 1f,
+                1f, 0f
+        ))
+        buffer.position(0)
+        buffer
+    }
+
+    private var posHandle: Int = -1
+    private var texHandle: Int = -1
+    private var textureHandle: Int = -1
+
     var textureID = 0
         private set
 
-    init {
-        vertexData = createFloatBuffer(pointData)
-        texVertexBuffer = createFloatBuffer(texVertex)
-    }
 
     fun build() {
         program = createProgram(VERTEX_SHADER, FRAGMENT_SHADER)
@@ -93,52 +102,46 @@ class EncodeProgram(private val size: Size) {
     }
 
     private fun initLocation() {
-        mAPositionLocation = getAttribLocation(program, "a_Position")
-        val uMatrixLocation = getUniformLocation(program, "u_Matrix")
+        posHandle = getAttribLocation(program, "position")
+        texHandle = getAttribLocation(program, "aTexCoord")
 
-        aTextCoordLocation = getAttribLocation(program, "a_TexCoord")
-        uTextureUnitLocation = getUniformLocation(program, "u_TextureUnit")
+        textureHandle = getUniformLocation(program, "texture")
 
         textureID = buildTextureId(GLES20.GL_TEXTURE_2D)
 
-        // 加载纹理坐标
-        texVertexBuffer.position(0)
-        GLES20.glVertexAttribPointer(aTextCoordLocation, 2, GLES20.GL_FLOAT,
-                false, 0, texVertexBuffer)
-        GLES20.glEnableVertexAttribArray(aTextCoordLocation)
-
         GLES20.glClearColor(0f, 0f, 0f, 0f)
         // 开启纹理透明混合，这样才能绘制透明图片
-        GLES20.glEnable(GL10.GL_BLEND)
-        GLES20.glBlendFunc(GL10.GL_ONE, GL10.GL_ONE_MINUS_SRC_ALPHA)
+//        GLES20.glEnable(GL10.GL_BLEND)
+//        GLES20.glBlendFunc(GL10.GL_ONE, GL10.GL_ONE_MINUS_SRC_ALPHA)
 
         GLES20.glViewport(0, 0, size.width, size.height)
-//        Matrix.orthoM(projectionMatrix, 0, -size.aspectRatio(), size.aspectRatio(), -1f,
-//                1f, -1f, 1f)
-        GLES20.glUniformMatrix4fv(uMatrixLocation, 1, false, projectionMatrix, 0)
     }
 
     fun renderBitmap(b: Bitmap) {
-        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, b, 0)
-//        GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D)
-        b.recycle()
-        unBindTexture()
-
         GLES20.glClear(GL10.GL_COLOR_BUFFER_BIT)
-        vertexData.position(0)
-
-        GLES20.glVertexAttribPointer(mAPositionLocation, 2,
-                GLES20.GL_FLOAT, false, 0, vertexData)
-        GLES20.glEnableVertexAttribArray(mAPositionLocation)
 
         // 设置当前活动的纹理单元为纹理单元0
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
-
         // 将纹理ID绑定到当前活动的纹理单元上
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureID)
 
-        GLES20.glUniform1i(uTextureUnitLocation, 0)
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, pointData.size / 2)
+        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, b, 0)
+        b.recycle()
+        unBindTexture()
+
+        // 顶点坐标
+        GLES20.glEnableVertexAttribArray(posHandle)
+        GLES20.glVertexAttribPointer(posHandle, 3, GLES20.GL_FLOAT,
+                false, 12, vertexBuffer)
+
+        // 纹理坐标
+        GLES20.glEnableVertexAttribArray(texHandle)
+        GLES20.glVertexAttribPointer(texHandle, 2, GLES20.GL_FLOAT,
+                false, 0, texBuffer)
+
+        GLES20.glUniform1i(texHandle, 0)
+        GLES20.glDrawElements(GLES20.GL_TRIANGLES, 6,
+                GLES20.GL_UNSIGNED_INT, indexBuffer)
         unBindTexture()
     }
 }

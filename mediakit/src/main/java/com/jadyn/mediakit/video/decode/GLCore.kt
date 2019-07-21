@@ -4,15 +4,14 @@ import android.content.ContentValues.TAG
 import android.graphics.Bitmap
 import android.graphics.SurfaceTexture
 import android.media.MediaCodec
-import android.opengl.GLES20
 import android.util.Log
 import android.util.Size
 import android.view.Surface
 import com.jadyn.mediakit.gl.EglEnv
 import com.jadyn.mediakit.gl.Texture2dProgram
 import com.jadyn.mediakit.gl.checkGlError
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
+import com.jadyn.mediakit.video.decode.pixg.FBOPixelsGen
+import com.jadyn.mediakit.video.decode.pixg.PixelsGen
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 
@@ -27,7 +26,8 @@ class GLCore {
 
     private lateinit var surface: Surface
     private lateinit var surfaceTexture: SurfaceTexture
-    private lateinit var pixelBuf: ByteBuffer
+
+    private lateinit var pixelGen: PixelsGen
 
     private lateinit var size: Size
 
@@ -45,15 +45,13 @@ class GLCore {
         }
         size = Size(width, height)
         EglEnv(width, height).setUpEnv().buildOffScreenSurface()
+        pixelGen = FBOPixelsGen(size, false)
         surfaceTexture = SurfaceTexture(texture2dProgram.genTextureId())
         surfaceTexture.setOnFrameAvailableListener {
             Log.d(TAG, "new frame available")
             semaphore.release()
         }
         surface = Surface(surfaceTexture)
-        // ARGB——8888，Each pixel is stored on 4 bytes
-        pixelBuf = ByteBuffer.allocate(width * height * 4)
-        pixelBuf.order(ByteOrder.LITTLE_ENDIAN)
         return surface
     }
 
@@ -109,14 +107,9 @@ class GLCore {
 
     private fun produceBitmap(): Bitmap {
         val s = System.currentTimeMillis()
-        pixelBuf.rewind()
-        GLES20.glReadPixels(0, 0, size.width, size.height, GLES20.GL_RGBA,
-                GLES20.GL_UNSIGNED_BYTE, pixelBuf)
-        val bmp = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
-        pixelBuf.rewind()
-        bmp.copyPixelsFromBuffer(pixelBuf)
+        val bitmap = pixelGen.produceBitmap()
         Log.d(TAG, "produce bitmap cost : ${System.currentTimeMillis() - s}")
-        return bmp
+        return bitmap
     }
 
     fun release() {

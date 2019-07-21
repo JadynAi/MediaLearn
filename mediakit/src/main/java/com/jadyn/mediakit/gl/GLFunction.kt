@@ -1,8 +1,11 @@
 package com.jadyn.mediakit.gl
 
+import android.app.ActivityManager
+import android.content.Context
 import android.opengl.EGL14
 import android.opengl.GLES20
 import android.util.Log
+import com.jadyn.ai.kotlind.base.BaseApplication
 
 /**
  *@version:
@@ -141,4 +144,16 @@ fun checkLocation(location: Int, label: String) {
     if (location < 0) {
         throw RuntimeException("Unable to locate '$label' in program")
     }
+}
+
+fun glVersion(): Int {
+    val am = BaseApplication.instance.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    val info = am.deviceConfigurationInfo ?: return 0
+    return info.reqGlEsVersion
+}
+
+private const val PBO_SUPPORT_VERSION = 0x30000
+
+fun isSupportPBO(): Boolean {
+    return glVersion() > PBO_SUPPORT_VERSION
 }

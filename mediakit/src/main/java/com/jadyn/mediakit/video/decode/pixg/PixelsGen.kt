@@ -1,9 +1,16 @@
 package com.jadyn.mediakit.video.decode.pixg
 
+import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.media.ImageReader
+import android.opengl.GLES20
+import android.opengl.GLES30
+import android.util.Log
 import android.util.Size
 import android.view.Surface
+import com.jadyn.mediakit.gl.GLJni
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 /**
  *@version:
@@ -12,177 +19,113 @@ import android.view.Surface
  *@Since:2019-07-16
  *@ChangeList:
  */
-abstract class PixelsGen {
+interface PixelsGen {
 
-    open fun configSurface(): Surface? {
+    fun inputSurface(): Surface? {
         return null
     }
 
-    lateinit var size: Size
-    
-    abstract fun release()
+    fun produceBitmap(): Bitmap
+
+    fun release()
 }
 
-class ImageReaderPixelsGen : PixelsGen() {
+class ImageReaderPixelsGen(private val size: Size) : PixelsGen {
     private val imageReader by lazy {
         ImageReader.newInstance(size.width, size.height, PixelFormat.RGBA_8888, 3)
     }
 
-    override fun configSurface(): Surface? {
+    override fun inputSurface(): Surface? {
         return imageReader.surface
     }
 
+    override fun produceBitmap(): Bitmap {
+        return Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
+    }
+
     override fun release() {
+        imageReader.close()
     }
 }
 
 /**
- * 普通的glReadPixels
+ *
  * */
-class FBOPixelsGen : PixelsGen() {
+class FBOPixelsGen(private val size: Size,
+                   private val usePbo: Boolean = true) : PixelsGen {
+    private val TAG = "FBOPixelsGen"
+
+    private val pixelBuf by lazy {
+        // ARGB——8888，Each pixel is stored on 4 bytes
+        val b = ByteBuffer.allocate(
+                size.width * size.height * 4).order(ByteOrder.LITTLE_ENDIAN)
+        b
+    }
+
+    private val PBO_COUNT = 2
+    private val pboIds by lazy {
+        IntArray(PBO_COUNT)
+    }
+    private var index = 0
+    private var nextIndex = 1
+
+    init {
+        if (usePbo) {
+            val s = size.width * size.height * 4
+            GLES30.glGenBuffers(pboIds.size, pboIds, 0)
+            GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, pboIds[0])
+            GLES30.glBufferData(GLES30.GL_PIXEL_PACK_BUFFER, s, null, GLES30.GL_STATIC_READ)
+
+            GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, pboIds[1])
+            GLES30.glBufferData(GLES30.GL_PIXEL_PACK_BUFFER, s, null, GLES30.GL_STATIC_READ)
+
+            GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, 0)
+        }
+    }
+
+    override fun produceBitmap(): Bitmap {
+        if (usePbo) {
+            return pboReadPixels()
+        }
+        return fboReadPixels()
+    }
+
+    /**
+     * FBO模式，默认缓冲区
+     * */
+    private fun fboReadPixels(): Bitmap {
+        Log.d(TAG, "read FBO: ")
+        pixelBuf.rewind()
+        GLES20.glReadPixels(0, 0, size.width, size.height, GLES20.GL_RGBA,
+                GLES20.GL_UNSIGNED_BYTE, pixelBuf)
+        val bmp = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
+        pixelBuf.rewind()
+        bmp.copyPixelsFromBuffer(pixelBuf)
+        return bmp
+    }
+
+    private fun pboReadPixels(): Bitmap {
+        Log.d(TAG, "PBO read: ")
+        GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, pboIds[index])
+        GLJni.glReadPixels(0, 0, size.width, size.height, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE)
+
+        GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, pboIds[nextIndex])
+
+        val data = GLES30.glMapBufferRange(GLES30.GL_PIXEL_PACK_BUFFER,
+                0, size.width * size.height * 4, GLES30.GL_MAP_READ_BIT) as ByteBuffer
+        //解除映射
+        GLES30.glUnmapBuffer(GLES30.GL_PIXEL_PACK_BUFFER)
+        //解除绑定PBO
+        GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, GLES20.GL_NONE)
+        //交换索引
+        index = (index + 1) % PBO_COUNT
+        nextIndex = (nextIndex + 1) % PBO_COUNT
+        val bitmap = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
+        bitmap.copyPixelsFromBuffer(data)
+        return bitmap
+    }
 
     override fun release() {
+        GLES20.glDeleteBuffers(pboIds.size, pboIds, 0)
     }
-}
-
-/**
- * 使用PBO模式
- * */
-class PBOPixelsGen : PixelsGen() {
-
-    override fun release() {
-    }
-}
-
-
-class MyLinkedList() {
-
-    /** Initialize your data structure here. */
-    private var head: Node? = null
-    private var tail: Node? = null
-    private var size = 0
-
-    /** Get the value of the index-th node in the linked list. If the index is invalid, return -1. */
-    fun get(index: Int): Int {
-        if (index < 0) {
-            return -1
-        }
-        if (index == 0) {
-            return (head?.`val`) ?: -1
-        }
-        var s = head
-        var f = head?.next
-        var sI = 0
-        var fI = 1
-        loop@ while (s != null || f != null) {
-            if (sI == index || fI == index) {
-                break@loop
-            }
-            s = s?.next?.next
-            f = f?.next?.next
-            sI += 2
-            fI += 2
-        }
-        if (sI == index) {
-            return s?.`val` ?: -1
-        }
-        if (fI == index) {
-            return f?.`val` ?: -1
-        }
-        return -1
-    }
-
-    /** Add a node of value val before the first element of the linked list. After the insertion, the new node will be the first node of the linked list. */
-    fun addAtHead(`val`: Int) {
-        size++
-        head?.apply {
-            val newH = Node(`val`)
-            newH.next = this
-            head = newH
-            return
-        }
-        head = Node(`val`)
-    }
-
-    /** Append a node of value val to the last element of the linked list. */
-    fun addAtTail(`val`: Int) {
-        size++
-        val newT = Node(`val`)
-        tail?.apply {
-            this.next = newT
-            tail = newT
-            return
-        }
-        if (head != null) {
-            head!!.next = newT
-            tail = newT
-            return
-        }
-        addAtHead(`val`)
-    }
-
-    /** Add a node of value val before the index-th node in the linked list. If index equals to the length of linked list, the node will be appended to the end of linked list. If index is greater than the length, the node will not be inserted. */
-    fun addAtIndex(index: Int, `val`: Int) {
-        if (index < 0) {
-            return
-        }
-        if (index == 0) {
-            addAtHead(`val`)
-            return
-        }
-        if (index == size) {
-            addAtTail(`val`)
-            return
-        }
-        size++
-        var cur = head
-        var cI = 0
-        var isLoop = true
-        while (isLoop) {
-            cI++
-            val n = cur?.next
-            if (cI == index) {
-                val nA = Node(`val`)
-                cur?.next = nA
-                nA.next = n
-                isLoop = false
-            }
-            cur = cur?.next
-        }
-    }
-
-    /** Delete the index-th node in the linked list, if the index is valid. */
-    fun deleteAtIndex(index: Int) {
-        if (index < 0) {
-            return
-        }
-        if (size <= 0) {
-            return
-        }
-        if (index >= size) {
-            return
-        }
-        size--
-        var cur = head
-        if (index == 0) {
-            head = head?.next
-            return
-        }
-        var cI = 0
-        loop@ while (cur != null) {
-            cI++
-            if (cI == index) {
-                cur!!.next = cur!!.next?.next
-                if (index == size - 1) {
-                    tail = cur
-                }
-                break@loop
-            }
-        }
-    }
-
-    private class Node(val `val`: Int) {
-        var next: Node? = null
-    }
-
 }

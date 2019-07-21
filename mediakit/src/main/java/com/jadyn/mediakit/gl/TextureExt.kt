@@ -44,6 +44,6 @@ private fun bindSetTexture(target: Int, id: Int) {
     GLES20.glTexParameteri(target, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE)
 }
 
-fun unBindTexture() {
-    GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0)
+fun unBindTexture(target: Int = GLES11Ext.GL_TEXTURE_EXTERNAL_OES) {
+    GLES20.glBindTexture(target, 0)
 }
