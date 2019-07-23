@@ -152,6 +152,14 @@ fun glVersion(): Int {
     return info.reqGlEsVersion
 }
 
+fun enableVertexAttrib(handle: Int) {
+    GLES20.glEnableVertexAttribArray(handle)
+}
+
+fun disableVertexAttrib(handle: Int) {
+    GLES20.glDisableVertexAttribArray(handle)
+}
+
 private const val PBO_SUPPORT_VERSION = 0x30000
 
 fun isSupportPBO(): Boolean {

@@ -56,20 +56,6 @@ class GLCore {
         return surface
     }
 
-    fun codeToFrame(bufferInfo: MediaCodec.BufferInfo, outputBufferId: Int,
-                    decoder: MediaCodec): Bitmap? {
-        val doRender = bufferInfo.size != 0
-        // CodeC搭配输出Surface时，调用此方法将数据及时渲染到Surface上
-        decoder.releaseOutputBuffer(outputBufferId, doRender)
-        if (doRender) {
-            // 2019/2/14-15:24 必须和surface创建时保持统一线程
-            awaitNewImage()
-            drawImage()
-            return produceBitmap()
-        }
-        return null
-    }
-
     fun updateTexture(bufferInfo: MediaCodec.BufferInfo, outputBufferId: Int,
                       decoder: MediaCodec): Boolean {
         val doRender = bufferInfo.size != 0
@@ -108,12 +94,13 @@ class GLCore {
 
     private fun produceBitmap(): Bitmap {
         val s = System.currentTimeMillis()
-        val bitmap = pixelGen.produceBitmap()
+        val bitmap = pixelGen.produceBitmap(texture2dProgram.frameBufferId)
         Log.d(TAG, "produce bitmap cost : ${System.currentTimeMillis() - s}")
         return bitmap
     }
 
     fun release() {
+        pixelGen.release()
         if (::surface.isInitialized) {
             surface.release()
             surfaceTexture.release()

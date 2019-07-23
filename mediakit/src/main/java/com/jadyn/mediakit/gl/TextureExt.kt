@@ -2,6 +2,7 @@ package com.jadyn.mediakit.gl
 
 import android.opengl.GLES11Ext
 import android.opengl.GLES20
+import android.opengl.GLES30
 
 /**
  *@version:
@@ -11,6 +12,23 @@ import android.opengl.GLES20
  *@ChangeList:
  */
 
+/**
+ * 生成帧缓冲
+ * */
+fun buildFrameBuffer(): Int {
+    val frames = IntArray(1)
+    GLES20.glGenFramebuffers(1, frames, 0)
+    GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, frames[0])
+    checkGlError("create frame buffer check")
+    return frames[0]
+}
+
+fun appendFBOTexture(textureId: Int, target: Int = GLES11Ext.GL_TEXTURE_EXTERNAL_OES) {
+    GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER,
+            GLES20.GL_COLOR_ATTACHMENT0, target, textureId, 0)
+    unBindTexture(target)
+    unBindFrameBuffer()
+}
 
 /**
  * 创建一个纹理对象，并且和ES绑定
@@ -45,5 +63,32 @@ private fun bindSetTexture(target: Int, id: Int) {
 }
 
 fun unBindTexture(target: Int = GLES11Ext.GL_TEXTURE_EXTERNAL_OES) {
-    GLES20.glBindTexture(target, 0)
+    GLES20.glBindTexture(target, GLES20.GL_NONE)
+}
+
+fun unBindFrameBuffer() {
+    GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, GLES20.GL_NONE)
+}
+
+fun unBindFrameBuffer3() {
+    GLES30.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, GLES20.GL_NONE)
+}
+
+/**
+ * 释放纹理
+ * */
+fun releaseTexture(id: IntArray) {
+    GLES20.glDeleteTextures(1, id, 0)
+}
+
+/**
+ * 释放帧缓冲和纹理
+ * */
+fun releaseFrameBufferTexture(frame: IntArray, textureId: IntArray) {
+    GLES20.glDeleteFramebuffers(1, frame, 0)
+    releaseTexture(textureId)
+}
+
+fun releaseFrameBufferTexture(frame: Int, textureId: Int) {
+    releaseFrameBufferTexture(intArrayOf(frame), intArrayOf(textureId))
 }

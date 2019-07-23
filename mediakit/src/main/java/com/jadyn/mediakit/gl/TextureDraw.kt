@@ -3,10 +3,8 @@ package com.jadyn.mediakit.gl
 import android.graphics.SurfaceTexture
 import android.opengl.GLES11Ext
 import android.opengl.GLES20
-import android.util.Log
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.FloatBuffer
+import android.opengl.Matrix
+import com.jadyn.ai.kotlind.utils.createFloatBuffer
 import java.nio.ShortBuffer
 
 
@@ -18,124 +16,124 @@ import java.nio.ShortBuffer
  *@ChangeList:
  */
 class TextureDraw(private val program: Int) {
-
-    private val stMatrix = FloatArray(16)
+    /**
+     * 顶点
+     * */
+    private val vertexBuffer by lazy {
+        val data = floatArrayOf(
+                -1f, 1f, 0f,
+                -1f, -1f, 0f,
+                1f, -1f, 0f,
+                1f, 1f, 0f
+        )
+        val buffer = createFloatBuffer(data)
+        buffer.position(0)
+        buffer
+    }
 
     /**
-     * 绘制的区域尺寸
-     */
-    private val squareSize = 1.0f
-    private val squareCoords = floatArrayOf(
-            -squareSize, squareSize, //left top
-            -squareSize, -squareSize, //left bottom
-            squareSize, -squareSize, //right bottom
-            squareSize, squareSize      //right top
-    )
+     * 顶点顺序
+     * */
+    private val indicesBuffer by lazy {
+        val data = shortArrayOf(0, 1, 2, 0, 2, 3)
+        val buffer = ShortBuffer.allocate(data.size)
+        buffer.put(data)
+        buffer.position(0)
+        buffer
+    }
 
     /**
      * 纹理坐标
-     */
-    private val textureCoords = floatArrayOf(
-            0.0f, 1.0f, 0.0f, 1.0f,
-            0.0f, 0.0f, 0.0f, 1.0f,
-            1.0f, 0.0f, 0.0f, 1.0f,
-            1.0f, 1.0f, 0.0f, 1.0f)
+     * */
+    private val texCoordBuffer by lazy {
+        val data = floatArrayOf(
+                0f, 0f, 1f, 1f,
+                0f, 1f, 1f, 1f,
+                1f, 1f, 1f, 1f,
+                1f, 0f, 1f, 1f
+        )
+        val buffer = createFloatBuffer(data)
+        buffer.position(0)
+        buffer
+    }
 
-    /**
-     * 用来缓存纹理坐标，因为纹理都是要在后台被绘制好，然
-     * 后不断的替换最前面显示的纹理图像
-     */
-    private var textureBuffer: FloatBuffer? = null
+    private var posHandle: Int = -1
+    private var texCoordHandle: Int = -1
+    private var textureHandle: Int = -1
+    private var stMatrixHandle: Int = -1
 
-    /**
-     * 绘制次序的缓存
-     */
-    private var drawOrderBuffer: ShortBuffer? = null
-
-    /**
-     * squareCoords的的顶点缓存
-     */
-    private var vertexBuffer: FloatBuffer? = null
-
-
-    /**
-     * 绘制次序
-     */
-    private val drawOrder = shortArrayOf(0, 1, 2, 0, 2, 3)
-
-    var positionAttr = 0
-    var textureCoordinateAttr = 0
-    var textureUniform = 0
-    var textureTransformUniform = 0
-
+    private val stMatrix by lazy {
+        FloatArray(16)
+    }
 
     init {
-        setUpTexture()
-        setupVertexBuffer()
 
-        positionAttr = getAttribLocation(program, "vPosition")
-        textureCoordinateAttr = getAttribLocation(program, "vTexCoordinate")
-        textureUniform = getUniformLocation(program, "texture")
-        textureTransformUniform = getUniformLocation(program, "textureTransform")
+        posHandle = getAttribLocation(program, "position")
+        texCoordHandle = getAttribLocation(program, "aTexCoord")
+        textureHandle = getUniformLocation(program, "texture")
+
+        stMatrixHandle = getUniformLocation(program, "texMatrix")
     }
 
-    private fun setupVertexBuffer() {
-        val orderByteBuffer = ByteBuffer.allocateDirect(drawOrder.size * 2)
-        orderByteBuffer.order(ByteOrder.nativeOrder())  //Modifies this buffer's byte order
-        drawOrderBuffer = orderByteBuffer.asShortBuffer()  //创建此缓冲区的视图，作为一个short缓冲区.
-        drawOrderBuffer!!.put(drawOrder)
-        drawOrderBuffer!!.position(0) //下一个要被读或写的元素的索引，从0 开始
-
-        // Initialize the texture holder
-        val bb = ByteBuffer.allocateDirect(squareCoords.size * 4)
-        bb.order(ByteOrder.nativeOrder())
-        vertexBuffer = bb.asFloatBuffer()
-        vertexBuffer!!.put(squareCoords)
-        vertexBuffer!!.position(0)
-    }
-
-    private fun setUpTexture() {
-        val texturebb = ByteBuffer.allocateDirect(textureCoords.size * 4)
-        texturebb.order(ByteOrder.nativeOrder())
-        textureBuffer = texturebb.asFloatBuffer()
-        textureBuffer!!.put(textureCoords)
-        textureBuffer!!.position(0)
-    }
-
-
-    /**
-     * @param isRevert 是否需要翻转图像 。录制视频时，应设置为false。否则会花屏
-     * */
-    fun drawFromSurfaceTexture(st: SurfaceTexture, textureId: Int, isRevert: Boolean = true) {
+    fun drawFromSurfaceTexture(st: SurfaceTexture, textureId: Int, isRevert: Boolean = false) {
         st.getTransformMatrix(stMatrix)
-        Log.d("cece", " matrix : ${stMatrix.toS()}")
+
+        // camera返回的纹理是，左右镜像，上下颠倒的
         if (isRevert) {
-            stMatrix[5] = -stMatrix[5]
-            stMatrix[13] = 1.0f - stMatrix[13]
+            // 这里的一个单位就是纹理在各自轴上的全长
+            // 先把图像沿着x轴向右平移一个单位。然后在沿着y轴做180f旋转。这样图像镜像就处理好了。
+            // 又回到了原来的坐标系
+            Matrix.translateM(stMatrix, 0, 1f, 0f, 0f)
+            Matrix.rotateM(stMatrix, 0, 180f, 0f, 1f, 0.0f)
+
+            // 接下来处理上下颠倒。颠倒的话，就是原点（0，0）沿着z轴转180度
+            // 只沿着z轴转180度的话，那么x和y都会变成-1个单位。所以先把x和y都沿着轴的正方向平移一个单位，再旋转
+            Matrix.translateM(stMatrix, 0, 1f, 1f, 0f)
+            Matrix.rotateM(stMatrix, 0, 180f, 0f, 0f, 1f)
+//            Matrix.rotateM(stMatrix, 0, 180f, 0.5f, 0.5f, 1.0f)
         }
 
-        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f)
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+        enableVertexAttrib(posHandle)
+        enableVertexAttrib(texCoordHandle)
 
-        GLES20.glEnableVertexAttribArray(positionAttr)
-        GLES20.glVertexAttribPointer(positionAttr, 2, GLES20.GL_FLOAT, false, 0, vertexBuffer)
+        GLES20.glVertexAttribPointer(posHandle, 3, GLES20.GL_FLOAT,
+                false, 12, vertexBuffer)
+        GLES20.glVertexAttribPointer(texCoordHandle, 4, GLES20.GL_FLOAT,
+                false, 16, texCoordBuffer)
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId)
-        GLES20.glUniform1i(textureUniform, 0)
 
-        GLES20.glEnableVertexAttribArray(textureCoordinateAttr)
-        GLES20.glVertexAttribPointer(textureCoordinateAttr, 4, GLES20.GL_FLOAT, false, 0, textureBuffer)
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+        GLES20.glUniform1i(textureHandle, 0)
 
-        GLES20.glUniformMatrix4fv(textureTransformUniform, 1, false,
-                stMatrix, 0)
+        /**
+         * @param count。矩阵数
+         * */
+        GLES20.glUniformMatrix4fv(stMatrixHandle, 1, false, stMatrix, 0)
 
-        GLES20.glDrawElements(GLES20.GL_TRIANGLES, drawOrder.size, GLES20.GL_UNSIGNED_SHORT, drawOrderBuffer)
-        GLES20.glDisableVertexAttribArray(positionAttr)
-        GLES20.glDisableVertexAttribArray(textureCoordinateAttr)
+        GLES20.glDrawElements(GLES20.GL_TRIANGLES, 6,
+                GLES20.GL_UNSIGNED_SHORT, indicesBuffer)
+
+        disableVertexAttrib(posHandle)
+        disableVertexAttrib(texCoordHandle)
+
         unBindTexture()
     }
 }
+
+/**
+ *  [1.0:0.0:0.0:0.0
+ *  :0.0:-1.0:0.0:0.0:
+ *  0.0:0.0:1.0:0.0:
+ *  0.0:1.0:0.0:1.0
+ *
+ *
+ *  camera: [0.0:-1.0:0.0:0.0:
+ *          -1.0:0.0:0.0:0.0:
+ *          0.0:0.0:1.0:0.0:
+ *          1.0:1.0:0.0:1.0
+ * */
 
 
 fun FloatArray.toS(): String {

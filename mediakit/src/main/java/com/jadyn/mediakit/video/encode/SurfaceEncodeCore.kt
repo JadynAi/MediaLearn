@@ -57,7 +57,7 @@ class SurfaceEncodeCore(private val width: Int, private val height: Int) {
     fun draw() {
         Log.d(TAG, "core draw thread ${Thread.currentThread().name}")
         awaitNewImage()
-        encodeProgram.drawFrame(surfaceTexture!!, false)
+        encodeProgram.drawFrame(surfaceTexture!!, true)
     }
 
     fun swapData(nesc: Long) {
