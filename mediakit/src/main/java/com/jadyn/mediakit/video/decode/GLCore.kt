@@ -57,14 +57,15 @@ class GLCore {
     }
 
     fun updateTexture(bufferInfo: MediaCodec.BufferInfo, outputBufferId: Int,
-                      decoder: MediaCodec): Boolean {
+                      decoder: MediaCodec,
+                      isRevert: Boolean = false): Boolean {
         val doRender = bufferInfo.size != 0
         // CodeC搭配输出Surface时，调用此方法将数据及时渲染到Surface上
         decoder.releaseOutputBuffer(outputBufferId, doRender)
         if (doRender) {
             // 2019/2/14-15:24 必须和surface创建时保持统一线程
             awaitNewImage()
-            drawImage()
+            drawImage(isRevert)
             return true
         }
         return false
@@ -88,13 +89,13 @@ class GLCore {
     /**
      * Draws the data from SurfaceTexture onto the current EGL surface.
      */
-    private fun drawImage() {
-        texture2dProgram.drawFrame(surfaceTexture)
+    private fun drawImage(isRevert: Boolean) {
+        texture2dProgram.drawFrame(surfaceTexture, isRevert)
     }
 
     private fun produceBitmap(): Bitmap {
         val s = System.currentTimeMillis()
-        val bitmap = pixelGen.produceBitmap(texture2dProgram.frameBufferId)
+        val bitmap = pixelGen.produceBitmap()
         Log.d(TAG, "produce bitmap cost : ${System.currentTimeMillis() - s}")
         return bitmap
     }

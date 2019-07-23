@@ -9,8 +9,6 @@ import android.util.Log
 import android.util.Size
 import android.view.Surface
 import com.jadyn.mediakit.gl.GLJni
-import com.jadyn.mediakit.gl.unBindFrameBuffer
-import com.jadyn.mediakit.gl.unBindFrameBuffer3
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -27,7 +25,7 @@ interface PixelsGen {
         return null
     }
 
-    fun produceBitmap(frameBufferId: Int): Bitmap
+    fun produceBitmap(): Bitmap
 
     fun release()
 }
@@ -41,7 +39,7 @@ class ImageReaderPixelsGen(private val size: Size) : PixelsGen {
         return imageReader.surface
     }
 
-    override fun produceBitmap(frameBufferId: Int): Bitmap {
+    override fun produceBitmap(): Bitmap {
         return Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
     }
 
@@ -74,7 +72,7 @@ class FBOPixelsGen(private val size: Size,
     init {
         if (usePbo) {
             val s = size.width * size.height * 4
-            GLES30.glGenBuffers(pboIds.size, pboIds, 0)
+            GLES30.glGenBuffers(PBO_COUNT, pboIds, 0)
             GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, pboIds[0])
             GLES30.glBufferData(GLES30.GL_PIXEL_PACK_BUFFER, s, null, GLES30.GL_STATIC_READ)
 
@@ -85,34 +83,33 @@ class FBOPixelsGen(private val size: Size,
         }
     }
 
-    override fun produceBitmap(frameBufferId: Int): Bitmap {
+    override fun produceBitmap(): Bitmap {
         if (usePbo) {
-            return pboReadPixels(frameBufferId)
+            return pboReadPixels()
         }
-        return fboReadPixels(frameBufferId)
+        return fboReadPixels()
     }
 
     /**
      * FBO模式，默认缓冲区
      * */
-    private fun fboReadPixels(frameBufferId: Int): Bitmap {
+    private fun fboReadPixels(): Bitmap {
         Log.d(TAG, "read FBO: ")
         pixelBuf.rewind()
-        GLES20.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, frameBufferId)
         GLES20.glReadPixels(0, 0, size.width, size.height, GLES20.GL_RGBA,
                 GLES20.GL_UNSIGNED_BYTE, pixelBuf)
-        unBindFrameBuffer()
         val bmp = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
         pixelBuf.rewind()
         bmp.copyPixelsFromBuffer(pixelBuf)
         return bmp
     }
 
-    private fun pboReadPixels(frameBufferId: Int): Bitmap {
+    private fun pboReadPixels(): Bitmap {
         Log.d(TAG, "PBO read: ")
-        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, frameBufferId)
         GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, pboIds[index])
         GLJni.glReadPixels(0, 0, size.width, size.height, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE)
+        //解除绑定PBO
+        GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, GLES30.GL_NONE)
 
         GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, pboIds[nextIndex])
 
@@ -121,8 +118,8 @@ class FBOPixelsGen(private val size: Size,
         //解除映射
         GLES30.glUnmapBuffer(GLES30.GL_PIXEL_PACK_BUFFER)
         //解除绑定PBO
-        GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, GLES20.GL_NONE)
-        unBindFrameBuffer3()
+        GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, GLES30.GL_NONE)
+        
         //交换索引
         index = (index + 1) % PBO_COUNT
         nextIndex = (nextIndex + 1) % PBO_COUNT

@@ -15,7 +15,7 @@ import java.nio.ShortBuffer
  *@Since:2019/4/3
  *@ChangeList:
  */
-class TextureDraw(private val program: Int) {
+class TextureDraw(program: Int) {
     /**
      * 顶点
      * */

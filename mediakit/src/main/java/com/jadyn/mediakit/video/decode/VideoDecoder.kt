@@ -1,6 +1,5 @@
 package com.jadyn.mediakit.video.decode
 
-import android.content.ContentValues
 import android.graphics.Bitmap
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
@@ -110,7 +109,7 @@ class VideoDecoderRunnable(
                             decoder.queueInputBuffer(inputBufferId, 0, 0, 0L,
                                     MediaCodec.BUFFER_FLAG_END_OF_STREAM)
                             inputEnd = true
-                            Log.d(ContentValues.TAG, "queueInputBuffer end stream :$advanceCount  time is ${System.currentTimeMillis()}")
+                            Log.d(TAG, "queueInputBuffer end stream :$advanceCount  time is ${System.currentTimeMillis()}")
                         } else {
                             // 将数据压入到输入队列
                             val presentationTimeUs = videoAnalyze.mediaExtractor.sampleTime
@@ -119,7 +118,7 @@ class VideoDecoderRunnable(
                                     sampleSize, presentationTimeUs, 0)
                             videoAnalyze.mediaExtractor.advance()
                             advanceCount++
-                            Log.d(ContentValues.TAG, "queueInputBuffer count :$advanceCount  time is ${System.currentTimeMillis()}")
+                            Log.d(TAG, "queueInputBuffer count :$advanceCount  time is ${System.currentTimeMillis()}")
                         }
                     }
                 }
@@ -140,7 +139,6 @@ class VideoDecoderRunnable(
                     }
                 }
             }
-
             decoder.release()
             decodeCore.release()
             videoAnalyze.release()

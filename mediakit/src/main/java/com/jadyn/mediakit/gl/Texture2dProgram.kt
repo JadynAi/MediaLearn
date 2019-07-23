@@ -39,8 +39,6 @@ class Texture2dProgram {
             """.trimIndent()
 
     private var textureId: Int = GLES20.GL_NONE
-    var frameBufferId: Int = GLES20.GL_NONE
-        private set
 
     private val textureDraw: TextureDraw
 
@@ -59,16 +57,18 @@ class Texture2dProgram {
      * 生成一个帧缓冲区。
      * 并将纹理绑定到颜色附件
      * */
+    @Deprecated("not need framebuffer")
     private fun genFrameBuffer() {
-        frameBufferId = buildFrameBuffer()
+        buildFrameBuffer()
         appendFBOTexture(textureId)
     }
 
-    fun drawFrame(st: SurfaceTexture, isRevert: Boolean = true) {
+    fun drawFrame(st: SurfaceTexture, isRevert: Boolean = false) {
         textureDraw.drawFromSurfaceTexture(st, textureId, isRevert)
     }
 
     fun release() {
+        releaseTexture(intArrayOf(textureId))
 //        releaseFrameBufferTexture(frameBufferId, textureId)
     }
 }
