@@ -42,4 +42,8 @@ class GLActivity : AppCompatActivity() {
 //            }
 //        }
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+    }
 }

@@ -27,10 +27,9 @@ class GLCore {
 
     private lateinit var surface: Surface
     private lateinit var surfaceTexture: SurfaceTexture
-
     private lateinit var pixelGen: PixelsGen
-
     private lateinit var size: Size
+    private lateinit var eglEnv: EglEnv
 
     private val texture2dProgram by lazy {
         Texture2dProgram()
@@ -45,7 +44,7 @@ class GLCore {
             return surface
         }
         size = Size(width, height)
-        EglEnv(width, height).setUpEnv().buildOffScreenSurface()
+        eglEnv = EglEnv(width, height).setUpEnv().buildOffScreenSurface()
         pixelGen = FBOPixelsGen(size, isSupportPBO())
         surfaceTexture = SurfaceTexture(texture2dProgram.genTextureId())
         surfaceTexture.setOnFrameAvailableListener {
@@ -105,6 +104,9 @@ class GLCore {
         if (::surface.isInitialized) {
             surface.release()
             surfaceTexture.release()
+        }
+        if (::eglEnv.isInitialized) {
+            eglEnv.release()
         }
     }
 }

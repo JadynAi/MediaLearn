@@ -64,6 +64,9 @@
             android:name=".camera2.Camera2RecordActivity"
             android:screenOrientation="portrait"
             />
+        <activity android:name=".gles.GLTextureActivity"
+            android:screenOrientation="portrait"
+            />
 
     </application>
 

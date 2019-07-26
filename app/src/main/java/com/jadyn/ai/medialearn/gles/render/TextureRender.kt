@@ -114,7 +114,7 @@ class TextureRender : GLSurfaceView.Renderer {
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId)
 
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0)
-        bitmap?.recycle()
+//        bitmap?.recycle()
 
         GLES20.glEnableVertexAttribArray(posHandle)
         GLES20.glEnableVertexAttribArray(texCoordHandle)
@@ -125,5 +125,4 @@ class TextureRender : GLSurfaceView.Renderer {
         GLES20.glVertexAttribPointer(texCoordHandle, 2, GLES20.GL_FLOAT,
                 false, 0, texBuffer)
     }
-
 }

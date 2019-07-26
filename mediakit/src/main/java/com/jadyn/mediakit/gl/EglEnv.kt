@@ -73,20 +73,19 @@ class EglEnv(private val width: Int, private val height: Int) {
         return this
     }
 
-    fun buildEGLSurface(surface: Surface? = null) {
+    fun buildEGLSurface(surface: Surface? = null): EglEnv {
         surface?.apply {
             Log.d("EGLSurface", "build window surface")
-            buildWindowSurface(this)
-            return
+            return buildWindowSurface(this)
         }
         Log.d("EGLSurface", "build off screen surface")
-        buildOffScreenSurface()
+        return buildOffScreenSurface()
     }
 
     /**
      * 创建离线Surface
      * */
-    fun buildOffScreenSurface() {
+    fun buildOffScreenSurface(): EglEnv {
         // EGL 和 OpenGL ES环境搭建完毕，OpenGL输出可以获得。接着是EGL和设备连接
         // 连接工具是：EGLSurface，这是一个FrameBuffer
         val pbufferAttributes = intArrayOf(EGL14.EGL_WIDTH, width, EGL14.EGL_HEIGHT,
@@ -96,6 +95,7 @@ class EglEnv(private val width: Int, private val height: Int) {
             checkEglError("EGL create Pbuffer surface failed")
         }
         makeCurrent()
+        return this
     }
 
     /**
@@ -103,7 +103,7 @@ class EglEnv(private val width: Int, private val height: Int) {
      *
      * @param surface 本地设备屏幕
      * */
-    fun buildWindowSurface(surface: Surface) {
+    fun buildWindowSurface(surface: Surface): EglEnv {
         val format = IntArray(1)
         if (!EGL14.eglGetConfigAttrib(eglDisplay, eglConfig, EGL14.EGL_NATIVE_VISUAL_ID, format, 0)) {
             checkEglError("EGL getConfig attrib failed ")
@@ -118,6 +118,7 @@ class EglEnv(private val width: Int, private val height: Int) {
             checkEglError("EGL create window surface failed")
         }
         makeCurrent()
+        return this
     }
 
     /**
