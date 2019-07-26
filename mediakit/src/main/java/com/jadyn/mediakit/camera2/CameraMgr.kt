@@ -37,7 +37,7 @@ class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
     private val DEF_MAX_PREVIEW_SIZE = Size(1920, 1080)
     private var isReady = false
     private lateinit var cameraMgr: CameraManager
-    private lateinit var camerIDC: CameraIDC
+    private lateinit var cameraIDC: CameraIDC
 
     private var sensorOrientation = 0
 
@@ -46,7 +46,6 @@ class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
 
     lateinit var previewSize: Size
         private set
-    private lateinit var cameraId: String
 
     private val workerThread by lazy {
         val thread = HandlerThread("Camera2Run")
@@ -98,7 +97,7 @@ class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
         }
         this.previewSurface = surface
         this.previewStarted = previewStartedF
-        cameraMgr.openCamera(cameraId, stateCallback, null)
+        cameraMgr.openCamera(cameraIDC.curID, stateCallback, null)
         return true
     }
 
@@ -109,8 +108,8 @@ class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
         cameraMgr = act.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         // 计算出和给定宽高以及设备屏幕宽高，最接近的摄像头尺寸。以及一些api的初始化
         try {
-            camerIDC = CameraIDC(cameraMgr)
-            val characteristics = cameraMgr.getCameraCharacteristics(cameraId)
+            cameraIDC = CameraIDC(cameraMgr)
+            val characteristics = cameraMgr.getCameraCharacteristics(cameraIDC.curID)
 
             val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
 
@@ -132,7 +131,6 @@ class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
             previewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture::class.java),
                     rotatedPreviewSize.width, rotatedPreviewSize.height,
                     maxPreviewSize.width, maxPreviewSize.height, largest, displayRotation)
-            this.cameraId = cameraId
 //                imageReader = ImageReader.newInstance(previewSize.width, previewSize.height
 //                        , ImageFormat.JPEG, 2).apply {
 //                    setOnImageAvailableListener({

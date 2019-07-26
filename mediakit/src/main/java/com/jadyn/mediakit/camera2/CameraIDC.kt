@@ -14,9 +14,9 @@ import com.jadyn.ai.kotlind.utils.isValid
  *@ChangeList:
  */
 class CameraIDC(cameraMgr: CameraManager,
-        @IntRange(from = 0, to = 1) defLoc: Int = 1) {
+                @IntRange(from = 0, to = 1) defLoc: Int = 1) {
     private val ids by lazy {
-        ArrayList<String>(2)
+        Array(2) { "" }
     }
 
     private var curLoc: Int = 1
