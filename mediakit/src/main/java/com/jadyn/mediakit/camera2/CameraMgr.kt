@@ -9,15 +9,18 @@ import android.graphics.SurfaceTexture
 import android.hardware.camera2.*
 import android.media.MediaRecorder
 import android.os.Handler
-import android.os.Looper
+import android.os.HandlerThread
 import android.util.Log
 import android.util.Size
 import android.view.Surface
 import com.jadyn.ai.kotlind.utils.maxChoose
+import com.jadyn.ai.kotlind.utils.screenHeight
+import com.jadyn.ai.kotlind.utils.screenWidth
 import com.jadyn.ai.kotlind.utils.swap
 import com.jadyn.mediakit.function.CompareSizesByArea
 import com.jadyn.mediakit.function.areDimensionsSwapped
 import com.jadyn.mediakit.function.chooseOptimalSize
+import java.lang.ref.WeakReference
 import java.util.*
 
 /**
@@ -27,15 +30,14 @@ import java.util.*
  *@Since:2019-05-07
  *@ChangeList:
  */
-class CameraMgr(private val activity: Activity, size: Size) {
+class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
 
     private val TAG = "Camera2Ops"
 
     private val DEF_MAX_PREVIEW_SIZE = Size(1920, 1080)
-
-    private val cameraMgr by lazy {
-        activity.getSystemService(Context.CAMERA_SERVICE) as CameraManager
-    }
+    private var isReady = false
+    private lateinit var cameraMgr: CameraManager
+    private lateinit var camerIDC: CameraIDC
 
     private var sensorOrientation = 0
 
@@ -46,8 +48,14 @@ class CameraMgr(private val activity: Activity, size: Size) {
         private set
     private lateinit var cameraId: String
 
-    private val UIHandler by lazy {
-        Handler(Looper.getMainLooper())
+    private val workerThread by lazy {
+        val thread = HandlerThread("Camera2Run")
+        thread.start()
+        thread
+    }
+
+    private val workerHandler by lazy {
+        Handler(workerThread.looper)
     }
 
     private var previewSurface: Surface? = null
@@ -77,67 +85,70 @@ class CameraMgr(private val activity: Activity, size: Size) {
     }
 
     init {
-        // 计算出和给定宽高以及设备屏幕宽高，最接近的摄像头尺寸。以及一些api的初始化
-        try {
-            for (cameraId in cameraMgr.cameraIdList) {
-                val characteristics = cameraMgr.getCameraCharacteristics(cameraId)
-                val facing = characteristics.get(CameraCharacteristics.LENS_FACING)
-                if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
-                    continue
-                }
-                val map = characteristics.get(
-                        CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP) ?: continue
-
-                // 选出最大的size,比较方式为 width*height 值的大小 
-                val largest = Collections.max(Arrays.asList(*map.getOutputSizes(ImageFormat.JPEG)),
-                        CompareSizesByArea())
-
-                // 预览的宽高需要根据此时屏幕的旋转角度，以及设备自身的“调整角度”来配合
-                val displayRotation = activity.windowManager.defaultDisplay.rotation
-                sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION)
-                val swappedDimensions = areDimensionsSwapped(displayRotation, sensorOrientation)
-
-                val displaySize = Point()
-                activity.windowManager.defaultDisplay.getSize(displaySize)
-                val rotatedPreviewSize = if (swappedDimensions) size.swap() else size
-                val displaySize1 = Size(displaySize.x, displaySize.y)
-                var maxPreviewSize = if (swappedDimensions) displaySize1.swap() else displaySize1
-                maxPreviewSize = maxPreviewSize.maxChoose(DEF_MAX_PREVIEW_SIZE)
-
-                previewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture::class.java),
-                        rotatedPreviewSize.width, rotatedPreviewSize.height,
-                        maxPreviewSize.width, maxPreviewSize.height, largest, displayRotation)
-                this.cameraId = cameraId
-
-//                imageReader = ImageReader.newInstance(previewSize.width, previewSize.height
-//                        , ImageFormat.JPEG, 2).apply {
-//                    setOnImageAvailableListener({
-//
-//                    }, null)
-//                }
-                flashSupported =
-                        characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
-                Log.d(TAG, "phone width ${activity.resources.displayMetrics.widthPixels} " +
-                        "height ${activity.resources.displayMetrics.heightPixels}")
-                Log.d(TAG, "display rotation $displayRotation  sensor $sensorOrientation: ")
-                Log.d(TAG, "preview size $previewSize  largest size is $largest")
-                Log.d(TAG, "all size ${Arrays.toString(map.getOutputSizes(SurfaceTexture::class.java))}")
-                Log.d(TAG, "all video size ${Arrays.toString(map.getOutputSizes(MediaRecorder::class.java))}")
-                break
-            }
-        } catch (e: CameraAccessException) {
-            e.printStackTrace()
-        }
+        isReady = tryConfig(size)
     }
 
     /**
      * @param surface preview surface
      * */
     @SuppressLint("MissingPermission")
-    fun openCamera(surface: Surface, previewStartedF: () -> Unit = {}) {
+    fun openCamera(surface: Surface, previewStartedF: () -> Unit = {}): Boolean {
+        if (!isReady) {
+            return false
+        }
         this.previewSurface = surface
         this.previewStarted = previewStartedF
         cameraMgr.openCamera(cameraId, stateCallback, null)
+        return true
+    }
+
+    private fun tryConfig(size: Size): Boolean {
+        val act = activity.get()
+        if (act == null || act.isFinishing) return false
+
+        cameraMgr = act.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        // 计算出和给定宽高以及设备屏幕宽高，最接近的摄像头尺寸。以及一些api的初始化
+        try {
+            camerIDC = CameraIDC(cameraMgr)
+            val characteristics = cameraMgr.getCameraCharacteristics(cameraId)
+
+            val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
+
+            // 选出最大的size,比较方式为 width*height 值的大小 
+            val largest = Collections.max(Arrays.asList(*map.getOutputSizes(ImageFormat.JPEG)),
+                    CompareSizesByArea())
+
+            // 预览的宽高需要根据此时屏幕的旋转角度，以及设备自身的“调整角度”来配合
+            val displayRotation = act.windowManager.defaultDisplay.rotation
+            sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION)
+            val swappedDimensions = areDimensionsSwapped(displayRotation, sensorOrientation)
+
+            val displaySize = Point(screenWidth, screenHeight)
+            val rotatedPreviewSize = if (swappedDimensions) size.swap() else size
+            val displaySize1 = Size(displaySize.x, displaySize.y)
+            var maxPreviewSize = if (swappedDimensions) displaySize1.swap() else displaySize1
+            maxPreviewSize = maxPreviewSize.maxChoose(DEF_MAX_PREVIEW_SIZE)
+
+            previewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture::class.java),
+                    rotatedPreviewSize.width, rotatedPreviewSize.height,
+                    maxPreviewSize.width, maxPreviewSize.height, largest, displayRotation)
+            this.cameraId = cameraId
+//                imageReader = ImageReader.newInstance(previewSize.width, previewSize.height
+//                        , ImageFormat.JPEG, 2).apply {
+//                    setOnImageAvailableListener({
+//
+//                    }, null)
+//                }
+            flashSupported =
+                    characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
+            Log.d(TAG, "display rotation $displayRotation  sensor $sensorOrientation: ")
+            Log.d(TAG, "preview size $previewSize  largest size is $largest")
+            Log.d(TAG, "all size ${Arrays.toString(map.getOutputSizes(SurfaceTexture::class.java))}")
+            Log.d(TAG, "all video size ${Arrays.toString(map.getOutputSizes(MediaRecorder::class.java))}")
+        } catch (e: CameraAccessException) {
+            e.printStackTrace()
+        }
+        return true
     }
 
     private var previewStarted: () -> Unit = {}
@@ -154,17 +165,10 @@ class CameraMgr(private val activity: Activity, size: Size) {
                     list.add(this)
                     builder?.addTarget(this)
                 }
-                createCaptureSession(list, object : CameraCaptureSession.StateCallback() {
-                    override fun onConfigureFailed(session: CameraCaptureSession?) {
-
-                    }
-
-                    override fun onConfigured(session: CameraCaptureSession?) {
-                        cameraSession = session
-                        updatePreview()
-                    }
-
-                }, null)
+                createCaptureSession2(list, {
+                    cameraSession = it
+                    updatePreview()
+                })
             }
         } catch (e: CameraAccessException) {
             e.printStackTrace()
@@ -211,7 +215,7 @@ class CameraMgr(private val activity: Activity, size: Size) {
             cameraDevice?.apply {
                 builder = createCaptureRequest(CameraDevice.TEMPLATE_RECORD)
                 // 自动对焦 
-                builder?.set(CaptureRequest.CONTROL_AF_MODE, 
+                builder?.set(CaptureRequest.CONTROL_AF_MODE,
                         CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
                 val list = arrayListOf<Surface>()
 
@@ -222,21 +226,14 @@ class CameraMgr(private val activity: Activity, size: Size) {
                     list.add(this)
                     builder?.addTarget(this)
                 }
-                createCaptureSession(list, object : CameraCaptureSession.StateCallback() {
-                    override fun onConfigureFailed(session: CameraCaptureSession?) {
-                        Log.d(TAG, "record failed ${Thread.currentThread().name}")
-                    }
-
-                    override fun onConfigured(session: CameraCaptureSession?) {
-                        Log.d(TAG, "record configure ${Thread.currentThread().name}")
-                        startRecordTime = System.currentTimeMillis()
-                        Log.d(TAG, "start record $startRecordTime")
-                        cameraSession = session
-                        updatePreview()
-                        isRecordingVideo = true
-                    }
-
-                }, UIHandler)
+                createCaptureSession2(list, {
+                    Log.d(TAG, "record configure ${Thread.currentThread().name}")
+                    startRecordTime = System.currentTimeMillis()
+                    Log.d(TAG, "start record $startRecordTime")
+                    cameraSession = it
+                    updatePreview()
+                    isRecordingVideo = true
+                }, handler = workerHandler)
             }
         } catch (e: CameraAccessException) {
             e.printStackTrace()
@@ -252,6 +249,8 @@ class CameraMgr(private val activity: Activity, size: Size) {
 
     //-----------Destroy--------------
     fun onDestory() {
-
+        workerHandler.removeCallbacksAndMessages(null)
+        workerThread.quitSafely()
+        activity.clear()
     }
 } 

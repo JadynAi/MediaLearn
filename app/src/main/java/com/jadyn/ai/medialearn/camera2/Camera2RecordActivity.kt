@@ -17,6 +17,7 @@ import com.jadyn.mediakit.camera2.CameraMgr
 import com.jadyn.mediakit.camera2.VideoGen
 import kotlinx.android.synthetic.main.activity_camera2_record.*
 import java.io.File
+import java.lang.ref.WeakReference
 import java.util.*
 
 /**
@@ -111,7 +112,7 @@ class Camera2RecordActivity : AppCompatActivity() {
 
     private fun openCamera2(width: Int, height: Int) {
         if (!::cameraMgr.isInitialized) {
-            cameraMgr = CameraMgr(this@Camera2RecordActivity, Size(width, height))
+            cameraMgr = CameraMgr(WeakReference(this@Camera2RecordActivity), Size(width, height))
         }
         val texture = camera2_record_texture.surfaceTexture
         // texture view 自动配置宽高

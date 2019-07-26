@@ -22,20 +22,17 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val subscribe = RxPermissions(this).request(Manifest.permission.CAMERA)
-                .subscribe {
-                    RxPermissions(this).request(Manifest.permission.UPDATE_DEVICE_STATS).subscribe()
-                }
-
         tv_go_camera.setOnClickListener {
             start<Camera2Activity>()
         }
 
         tv_go_camera2.setOnClickListener {
-            RxPermissions(this).request(
-                    Manifest.permission.READ_EXTERNAL_STORAGE)
+            RxPermissions(this).requestEach(
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    Manifest.permission.CAMERA)
                     .doOnNext {
-                        if (it) {
+                        if (it.granted && it.name == Manifest.permission.CAMERA) {
                             start<Camera2RecordActivity>()
                         }
                     }
@@ -90,12 +87,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         val semaphore = Semaphore(0)
-        
+
         tv_gl.setOnClickListener {
             start<GLActivity>()
 //            semaphore.release()
         }
-        
+
         tv_cutout.click {
             start<CutOutActivity>()
 //            val s = System.currentTimeMillis()
@@ -104,6 +101,6 @@ class MainActivity : AppCompatActivity() {
 //                1
 //            }.subscribeOn(Schedulers.io()).subscribe()
         }
-        
+
     }
 }
