@@ -3,17 +3,17 @@
 
 ## Camera2 视频录制
 
-#### Camera2录制视频(一)：音频的录制及编码，[点击传送门](https://juejin.im/post/5d130936e51d45777b1a3dc8)
+- Camera2录制视频(一)：音频的录制及编码，[点击传送门](https://juejin.im/post/5d130936e51d45777b1a3dc8)
 
-#### Camera2录制视频(二)：MediaCodeC+OpenGL视频编码，[传送门](https://juejin.im/post/5d2c12fdf265da1bae392b4c)
+- Camera2录制视频(二)：MediaCodeC+OpenGL视频编码，[传送门](https://juejin.im/post/5d2c12fdf265da1bae392b4c)
 
 ## MediaCodeC硬编码
 
-#### MediaCodeC硬编码将图片集编码为视频Mp4文件[MediaCodeC编码视频](https://jadynai.github.io/2019/04/01/2019-04-01-MediaCodeC-encoder1/)
+- MediaCodeC硬编码将图片集编码为视频Mp4文件[MediaCodeC编码视频](https://jadynai.github.io/2019/04/01/2019-04-01-MediaCodeC-encoder1/)
 
-#### MediaCodeC将视频完整解码，并存储为图片文件。使用两种不同的方式，[硬编码解码视频](https://jadynai.github.io/2019/01/25/2019-01-25-MediaCodeC-Decode-1/)
+- MediaCodeC将视频完整解码，并存储为图片文件。使用两种不同的方式，[硬编码解码视频](https://jadynai.github.io/2019/01/25/2019-01-25-MediaCodeC-Decode-1/)
 
-### MediaCodeC解码视频指定帧[硬编码解码指定帧](https://jadynai.github.io/2019/02/09/2019-02-09-MediaCodeC-frame/)
+- MediaCodeC解码视频指定帧[硬编码解码指定帧](https://jadynai.github.io/2019/02/09/2019-02-09-MediaCodeC-frame/)
 
 
 
