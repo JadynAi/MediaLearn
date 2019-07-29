@@ -213,3 +213,7 @@ fun String.hashKeyForDisk(): String {
         hashCode().toString()
     }
 }
+
+fun logD(TAG: String, content: String) {
+    Log.d(TAG, content)
+}

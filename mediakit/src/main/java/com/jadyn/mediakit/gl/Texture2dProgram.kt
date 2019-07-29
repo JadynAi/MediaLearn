@@ -2,7 +2,7 @@ package com.jadyn.mediakit.gl
 
 import android.graphics.SurfaceTexture
 import android.opengl.GLES20
-import android.util.Log
+import com.jadyn.mediakit.function.logD
 
 /**
  *@version:
@@ -43,7 +43,7 @@ class Texture2dProgram {
     private val textureDraw: TextureDraw
 
     init {
-        Log.d(this.javaClass.name, " create texture 2d program ")
+        logD(this.javaClass.name, " create texture 2d program ")
         val program = createProgram(VERTEX_SHADER, FRAGMENT_SHADER)
         textureDraw = TextureDraw(program)
     }
@@ -57,11 +57,11 @@ class Texture2dProgram {
      * 生成一个帧缓冲区。
      * 并将纹理绑定到颜色附件
      * */
-    @Deprecated("not need framebuffer")
-    private fun genFrameBuffer() {
-        buildFrameBuffer()
-        appendFBOTexture(textureId)
-    }
+//    @Deprecated("not need framebuffer")
+//    private fun genFrameBuffer() {
+//        buildFrameBuffer()
+//        appendFBOTexture(textureId)
+//    }
 
     fun drawFrame(st: SurfaceTexture, isRevert: Boolean = false) {
         textureDraw.drawFromSurfaceTexture(st, textureId, isRevert)
@@ -69,6 +69,5 @@ class Texture2dProgram {
 
     fun release() {
         releaseTexture(intArrayOf(textureId))
-//        releaseFrameBufferTexture(frameBufferId, textureId)
     }
 }

@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.support.v7.app.AppCompatActivity
 import android.text.TextUtils
+import android.util.Log
 import androidx.core.widget.toast
 import com.jadyn.ai.medialearn.R
 import com.jadyn.mediakit.video.decode.VideoDecoder
@@ -67,6 +68,7 @@ class DecodeActivity : AppCompatActivity() {
             videoDecoder!!.start({
                 videoDecoder = null
             }, {
+                Log.d("cece", "decode failed : $it")
                 videoDecoder = null
             }, {
                 this@DecodeActivity.runOnUiThread {

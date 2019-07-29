@@ -1,7 +1,6 @@
 package com.jadyn.mediakit.gl
 
 import android.graphics.SurfaceTexture
-import android.opengl.GLES11Ext
 import android.opengl.GLES20
 import android.opengl.Matrix
 import com.jadyn.ai.kotlind.utils.createFloatBuffer
@@ -104,7 +103,7 @@ class TextureDraw(program: Int) {
                 false, 16, texCoordBuffer)
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId)
+        bindTexture(textureId)
 
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
         GLES20.glUniform1i(textureHandle, 0)

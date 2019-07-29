@@ -9,14 +9,32 @@ import android.view.Surface
  *@Since:2019-07-25
  *@ChangeList:
  */
-class SurfaceCompose {
-    private val mgrList by lazy { 
+class Camera2Ext {
+    private val mgrList by lazy {
         LinkedHashSet<Surface>()
     }
 
     fun add(surface: Surface?) {
-        surface?.apply { 
+        surface?.apply {
             mgrList.add(this)
         }
+    }
+
+    fun add(vararg s: Surface?) {
+        s.forEach { 
+            it?.apply {
+                mgrList.add(this)
+            }
+        }
+    }
+
+    fun clear() {
+        if (mgrList.isEmpty()) {
+            return
+        }
+        mgrList.forEach {
+            it.release()
+        }
+        mgrList.clear()
     }
 }

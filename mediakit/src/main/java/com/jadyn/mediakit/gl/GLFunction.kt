@@ -140,6 +140,13 @@ fun checkGlError(op: String) {
     }
 }
 
+fun checkFrameBuffer(){
+    val status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER)
+    if (status != GLES20.GL_FRAMEBUFFER_COMPLETE) {
+        throw RuntimeException("Frame Buffer is not complete")
+    }
+}
+
 fun checkLocation(location: Int, label: String) {
     if (location < 0) {
         throw RuntimeException("Unable to locate '$label' in program")

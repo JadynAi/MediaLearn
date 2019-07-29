@@ -56,8 +56,11 @@ class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
     private val workerHandler by lazy {
         Handler(workerThread.looper)
     }
+    private val surfaceCompose by lazy { 
+        Camera2Ext()
+    }
 
-    private var previewSurface: Surface? = null
+    private lateinit var previewST: SurfaceTexture
     private var cameraDevice: CameraDevice? = null
     private var builder: CaptureRequest.Builder? = null
     private var cameraSession: CameraCaptureSession? = null
@@ -91,11 +94,11 @@ class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
      * @param surface preview surface
      * */
     @SuppressLint("MissingPermission")
-    fun openCamera(surface: Surface, previewStartedF: () -> Unit = {}): Boolean {
+    fun openCamera(surface: SurfaceTexture, previewStartedF: () -> Unit = {}): Boolean {
         if (!isReady) {
             return false
         }
-        this.previewSurface = surface
+        this.previewST = surface
         this.previewStarted = previewStartedF
         cameraMgr.openCamera(cameraIDC.curID, stateCallback, null)
         return true
@@ -159,10 +162,10 @@ class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
                 // 自动对焦 
                 builder?.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
                 val list = arrayListOf<Surface>()
-                previewSurface?.apply {
-                    list.add(this)
-                    builder?.addTarget(this)
-                }
+                val surface = Surface(previewST)
+                list.add(surface)
+                surfaceCompose.add(surface)
+                builder?.addTarget(surface)
                 createCaptureSession2(list, {
                     cameraSession = it
                     updatePreview()
@@ -217,13 +220,12 @@ class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
                         CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
                 val list = arrayListOf<Surface>()
 
+                val preSurface = Surface(previewST)
                 builder?.addTarget(recordSurface)
+                builder?.addTarget(preSurface)
                 list.add(recordSurface)
-
-                previewSurface?.apply {
-                    list.add(this)
-                    builder?.addTarget(this)
-                }
+                list.add(preSurface)
+                surfaceCompose.add(preSurface, recordSurface)
                 createCaptureSession2(list, {
                     Log.d(TAG, "record configure ${Thread.currentThread().name}")
                     startRecordTime = System.currentTimeMillis()

@@ -27,3 +27,27 @@ fun CameraDevice.createCaptureSession2(outputs: List<Surface>,
 
     }, handler)
 }
+
+class StateCallBack(
+        private val opened: (cameraDevice: CameraDevice?) -> Unit,
+        private val closed: (cameraDevice: CameraDevice?) -> Unit,
+        private val disConnected: (cameraDevice: CameraDevice?) -> Unit = {},
+        private val onError: (cameraDevice: CameraDevice?, error: Int) -> Unit = { _, _ -> Unit }
+) : CameraDevice.StateCallback() {
+    override fun onOpened(camera: CameraDevice?) {
+        opened.invoke(camera)
+    }
+
+    override fun onClosed(camera: CameraDevice?) {
+        super.onClosed(camera)
+        closed.invoke(camera)
+    }
+
+    override fun onDisconnected(camera: CameraDevice?) {
+        disConnected.invoke(camera)
+    }
+
+    override fun onError(camera: CameraDevice?, error: Int) {
+        onError.invoke(camera, error)
+    }
+}

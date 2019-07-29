@@ -119,7 +119,7 @@ class Camera2RecordActivity : AppCompatActivity() {
         camera2_record_texture.setAspectRatio(cameraMgr.previewSize)
         configureTextureTransform(camera2_record_texture.width,
                 camera2_record_texture.height)
-        cameraMgr.openCamera(Surface(texture))
+        cameraMgr.openCamera(texture)
         texture?.setDefaultBufferSize(cameraMgr.previewSize.width,
                 cameraMgr.previewSize.height)
     }
