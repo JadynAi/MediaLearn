@@ -2,7 +2,6 @@ package com.jadyn.mediakit.gl
 
 import android.graphics.SurfaceTexture
 import android.opengl.GLES20
-import com.jadyn.mediakit.function.logD
 
 /**
  *@version:
@@ -39,12 +38,12 @@ class Texture2dProgram {
             """.trimIndent()
 
     private var textureId: Int = GLES20.GL_NONE
+    private val program: Int
 
     private val textureDraw: TextureDraw
 
     init {
-        logD(this.javaClass.name, " create texture 2d program ")
-        val program = createProgram(VERTEX_SHADER, FRAGMENT_SHADER)
+        program = createProgram(VERTEX_SHADER, FRAGMENT_SHADER)
         textureDraw = TextureDraw(program)
     }
 
@@ -63,11 +62,12 @@ class Texture2dProgram {
 //        appendFBOTexture(textureId)
 //    }
 
-    fun drawFrame(st: SurfaceTexture, isRevert: Boolean = false) {
-        textureDraw.drawFromSurfaceTexture(st, textureId, isRevert)
+    fun drawFrame(st: SurfaceTexture) {
+        textureDraw.drawFromSurfaceTexture(st, textureId)
     }
 
     fun release() {
         releaseTexture(intArrayOf(textureId))
+        GLES20.glDeleteProgram(program)
     }
 }

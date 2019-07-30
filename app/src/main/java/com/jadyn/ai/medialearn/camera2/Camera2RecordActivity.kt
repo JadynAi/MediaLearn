@@ -72,7 +72,7 @@ class Camera2RecordActivity : AppCompatActivity() {
                                 ":${instance.get(Calendar.HOUR_OF_DAY)}" +
                                 ":${instance.get(Calendar.MINUTE)}.mp4")
                 
-                videoRecorder.start(720, 1280, 8000000, surfaceCallback = {
+                videoRecorder.start(1080, 1440, 8000000, surfaceCallback = {
                     // 录制的时候根据，定制的视频尺寸，重新调整PreviewSurface的数据
                     cameraMgr.startRecord(it)
                     runOnUiThread {
@@ -148,5 +148,10 @@ class Camera2RecordActivity : AppCompatActivity() {
             matrix.postRotate(180f, centerX, centerY)
         }
         camera2_record_texture.setTransform(matrix)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        cameraMgr.onDestory()
     }
 }

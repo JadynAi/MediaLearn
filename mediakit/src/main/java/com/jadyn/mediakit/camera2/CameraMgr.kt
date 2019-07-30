@@ -47,16 +47,10 @@ class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
     lateinit var previewSize: Size
         private set
 
-    private val workerThread by lazy {
-        val thread = HandlerThread("Camera2Run")
-        thread.start()
-        thread
-    }
+    private var workerThread: HandlerThread? = null
+    private var workerHandler: Handler? = null
 
-    private val workerHandler by lazy {
-        Handler(workerThread.looper)
-    }
-    private val surfaceCompose by lazy { 
+    private val surfaceCompose by lazy {
         Camera2Ext()
     }
 
@@ -69,6 +63,11 @@ class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
         object : CameraDevice.StateCallback() {
             override fun onOpened(camera: CameraDevice?) {
                 Log.d(TAG, " open: ")
+                if (workerThread == null) {
+                    workerThread = HandlerThread("Camera2Run")
+                    workerThread?.start()
+                    workerHandler = Handler(workerThread?.looper)
+                }
                 cameraDevice = camera
                 startPreview()
             }
@@ -164,12 +163,12 @@ class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
                 val list = arrayListOf<Surface>()
                 val surface = Surface(previewST)
                 list.add(surface)
-                surfaceCompose.add(surface)
                 builder?.addTarget(surface)
+                surfaceCompose.add(surface)
                 createCaptureSession2(list, {
                     cameraSession = it
                     updatePreview()
-                })
+                }, handler = workerHandler)
             }
         } catch (e: CameraAccessException) {
             e.printStackTrace()
@@ -221,10 +220,11 @@ class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
                 val list = arrayListOf<Surface>()
 
                 val preSurface = Surface(previewST)
-                builder?.addTarget(recordSurface)
                 builder?.addTarget(preSurface)
-                list.add(recordSurface)
+                builder?.addTarget(recordSurface)
                 list.add(preSurface)
+                list.add(recordSurface)
+
                 surfaceCompose.add(preSurface, recordSurface)
                 createCaptureSession2(list, {
                     Log.d(TAG, "record configure ${Thread.currentThread().name}")
@@ -249,8 +249,15 @@ class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
 
     //-----------Destroy--------------
     fun onDestory() {
-        workerHandler.removeCallbacksAndMessages(null)
-        workerThread.quitSafely()
+        workerHandler?.removeCallbacksAndMessages(null)
+        workerThread?.quitSafely()
+        try {
+            workerThread?.join()
+            workerThread = null
+            workerHandler = null
+        } catch (e: InterruptedException) {
+            Log.e(TAG, e.toString())
+        }
         activity.clear()
     }
 } 

@@ -123,6 +123,6 @@ class TextureRender : GLSurfaceView.Renderer {
                 false, 12, vertexBuffer)
 
         GLES20.glVertexAttribPointer(texCoordHandle, 2, GLES20.GL_FLOAT,
-                false, 0, texBuffer)
+                false, 8, texBuffer)
     }
 }

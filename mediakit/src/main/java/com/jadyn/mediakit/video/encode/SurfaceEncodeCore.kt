@@ -6,10 +6,9 @@ import android.opengl.GLES20
 import android.opengl.Matrix
 import android.util.Log
 import android.view.Surface
+import com.jadyn.ai.kotlind.utils.createFloatBuffer
 import com.jadyn.mediakit.gl.*
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.FloatBuffer
+import java.nio.ShortBuffer
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 
@@ -29,7 +28,7 @@ class SurfaceEncodeCore(private val width: Int, private val height: Int) {
     private var surfaceTexture: SurfaceTexture? = null
 
     private val encodeProgram by lazy {
-        Texture2dProgram()
+        SurfaceProgram()
     }
 
     private val semaphore by lazy {
@@ -49,6 +48,7 @@ class SurfaceEncodeCore(private val width: Int, private val height: Int) {
         surfaceTexture!!.setDefaultBufferSize(height, width)
         // 监听获取新的图像帧
         surfaceTexture!!.setOnFrameAvailableListener {
+            Log.d(TAG, "surface texture available: ")
             semaphore.release()
         }
         return surfaceTexture!!
@@ -57,7 +57,7 @@ class SurfaceEncodeCore(private val width: Int, private val height: Int) {
     fun draw() {
         Log.d(TAG, "core draw thread ${Thread.currentThread().name}")
         awaitNewImage()
-        encodeProgram.drawFrame(surfaceTexture!!, true)
+        encodeProgram.drawFrame(surfaceTexture!!)
     }
 
     fun swapData(nesc: Long) {
@@ -66,7 +66,7 @@ class SurfaceEncodeCore(private val width: Int, private val height: Int) {
     }
 
     private fun awaitNewImage() {
-        if (!semaphore.tryAcquire(500, TimeUnit.MILLISECONDS)) {
+        if (!semaphore.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
             throw RuntimeException("Camera frame wait timed out")
         }
         checkGlError("before updateTexImage")
@@ -81,91 +81,6 @@ class SurfaceEncodeCore(private val width: Int, private val height: Int) {
     }
 }
 
-class Program1 {
-    private val VERTEX_SHADER =
-            """
-                attribute vec4 aPosition;
-                uniform mat4 uTextureMatrix;
-                attribute vec4 aTextureCoordinate;
-                varying vec2 vTextureCoord;
-                void main(){
-                    vTextureCoord = (uTextureMatrix * aTextureCoordinate).xy;
-                    gl_Position = aPosition;
-                }
-            """.trimIndent()
-    private val FRAGMENT_SHADER =
-            """
-                #extension GL_OES_EGL_image_external : require
-                precision mediump float;
-                uniform samplerExternalOES uTextureSampler;
-                varying vec2 vTextureCoord;
-                void main(){
-                    gl_FragColor = texture2D(uTextureSampler, vTextureCoord);
-                }
-            """.trimIndent()
-    private val program: Int
-    private var textureId: Int = -123
-
-    private val stMatrix = FloatArray(16)
-
-    private val vertexData by lazy {
-        floatArrayOf(
-                1f, 1f, 1f, 1f,
-                -1f, 1f, 0f, 1f,
-                -1f, -1f, 0f, 0f,
-                1f, 1f, 1f, 1f,
-                -1f, -1f, 0f, 0f,
-                1f, -1f, 1f, 0f
-        )
-    }
-
-    private val vertextBuffer: FloatBuffer
-
-    private val aPositionLocation: Int
-    private val aTextureCoordLocation: Int
-    private val uTextureMatrixLocation: Int
-    private val uTextureSamplerLocation: Int
-
-    init {
-        program = createProgram(VERTEX_SHADER, FRAGMENT_SHADER)
-        vertextBuffer = ByteBuffer.allocateDirect(vertexData.size * 4)
-                .order(ByteOrder.nativeOrder())
-                .asFloatBuffer()
-        vertextBuffer.put(vertexData, 0, vertexData.size).position(0)
-
-        aPositionLocation = getAttribLocation(program, "aPosition")
-        aTextureCoordLocation = getAttribLocation(program, "aTextureCoordinate")
-        uTextureMatrixLocation = getUniformLocation(program, "uTextureMatrix")
-        uTextureSamplerLocation = getUniformLocation(program, "uTextureSampler")
-    }
-
-    fun genTextureId(): Int {
-        textureId = buildTextureId()
-        return textureId
-    }
-
-    fun drawFrame(st: SurfaceTexture, ce: Boolean) {
-        st.getTransformMatrix(stMatrix)
-
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId)
-        GLES20.glUniform1i(uTextureSamplerLocation, 0)
-
-        GLES20.glUniformMatrix4fv(uTextureMatrixLocation, 1, false, stMatrix, 0)
-
-        vertextBuffer.position(0)
-        GLES20.glEnableVertexAttribArray(aPositionLocation)
-        GLES20.glVertexAttribPointer(aPositionLocation, 2, GLES20.GL_FLOAT, false, 16, vertextBuffer)
-
-        vertextBuffer.position(2)
-        GLES20.glEnableVertexAttribArray(aTextureCoordLocation)
-        GLES20.glVertexAttribPointer(aTextureCoordLocation, 2, GLES20.GL_FLOAT, false, 16, vertextBuffer)
-
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6)
-        unBindTexture()
-    }
-}
-
 /**
  * 使用 作为数据传递介质 Surface 绘制
  *
@@ -173,83 +88,38 @@ class Program1 {
  * */
 
 class SurfaceProgram {
-    private val FLOAT_SIZE_BYTES = 4
-    private val TRIANGLE_VERTICES_DATA_STRIDE_BYTES = 5 * FLOAT_SIZE_BYTES
-    private val TRIANGLE_VERTICES_DATA_POS_OFFSET = 0
-    private val TRIANGLE_VERTICES_DATA_UV_OFFSET = 3
-
-    private var textureId: Int = -123
-
     //顶点着色器
     private val VERTEX_SHADER =
             """
-            uniform mat4 uMVPMatrix;
-            uniform mat4 uSTMatrix;
-            attribute vec4 aPosition;
-            attribute vec4 aTextureCoord;
-            varying vec2 vTextureCoord;
-            void main() {
-                gl_Position = uMVPMatrix * aPosition;
-                vTextureCoord = (uSTMatrix * aTextureCoord).xy;
-            }
-            """
+                attribute vec4 position;
+                attribute vec4 aTexCoord;
+                uniform mat4 texMatrix;
+                varying vec2 vTexCoord;
+                void main(){
+                    gl_Position = position;
+                    vTexCoord = (texMatrix * aTexCoord).xy;
+                }
+            """.trimIndent()
 
     //片元着色器
     private val FRAGMENT_SHADER =
             """
-            #extension GL_OES_EGL_image_external : require
-            precision mediump float;
-            varying vec2 vTextureCoord;
-            uniform samplerExternalOES sTexture;
-            void main() {
-                gl_FragColor = texture2D(sTexture, vTextureCoord);
-            }
-            """
+                #extension GL_OES_EGL_image_external : require
+                precision mediump float;
+                uniform samplerExternalOES texture;
+                varying vec2 vTexCoord;
+                void main () {
+                    gl_FragColor = texture2D(texture, vTexCoord);
+                }
+            """.trimIndent()
 
-    private val triangleVerticesData = floatArrayOf(
-            // X, Y, Z, U, V
-            -1.0f, -1.0f, 0f, 0f,
-            0f, 1.0f, -1.0f, 0f,
-            1f, 0f, -1.0f, 1.0f,
-            0f, 0f, 1f, 1.0f,
-            1.0f, 0f, 1f, 1f)
-
-    private val triangleVertices: FloatBuffer
-
-    private val mMVPMatrix = FloatArray(16)
-    private val stMatrix = FloatArray(16)
-
-    private var program: Int = 0
-    private var muMVPMatrixHandle: Int = 0
-    private var muSTMatrixHandle: Int = 0
-    private var maPositionHandle: Int = 0
-    private var maTextureHandle: Int = 0
+    private val camera2Draw: Camera2Draw
+    private var textureId: Int = GLES20.GL_NONE
+    private var program: Int = GLES20.GL_NONE
 
     init {
-        triangleVertices = ByteBuffer.allocateDirect(
-                triangleVerticesData.size * FLOAT_SIZE_BYTES)
-                .order(ByteOrder.nativeOrder()).asFloatBuffer()
-        triangleVertices.put(triangleVerticesData).position(0)
-
-        Matrix.setIdentityM(stMatrix, 0)
-
-        Log.d(this.javaClass.name, " create texture 2d program ")
         program = createProgram(VERTEX_SHADER, FRAGMENT_SHADER)
-        maPositionHandle = GLES20.glGetAttribLocation(program, "aPosition")
-        checkLocation(maPositionHandle, "aPosition")
-        maTextureHandle = GLES20.glGetAttribLocation(program, "aTextureCoord")
-        checkLocation(maTextureHandle, "aTextureCoord")
-
-        /**
-         * uniform :代表从CPU传递到GPU的数据；
-         * 以下就是获取特定uniform的的索引值，方便后续更新
-         * 更新使用的函数是 @glUniform4f
-         * */
-        muMVPMatrixHandle = GLES20.glGetUniformLocation(program, "uMVPMatrix")
-        checkLocation(muMVPMatrixHandle, "uMVPMatrix")
-        muSTMatrixHandle = GLES20.glGetUniformLocation(program, "uSTMatrix")
-        checkLocation(muSTMatrixHandle, "uSTMatrix")
-
+        camera2Draw = Camera2Draw(program)
     }
 
     fun genTextureId(): Int {
@@ -258,36 +128,98 @@ class SurfaceProgram {
     }
 
     fun drawFrame(st: SurfaceTexture) {
-        checkGlError("onDrawFrame start")
-        st.getTransformMatrix(stMatrix)
+        camera2Draw.drawFrame(st, textureId)
+    }
 
-        GLES20.glClearColor(0.0f, 1.0f, 0.0f, 1.0f)
-        GLES20.glClear(GLES20.GL_DEPTH_BUFFER_BIT or GLES20.GL_COLOR_BUFFER_BIT)
+    fun release() {
+        releaseTexture(intArrayOf(textureId))
+        GLES20.glDeleteProgram(program)
+    }
+}
+
+class Camera2Draw(program: Int) {
+    private val vertexBuffer by lazy {
+        createFloatBuffer(floatArrayOf(
+                -1f, 1f, 0f,
+                -1f, -1f, 0f,
+                1f, -1f, 0f,
+                1f, 1f, 0f
+        )).position(0)
+    }
+
+    private val indexBuffer by lazy {
+        val data = shortArrayOf(0, 1, 2, 0, 2, 3)
+        val buffer = ShortBuffer.allocate(data.size).put(data)
+        buffer.position(0)
+        buffer
+    }
+
+    private val texCoordBuffer by lazy {
+        val buffer = createFloatBuffer(floatArrayOf(
+                0f, 0f, 1f, 1f,
+                0f, 1f, 1f, 1f,
+                1f, 1f, 1f, 1f,
+                1f, 0f, 1f, 1f
+        ))
+        buffer.position(0)
+        buffer
+    }
+
+    private var posHandle: Int = -1
+    private var texCoordHandle: Int = -1
+    private var textureHandle: Int = -1
+    private var stMatrixHandle: Int = -1
+
+    private val stMatrix by lazy {
+        FloatArray(16)
+    }
+
+    init {
+        posHandle = getAttribLocation(program, "position")
+        texCoordHandle = getAttribLocation(program, "aTexCoord")
+        textureHandle = getUniformLocation(program, "texture")
+        stMatrixHandle = getUniformLocation(program, "texMatrix")
+    }
+
+    fun drawFrame(surfaceTexture: SurfaceTexture, textureId: Int) {
+        surfaceTexture.getTransformMatrix(stMatrix)
+
+        // camera返回的纹理是，左右镜像，上下颠倒的
+        // rotateM。这个函数的意义就是原点绕着x、y、z三个轴旋转
+        // 这里的一个单位就是纹理在各自轴上的全长
+        // 先把图像沿着x轴向右平移一个单位。然后在沿着y轴做180f旋转。这样图像镜像就处理好了。
+        // 又回到了原来的坐标系
+        Matrix.translateM(stMatrix, 0, 1f, 0f, 0f)
+        // 绕着y轴旋转
+        Matrix.rotateM(stMatrix, 0, 180f, 0f, 1f, 0.0f)
+
+        // 接下来处理上下颠倒。颠倒的话，就是原点（0，0）沿着z轴转180度
+        // 只沿着z轴转180度的话，那么x和y都会变成-1个单位。所以先把x和y都沿着轴的正方向平移一个单位，再旋转
+        Matrix.translateM(stMatrix, 0, 1f, 1f, 0f)
+        // 绕着z轴旋转
+        Matrix.rotateM(stMatrix, 0, 180f, 0f, 0f, 1f)
+
+        enableVertexAttrib(posHandle)
+        enableVertexAttrib(texCoordHandle)
+
+        GLES20.glVertexAttribPointer(posHandle, 3, GLES20.GL_FLOAT,
+                false, 12, vertexBuffer)
+        GLES20.glVertexAttribPointer(texCoordHandle, 4, GLES20.GL_FLOAT,
+                false, 16, texCoordBuffer)
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId)
-
-        triangleVertices.position(TRIANGLE_VERTICES_DATA_POS_OFFSET)
-        GLES20.glVertexAttribPointer(maPositionHandle, 3, GLES20.GL_FLOAT, false,
-                TRIANGLE_VERTICES_DATA_STRIDE_BYTES, triangleVertices)
-        checkGlError("glVertexAttribPointer maPosition")
-        GLES20.glEnableVertexAttribArray(maPositionHandle)
-        checkGlError("glEnableVertexAttribArray maPositionHandle")
-
-        triangleVertices.position(TRIANGLE_VERTICES_DATA_UV_OFFSET)
-        GLES20.glVertexAttribPointer(maTextureHandle, 2, GLES20.GL_FLOAT, false,
-                TRIANGLE_VERTICES_DATA_STRIDE_BYTES, triangleVertices)
-        checkGlError("glVertexAttribPointer maTextureHandle")
-        GLES20.glEnableVertexAttribArray(maTextureHandle)
-        checkGlError("glEnableVertexAttribArray maTextureHandle")
-
-        Matrix.setIdentityM(mMVPMatrix, 0)
-        GLES20.glUniformMatrix4fv(muMVPMatrixHandle, 1, false, mMVPMatrix, 0)
-        GLES20.glUniformMatrix4fv(muSTMatrixHandle, 1, false, stMatrix, 0)
-
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
-        checkGlError("glDrawArrays")
-
+        
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+        GLES20.glUniform1i(textureHandle, 0)
+        
+        GLES20.glUniformMatrix4fv(stMatrixHandle, 1, false, stMatrix, 0)
+        GLES20.glDrawElements(GLES20.GL_TRIANGLES, 6,
+                GLES20.GL_UNSIGNED_SHORT, indexBuffer)
+        
+        disableVertexAttrib(posHandle)
+        disableVertexAttrib(texCoordHandle)
+        
         unBindTexture()
     }
 }

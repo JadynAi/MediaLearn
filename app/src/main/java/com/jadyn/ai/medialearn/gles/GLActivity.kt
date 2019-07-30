@@ -28,19 +28,6 @@ class GLActivity : AppCompatActivity() {
         gl_texture_view.setRenderer(TextureRender())
         gl_texture_view.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
 
-//        gl_texture_view.surfaceTextureListener = object :TextureView.SurfaceTextureListener{
-//            override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture?, width: Int, height: Int) {
-//            }
-//
-//            override fun onSurfaceTextureUpdated(surface: SurfaceTexture?) {
-//            }
-//
-//            override fun onSurfaceTextureDestroyed(surface: SurfaceTexture?): Boolean {
-//            }
-//
-//            override fun onSurfaceTextureAvailable(surface: SurfaceTexture?, width: Int, height: Int) {
-//            }
-//        }
     }
 
     override fun onDestroy() {

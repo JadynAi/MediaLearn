@@ -117,7 +117,7 @@ class FBOPixelsGen(private val size: Size,
         GLES30.glUnmapBuffer(GLES30.GL_PIXEL_PACK_BUFFER)
         //解除绑定PBO
         GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, GLES30.GL_NONE)
-        
+
         //交换索引
         index = (index + 1) % PBO_COUNT
         nextIndex = (nextIndex + 1) % PBO_COUNT
@@ -127,6 +127,8 @@ class FBOPixelsGen(private val size: Size,
     }
 
     override fun release() {
-        GLES20.glDeleteBuffers(pboIds.size, pboIds, 0)
+        if (usePbo) {
+            GLES30.glDeleteBuffers(pboIds.size, pboIds, 0)
+        }
     }
 }

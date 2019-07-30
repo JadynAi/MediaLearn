@@ -46,16 +46,13 @@ class VideoRecorder(private val width: Int, private val height: Int,
         MediaCodec.BufferInfo()
     }
 
-    init {
-        Log.d(TAG, "runnable init thread: ${Thread.currentThread().name} ")
-    }
-
     private lateinit var codec: MediaCodec
     private lateinit var inputSurface: Surface
     private var frameCount = 0
     private var isFormatChanged = false
 
     override fun run() {
+        Log.d(TAG, "runnable init thread: ${Thread.currentThread().name} ")
         try {
             // Mime 决定输出数据格式，这里的AVC代表H264
             codec = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_VIDEO_AVC)

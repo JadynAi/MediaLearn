@@ -58,6 +58,7 @@ class VideoDecoderRunnable(
 
 
     override fun run() {
+        val decodeCore = GLCore()
         try {
             isRunning.add(1)
             val startTime = System.currentTimeMillis()
@@ -69,7 +70,6 @@ class VideoDecoderRunnable(
             val decoder = MediaCodec.createDecoderByType(mediaFormat.mime)
 
 
-            val decodeCore = GLCore()
             val width = mediaFormat.width
             val height = mediaFormat.height
             // 指定帧格式COLOR_FormatYUV420Flexible,几乎所有的解码器都支持
@@ -145,6 +145,7 @@ class VideoDecoderRunnable(
             observer.invoke(outputFrameCount)
             Log.d(TAG, "total cost time ${System.currentTimeMillis() - startTime}")
         } catch (e: Exception) {
+            decodeCore.release()
             observer.invoke(e)
         }
     }

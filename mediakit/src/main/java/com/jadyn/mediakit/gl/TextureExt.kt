@@ -62,12 +62,8 @@ private fun bindSetTexture(target: Int, id: Int) {
     GLES20.glTexParameteri(target, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE)
 }
 
-fun bindTexture(textureId: Int, target: Int = GLES11Ext.GL_TEXTURE_EXTERNAL_OES) {
-    GLES20.glBindTexture(target, textureId)
-}
-
 fun unBindTexture(target: Int = GLES11Ext.GL_TEXTURE_EXTERNAL_OES) {
-    bindTexture(GLES20.GL_NONE, target)
+    GLES20.glBindTexture(target, GLES20.GL_NONE)
 }
 
 fun unBindFrameBuffer() {
@@ -82,7 +78,7 @@ fun unBindFrameBuffer3() {
  * 释放纹理
  * */
 fun releaseTexture(id: IntArray) {
-    GLES20.glDeleteTextures(1, id, 0)
+    GLES20.glDeleteTextures(id.size, id, 0)
 }
 
 /**

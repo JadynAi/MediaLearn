@@ -127,7 +127,6 @@ class EncodeProgram(private val size: Size) {
 
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, b, 0)
         b.recycle()
-        unBindTexture()
 
         // 顶点坐标
         GLES20.glEnableVertexAttribArray(posHandle)
@@ -142,6 +141,10 @@ class EncodeProgram(private val size: Size) {
         GLES20.glUniform1i(texHandle, 0)
         GLES20.glDrawElements(GLES20.GL_TRIANGLES, 6,
                 GLES20.GL_UNSIGNED_INT, indexBuffer)
-        unBindTexture()
+        unBindTexture(GLES20.GL_TEXTURE_2D)
+    }
+
+    fun release() {
+        releaseTexture(intArrayOf(textureID))
     }
 }

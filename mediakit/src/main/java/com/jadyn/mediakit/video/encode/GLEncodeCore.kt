@@ -46,5 +46,6 @@ class GLEncodeCore(private val width: Int, private val height: Int) {
 
     fun release() {
         eglEnv.release()
+        encodeProgram.release()
     }
 }

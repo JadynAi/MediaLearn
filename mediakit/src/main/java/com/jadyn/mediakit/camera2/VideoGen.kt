@@ -65,6 +65,11 @@ class VideoGen {
             // 得到输出video format
             videoFormats.add(it)
         }
+
+//        val handlerThread = HandlerThread("video")
+//        handlerThread.start()
+//        val handler = Handler(handlerThread.looper)
+//        handler.post(videoRecorder)
         // 执行视频录制
         recorderThread.execute(videoRecorder)
         // 执行音频录制，回调PCM数据
