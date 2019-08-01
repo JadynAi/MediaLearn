@@ -144,7 +144,7 @@ class Camera2Draw(program: Int) {
                 -1f, -1f, 0f,
                 1f, -1f, 0f,
                 1f, 1f, 0f
-        )).position(0)
+        ))
     }
 
     private val indexBuffer by lazy {
@@ -155,14 +155,12 @@ class Camera2Draw(program: Int) {
     }
 
     private val texCoordBuffer by lazy {
-        val buffer = createFloatBuffer(floatArrayOf(
+        createFloatBuffer(floatArrayOf(
                 0f, 0f, 1f, 1f,
                 0f, 1f, 1f, 1f,
                 1f, 1f, 1f, 1f,
                 1f, 0f, 1f, 1f
         ))
-        buffer.position(0)
-        buffer
     }
 
     private var posHandle: Int = -1
