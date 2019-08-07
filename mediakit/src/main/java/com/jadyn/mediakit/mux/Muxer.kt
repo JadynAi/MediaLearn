@@ -85,19 +85,20 @@ class Muxer {
         mediaMuxer!!.start()
 
         while (isRecording.isNotEmpty()) {
-            val videoFrame = videoQueue.peek()
             val audioFrame = audioQueue.peek()
-            if (videoFrame == null || audioFrame == null) {
+            val videoFrame = videoQueue.peek()
+            if (audioFrame == null || videoFrame == null) {
                 continue
             }
-            val videoTime = videoFrame.bufferInfo.presentationTimeUs
+            // 先判断队首的时间戳大小，先写入小的数据
             val audioTime = audioFrame.bufferInfo.presentationTimeUs
+            val videoTime = videoFrame.bufferInfo.presentationTimeUs
             if (audioTime != -1L && videoTime != -1L) {
                 // 先写小一点的时间戳的数据
                 if (audioTime < videoTime) {
-                    writeAudio(audioTrackId)
+                    writeAudio(audioTrackId, audioQueue.poll())
                 } else {
-                    writeVideo(videoTrackId)
+                    writeVideo(videoTrackId, videoQueue.poll())
                 }
             }
         }
@@ -107,8 +108,8 @@ class Muxer {
         mediaMuxer = null
     }
 
-    private fun writeVideo(id: Int) {
-        videoQueue.poll()?.apply {
+    private fun writeVideo(id: Int, videoFrame: VideoPacket) {
+        videoFrame.apply {
             try {
                 loggerStream?.write("video frame : ${bufferInfo?.toS()} \r\n".toByteArray())
             } catch (e: Exception) {
@@ -118,8 +119,8 @@ class Muxer {
         }
     }
 
-    private fun writeAudio(id: Int) {
-        audioQueue.poll().apply {
+    private fun writeAudio(id: Int, audioFrame: AudioPacket) {
+        audioFrame.apply {
             try {
                 loggerStream?.write("audio frame : ${bufferInfo?.toS()} \r\n".toByteArray())
             } catch (e: Exception) {
