@@ -5,8 +5,6 @@ import android.media.MediaMuxer
 import android.os.Environment
 import android.os.Handler
 import android.os.HandlerThread
-import com.jadyn.ai.kotlind.utils.firstSafe
-import com.jadyn.ai.kotlind.utils.popSafe
 import com.jadyn.mediakit.audio.AudioPacket
 import com.jadyn.mediakit.camera2.VideoPacket
 import com.jadyn.mediakit.function.toS
@@ -14,7 +12,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import java.util.*
-import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
  *@version:
@@ -28,11 +26,11 @@ class Muxer {
 
     //AAC 音频帧队列
     private val audioQueue by lazy {
-        ConcurrentLinkedDeque<AudioPacket>()
+        ConcurrentLinkedQueue<AudioPacket>()
     }
     // 视频帧队列
     private val videoQueue by lazy {
-        ConcurrentLinkedDeque<VideoPacket>()
+        ConcurrentLinkedQueue<VideoPacket>()
     }
 
     private val thread by lazy {
@@ -41,9 +39,7 @@ class Muxer {
         handlerThread
     }
 
-    private val handler by lazy {
-        Handler(thread.looper)
-    }
+    private var handler: Handler? = null
 
     private var mediaMuxer: MediaMuxer? = null
 
@@ -52,7 +48,10 @@ class Muxer {
     fun start(isRecording: List<Any>, outputPath: String?,
               videoTracks: List<MediaFormat>,
               audioTracks: List<MediaFormat>) {
-        handler.post {
+        if (handler == null) {
+            handler = Handler(thread.looper)
+        }
+        handler!!.post {
             // 循环直到拿到可用的 输出视频轨和音频轨
             loop@ while (true) {
                 if (videoTracks.isNotEmpty() && audioTracks.isNotEmpty()) {
@@ -86,25 +85,20 @@ class Muxer {
         mediaMuxer!!.start()
 
         while (isRecording.isNotEmpty()) {
-            val videoFrame = videoQueue.firstSafe
-            val audioFrame = audioQueue.firstSafe
-
-            val videoTime = videoFrame?.bufferInfo?.presentationTimeUs ?: -1L
-            val audioTime = audioFrame?.bufferInfo?.presentationTimeUs ?: -1L
-
-            if (videoTime == -1L && audioTime != -1L) {
-                writeAudio(audioTrackId)
-            } else if (audioTime == -1L && videoTime != -1L) {
-                writeVideo(videoTrackId)
-            } else if (audioTime != -1L && videoTime != -1L) {
+            val videoFrame = videoQueue.peek()
+            val audioFrame = audioQueue.peek()
+            if (videoFrame == null || audioFrame == null) {
+                continue
+            }
+            val videoTime = videoFrame.bufferInfo.presentationTimeUs
+            val audioTime = audioFrame.bufferInfo.presentationTimeUs
+            if (audioTime != -1L && videoTime != -1L) {
                 // 先写小一点的时间戳的数据
                 if (audioTime < videoTime) {
                     writeAudio(audioTrackId)
                 } else {
                     writeVideo(videoTrackId)
                 }
-            } else {
-                // do nothing
             }
         }
         loggerStream?.close()
@@ -114,7 +108,7 @@ class Muxer {
     }
 
     private fun writeVideo(id: Int) {
-        videoQueue.popSafe?.apply {
+        videoQueue.poll()?.apply {
             try {
                 loggerStream?.write("video frame : ${bufferInfo?.toS()} \r\n".toByteArray())
             } catch (e: Exception) {
@@ -125,7 +119,7 @@ class Muxer {
     }
 
     private fun writeAudio(id: Int) {
-        audioQueue.popSafe?.apply {
+        audioQueue.poll().apply {
             try {
                 loggerStream?.write("audio frame : ${bufferInfo?.toS()} \r\n".toByteArray())
             } catch (e: Exception) {
@@ -146,10 +140,12 @@ class Muxer {
     fun release() {
         videoQueue.clear()
         audioQueue.clear()
-        handler.removeCallbacksAndMessages(null)
+        handler?.removeCallbacksAndMessages(null)
         thread.interrupt()
         thread.quitSafely()
+        handler = null
         mediaMuxer = null
     }
 }
+
 

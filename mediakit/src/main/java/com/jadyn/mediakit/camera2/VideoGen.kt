@@ -12,7 +12,7 @@ import com.jadyn.mediakit.function.createAACFormat
 import com.jadyn.mediakit.function.genData
 import com.jadyn.mediakit.mux.Muxer
 import com.jadyn.mediakit.video.encode.VideoRecorder
-import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.Executors
 
 /**
@@ -35,7 +35,7 @@ class VideoGen {
     //-----audio-------
     //PCM 队列
     private val audioQueue by lazy {
-        ConcurrentLinkedDeque<ByteArray>()
+        ArrayBlockingQueue<ByteArray>(20)
     }
 
     //-----mux-------

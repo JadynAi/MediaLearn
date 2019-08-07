@@ -189,7 +189,7 @@ class Camera2Draw(program: Int) {
         // 又回到了原来的坐标系
         Matrix.translateM(stMatrix, 0, 1f, 0f, 0f)
         // 绕着y轴旋转
-        Matrix.rotateM(stMatrix, 0, 180f, 0f, 1f, 0.0f)
+        Matrix.rotateM(stMatrix, 0, 180f, 0f, 1f, 0f)
 
         // 接下来处理上下颠倒。颠倒的话，就是原点（0，0）沿着z轴转180度
         // 只沿着z轴转180度的话，那么x和y都会变成-1个单位。所以先把x和y都沿着轴的正方向平移一个单位，再旋转

@@ -96,10 +96,12 @@ class VideoRecorder(private val width: Int, private val height: Int,
             }
             if (bufferInfo.size != 0) {
                 Log.d(TAG, "buffer info offset ${bufferInfo.offset} time is ${bufferInfo.presentationTimeUs} ")
-                encodedData.position(bufferInfo.offset)
-                encodedData.limit(bufferInfo.offset + bufferInfo.size)
-                Log.d(TAG, "sent " + bufferInfo.size + " bytes to muxer")
-                dataCallback.invoke(frameCount, bufferInfo.presentationTimeUs, bufferInfo, encodedData)
+                encodedData?.apply {
+                    encodedData.position(bufferInfo.offset)
+                    encodedData.limit(bufferInfo.offset + bufferInfo.size)
+                    Log.d(TAG, "sent " + bufferInfo.size + " bytes to muxer")
+                    dataCallback.invoke(frameCount, bufferInfo.presentationTimeUs, bufferInfo, encodedData)
+                }
             }
             codec.releaseOutputBuffer(it, false)
         }, !isEnd)

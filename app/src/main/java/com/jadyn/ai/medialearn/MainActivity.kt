@@ -89,14 +89,16 @@ class MainActivity : AppCompatActivity() {
         tv_gl.setOnClickListener {
             start<GLActivity>()
         }
-        
-        tv_gl_2.click { 
+
+        tv_gl_2.click {
             start<GLTextureActivity>()
         }
 
         tv_cutout.click {
             start<CutOutActivity>()
         }
-
     }
 }
+
+
+

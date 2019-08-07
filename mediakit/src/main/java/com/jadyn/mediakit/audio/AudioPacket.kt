@@ -9,7 +9,7 @@ import android.media.MediaCodec
  *@Since:2019-05-20
  *@ChangeList:
  */
-class AudioPacket(val buffer: ByteArray, val size: Int, val bufferInfo: MediaCodec.BufferInfo? = null) {
+class AudioPacket(val buffer: ByteArray, val size: Int, val bufferInfo: MediaCodec.BufferInfo) {
 
     override fun toString(): String {
         bufferInfo?.apply {

@@ -13,4 +13,4 @@ class VideoPacket(val buffer: ByteArray,
                   val size: Int,
                   val timeMills: Long,
                   val duration: Int,
-                  val bufferInfo: MediaCodec.BufferInfo? = null)
+                  val bufferInfo: MediaCodec.BufferInfo)
