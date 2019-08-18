@@ -74,6 +74,7 @@ class FBOPixelsGen(private val size: Size,
             val s = size.width * size.height * 4
             GLES30.glGenBuffers(PBO_COUNT, pboIds, 0)
             GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, pboIds[0])
+            // 传null就是分配空间
             GLES30.glBufferData(GLES30.GL_PIXEL_PACK_BUFFER, s, null, GLES30.GL_STATIC_READ)
 
             GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, pboIds[1])
@@ -107,6 +108,7 @@ class FBOPixelsGen(private val size: Size,
     private fun pboReadPixels(): Bitmap {
         Log.d(TAG, "PBO read: ")
         GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, pboIds[index])
+        // 2019-08-18-14:29 数据复制到缓冲区
         GLJni.glReadPixels(0, 0, size.width, size.height, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE)
 
         GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, pboIds[nextIndex])
