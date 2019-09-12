@@ -1,0 +1,51 @@
+{
+  "buildFiles": [
+    "/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Android.mk",
+    "/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Application.mk"
+  ],
+  "cleanCommands": [
+    "/Users/jadynai/Developer/SDK/ndk-bundle/ndk-build NDK_PROJECT_PATH\u003dnull APP_BUILD_SCRIPT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Android.mk NDK_APPLICATION_MK\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Application.mk APP_ABI\u003darmeabi-v7a NDK_ALL_ABIS\u003darmeabi-v7a NDK_DEBUG\u003d1 APP_PLATFORM\u003dandroid-21 NDK_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/obj NDK_LIBS_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/lib clean"
+  ],
+  "buildTargetsCommand": "/Users/jadynai/Developer/SDK/ndk-bundle/ndk-build NDK_PROJECT_PATH\u003dnull APP_BUILD_SCRIPT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Android.mk NDK_APPLICATION_MK\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Application.mk APP_ABI\u003darmeabi-v7a NDK_ALL_ABIS\u003darmeabi-v7a NDK_DEBUG\u003d1 APP_PLATFORM\u003dandroid-21 NDK_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/obj NDK_LIBS_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/lib {LIST_OF_TARGETS_TO_BUILD}",
+  "libraries": {
+    "gljni-debug-armeabi-v7a": {
+      "buildCommand": "/Users/jadynai/Developer/SDK/ndk-bundle/ndk-build NDK_PROJECT_PATH\u003dnull APP_BUILD_SCRIPT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Android.mk NDK_APPLICATION_MK\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Application.mk APP_ABI\u003darmeabi-v7a NDK_ALL_ABIS\u003darmeabi-v7a NDK_DEBUG\u003d1 APP_PLATFORM\u003dandroid-21 NDK_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/obj NDK_LIBS_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/lib /Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/obj/local/armeabi-v7a/libgljni.so",
+      "toolchain": "toolchain-armeabi-v7a",
+      "abi": "armeabi-v7a",
+      "artifactName": "gljni",
+      "files": [
+        {
+          "src": "/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/com_jadyn_mediakit_gl_GLJni.c",
+          "flags": "-target armv7-none-linux-androideabi21 -fdata-sections -ffunction-sections -fstack-protector-strong -funwind-tables -no-canonical-prefixes --sysroot /Users/jadynai/Developer/SDK/ndk-bundle/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -g -Wno-invalid-command-line-argument -Wno-unused-command-line-argument -fno-addrsig -fpic -march\u003darmv7-a -mthumb -O0 -UNDEBUG -fno-limit-debug-info -mfpu\u003dneon -I/Users/jadynai/Developer/SDK/ndk-bundle/sources/android/cpufeatures -I/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni -DANDROID -D__cpusplus -g -mfloat-abi\u003dsoftfp -mfpu\u003dneon -march\u003darmv7-a -mtune\u003dcortex-a8 -DHAVE_NEON\u003d1 -DNO_CRYPTO -Wa,--noexecstack -Wformat -Werror\u003dformat-security"
+        },
+        {
+          "src": "/Users/jadynai/Developer/SDK/ndk-bundle/sources/android/cpufeatures/cpu-features.c",
+          "flags": "-target armv7-none-linux-androideabi21 -fdata-sections -ffunction-sections -fstack-protector-strong -funwind-tables -no-canonical-prefixes --sysroot /Users/jadynai/Developer/SDK/ndk-bundle/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -g -Wno-invalid-command-line-argument -Wno-unused-command-line-argument -fno-addrsig -fpic -march\u003darmv7-a -mthumb -O0 -UNDEBUG -fno-limit-debug-info -I/Users/jadynai/Developer/SDK/ndk-bundle/sources/android/cpufeatures -DANDROID -Wall -Wextra -Werror -Wa,--noexecstack -Wformat -Werror\u003dformat-security"
+        }
+      ],
+      "output": "/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/obj/local/armeabi-v7a/libgljni.so"
+    },
+    "cpufeatures-debug-armeabi-v7a": {
+      "buildCommand": "/Users/jadynai/Developer/SDK/ndk-bundle/ndk-build NDK_PROJECT_PATH\u003dnull APP_BUILD_SCRIPT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Android.mk NDK_APPLICATION_MK\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Application.mk APP_ABI\u003darmeabi-v7a NDK_ALL_ABIS\u003darmeabi-v7a NDK_DEBUG\u003d1 APP_PLATFORM\u003dandroid-21 NDK_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/obj NDK_LIBS_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/lib /Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/obj/local/armeabi-v7a/libcpufeatures.a",
+      "toolchain": "toolchain-armeabi-v7a",
+      "abi": "armeabi-v7a",
+      "artifactName": "cpufeatures",
+      "files": [
+        {
+          "src": "/Users/jadynai/Developer/SDK/ndk-bundle/sources/android/cpufeatures/cpu-features.c",
+          "flags": "-target armv7-none-linux-androideabi21 -fdata-sections -ffunction-sections -fstack-protector-strong -funwind-tables -no-canonical-prefixes --sysroot /Users/jadynai/Developer/SDK/ndk-bundle/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -g -Wno-invalid-command-line-argument -Wno-unused-command-line-argument -fno-addrsig -fpic -march\u003darmv7-a -mthumb -O0 -UNDEBUG -fno-limit-debug-info -I/Users/jadynai/Developer/SDK/ndk-bundle/sources/android/cpufeatures -DANDROID -Wall -Wextra -Werror -Wa,--noexecstack -Wformat -Werror\u003dformat-security"
+        }
+      ],
+      "output": "/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/obj/local/armeabi-v7a/libcpufeatures.a"
+    }
+  },
+  "toolchains": {
+    "toolchain-armeabi-v7a": {
+      "cCompilerExecutable": "/Users/jadynai/Developer/SDK/ndk-bundle/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang"
+    }
+  },
+  "cFileExtensions": [
+    "c"
+  ],
+  "cppFileExtensions": []
+}

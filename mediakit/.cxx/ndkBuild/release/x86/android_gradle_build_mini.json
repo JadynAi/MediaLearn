@@ -1,0 +1,24 @@
+{
+  "buildFiles": [
+    "/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Android.mk",
+    "/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Application.mk"
+  ],
+  "cleanCommands": [
+    "/Users/jadynai/Developer/SDK/ndk-bundle/ndk-build NDK_PROJECT_PATH\u003dnull APP_BUILD_SCRIPT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Android.mk NDK_APPLICATION_MK\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Application.mk APP_ABI\u003dx86 NDK_ALL_ABIS\u003dx86 NDK_DEBUG\u003d0 APP_PLATFORM\u003dandroid-21 NDK_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/release/obj NDK_LIBS_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/release/lib clean"
+  ],
+  "buildTargetsCommand": "/Users/jadynai/Developer/SDK/ndk-bundle/ndk-build NDK_PROJECT_PATH\u003dnull APP_BUILD_SCRIPT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Android.mk NDK_APPLICATION_MK\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Application.mk APP_ABI\u003dx86 NDK_ALL_ABIS\u003dx86 NDK_DEBUG\u003d0 APP_PLATFORM\u003dandroid-21 NDK_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/release/obj NDK_LIBS_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/release/lib {LIST_OF_TARGETS_TO_BUILD}",
+  "libraries": {
+    "gljni-release-x86": {
+      "artifactName": "gljni",
+      "buildCommand": "/Users/jadynai/Developer/SDK/ndk-bundle/ndk-build NDK_PROJECT_PATH\u003dnull APP_BUILD_SCRIPT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Android.mk NDK_APPLICATION_MK\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Application.mk APP_ABI\u003dx86 NDK_ALL_ABIS\u003dx86 NDK_DEBUG\u003d0 APP_PLATFORM\u003dandroid-21 NDK_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/release/obj NDK_LIBS_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/release/lib /Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/release/obj/local/x86/libgljni.so",
+      "abi": "x86",
+      "output": "/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/release/obj/local/x86/libgljni.so"
+    },
+    "cpufeatures-release-x86": {
+      "artifactName": "cpufeatures",
+      "buildCommand": "/Users/jadynai/Developer/SDK/ndk-bundle/ndk-build NDK_PROJECT_PATH\u003dnull APP_BUILD_SCRIPT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Android.mk NDK_APPLICATION_MK\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Application.mk APP_ABI\u003dx86 NDK_ALL_ABIS\u003dx86 NDK_DEBUG\u003d0 APP_PLATFORM\u003dandroid-21 NDK_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/release/obj NDK_LIBS_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/release/lib /Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/release/obj/local/x86/libcpufeatures.a",
+      "abi": "x86",
+      "output": "/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/release/obj/local/x86/libcpufeatures.a"
+    }
+  }
+}

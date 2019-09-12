@@ -1,0 +1,51 @@
+{
+  "buildFiles": [
+    "/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Android.mk",
+    "/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Application.mk"
+  ],
+  "cleanCommands": [
+    "/Users/jadynai/Developer/SDK/ndk-bundle/ndk-build NDK_PROJECT_PATH\u003dnull APP_BUILD_SCRIPT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Android.mk NDK_APPLICATION_MK\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Application.mk APP_ABI\u003dx86 NDK_ALL_ABIS\u003dx86 NDK_DEBUG\u003d1 APP_PLATFORM\u003dandroid-21 NDK_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/obj NDK_LIBS_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/lib clean"
+  ],
+  "buildTargetsCommand": "/Users/jadynai/Developer/SDK/ndk-bundle/ndk-build NDK_PROJECT_PATH\u003dnull APP_BUILD_SCRIPT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Android.mk NDK_APPLICATION_MK\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Application.mk APP_ABI\u003dx86 NDK_ALL_ABIS\u003dx86 NDK_DEBUG\u003d1 APP_PLATFORM\u003dandroid-21 NDK_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/obj NDK_LIBS_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/lib {LIST_OF_TARGETS_TO_BUILD}",
+  "libraries": {
+    "cpufeatures-debug-x86": {
+      "buildCommand": "/Users/jadynai/Developer/SDK/ndk-bundle/ndk-build NDK_PROJECT_PATH\u003dnull APP_BUILD_SCRIPT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Android.mk NDK_APPLICATION_MK\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Application.mk APP_ABI\u003dx86 NDK_ALL_ABIS\u003dx86 NDK_DEBUG\u003d1 APP_PLATFORM\u003dandroid-21 NDK_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/obj NDK_LIBS_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/lib /Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/obj/local/x86/libcpufeatures.a",
+      "toolchain": "toolchain-x86",
+      "abi": "x86",
+      "artifactName": "cpufeatures",
+      "files": [
+        {
+          "src": "/Users/jadynai/Developer/SDK/ndk-bundle/sources/android/cpufeatures/cpu-features.c",
+          "flags": "-target i686-none-linux-android21 -fdata-sections -ffunction-sections -fstack-protector-strong -funwind-tables -no-canonical-prefixes --sysroot /Users/jadynai/Developer/SDK/ndk-bundle/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -g -Wno-invalid-command-line-argument -Wno-unused-command-line-argument -fno-addrsig -fPIC -O0 -UNDEBUG -fno-limit-debug-info -I/Users/jadynai/Developer/SDK/ndk-bundle/sources/android/cpufeatures -DANDROID -Wall -Wextra -Werror -Wa,--noexecstack -Wformat -Werror\u003dformat-security -mstackrealign"
+        }
+      ],
+      "output": "/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/obj/local/x86/libcpufeatures.a"
+    },
+    "gljni-debug-x86": {
+      "buildCommand": "/Users/jadynai/Developer/SDK/ndk-bundle/ndk-build NDK_PROJECT_PATH\u003dnull APP_BUILD_SCRIPT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Android.mk NDK_APPLICATION_MK\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/Application.mk APP_ABI\u003dx86 NDK_ALL_ABIS\u003dx86 NDK_DEBUG\u003d1 APP_PLATFORM\u003dandroid-21 NDK_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/obj NDK_LIBS_OUT\u003d/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/lib /Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/obj/local/x86/libgljni.so",
+      "toolchain": "toolchain-x86",
+      "abi": "x86",
+      "artifactName": "gljni",
+      "files": [
+        {
+          "src": "/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni/com_jadyn_mediakit_gl_GLJni.c",
+          "flags": "-target i686-none-linux-android21 -fdata-sections -ffunction-sections -fstack-protector-strong -funwind-tables -no-canonical-prefixes --sysroot /Users/jadynai/Developer/SDK/ndk-bundle/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -g -Wno-invalid-command-line-argument -Wno-unused-command-line-argument -fno-addrsig -fPIC -O0 -UNDEBUG -fno-limit-debug-info -I/Users/jadynai/Developer/SDK/ndk-bundle/sources/android/cpufeatures -I/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/src/main/jni -DANDROID -DNO_CRYPTO -Wa,--noexecstack -Wformat -Werror\u003dformat-security -mstackrealign"
+        },
+        {
+          "src": "/Users/jadynai/Developer/SDK/ndk-bundle/sources/android/cpufeatures/cpu-features.c",
+          "flags": "-target i686-none-linux-android21 -fdata-sections -ffunction-sections -fstack-protector-strong -funwind-tables -no-canonical-prefixes --sysroot /Users/jadynai/Developer/SDK/ndk-bundle/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -g -Wno-invalid-command-line-argument -Wno-unused-command-line-argument -fno-addrsig -fPIC -O0 -UNDEBUG -fno-limit-debug-info -I/Users/jadynai/Developer/SDK/ndk-bundle/sources/android/cpufeatures -DANDROID -Wall -Wextra -Werror -Wa,--noexecstack -Wformat -Werror\u003dformat-security -mstackrealign"
+        }
+      ],
+      "output": "/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/build/intermediates/ndkBuild/debug/obj/local/x86/libgljni.so"
+    }
+  },
+  "toolchains": {
+    "toolchain-x86": {
+      "cCompilerExecutable": "/Users/jadynai/Developer/SDK/ndk-bundle/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang"
+    }
+  },
+  "cFileExtensions": [
+    "c"
+  ],
+  "cppFileExtensions": []
+}
