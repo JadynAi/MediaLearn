@@ -4,7 +4,7 @@ import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CameraMetadata
-import android.support.annotation.IntRange
+import androidx.annotation.IntRange
 import android.util.ArrayMap
 import android.util.Size
 import com.jadyn.ai.kotlind.utils.isValid

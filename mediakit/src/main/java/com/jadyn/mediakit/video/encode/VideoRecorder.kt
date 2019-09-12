@@ -84,12 +84,19 @@ class VideoRecorder(private val width: Int, private val height: Int,
         if (isEnd) {
             codec.signalEndOfInputStream()
         }
-        codec.handleOutputBuffer(bufferInfo, 2500, {
+        codec.handleOutputBuffer(bufferInfo, 0, {
             if (!isFormatChanged) {
                 outputFormatChanged.invoke(codec.outputFormat)
                 isFormatChanged = true
             }
         }, {
+            //            手动设置帧间隔
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//            val bundle = Bundle()
+//            bundle.putLong(MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME, 0)
+//            codec.setParameters(bundle)
+//            }
+
             val encodedData = codec.getOutputBuffer(it)
             if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG != 0) {
                 bufferInfo.size = 0

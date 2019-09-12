@@ -3,24 +3,22 @@ package com.jadyn.mediakit.camera2
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
-import android.graphics.ImageFormat
-import android.graphics.Point
-import android.graphics.SurfaceTexture
+import android.graphics.*
 import android.hardware.camera2.*
+import android.media.ImageReader
 import android.media.MediaRecorder
 import android.os.Handler
 import android.os.HandlerThread
+import android.os.Looper
 import android.util.Log
 import android.util.Size
 import android.view.Surface
-import com.jadyn.ai.kotlind.utils.maxChoose
-import com.jadyn.ai.kotlind.utils.screenHeight
-import com.jadyn.ai.kotlind.utils.screenWidth
-import com.jadyn.ai.kotlind.utils.swap
+import com.jadyn.ai.kotlind.utils.*
 import com.jadyn.mediakit.function.CompareSizesByArea
 import com.jadyn.mediakit.function.areDimensionsSwapped
 import com.jadyn.mediakit.function.chooseOptimalSize
-import java.lang.ref.WeakReference
+import java.io.FileOutputStream
+import java.lang.ref.SoftReference
 import java.util.*
 
 /**
@@ -30,7 +28,7 @@ import java.util.*
  *@Since:2019-05-07
  *@ChangeList:
  */
-class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
+class CameraMgr(private var activity: SoftReference<Activity>, size: Size) {
 
     private val TAG = "Camera2Ops"
 
@@ -58,7 +56,7 @@ class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
     private var cameraDevice: CameraDevice? = null
     private var builder: CaptureRequest.Builder? = null
     private var cameraSession: CameraCaptureSession? = null
-    //    private var imageReader: ImageReader? = null
+    private var imageReader: ImageReader? = null
     private val stateCallback by lazy {
         object : CameraDevice.StateCallback() {
             override fun onOpened(camera: CameraDevice?) {
@@ -69,6 +67,25 @@ class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
                     workerHandler = Handler(workerThread?.looper)
                 }
                 cameraDevice = camera
+                if (imageReader == null) {
+                    imageReader = ImageReader.newInstance(previewSize.width, previewSize.height
+                            , ImageFormat.JPEG, 1).apply {
+                        setOnImageAvailableListener({
+                            val image = it.acquireNextImage()
+                            val byteBuffer = image.planes[0].buffer
+                            val byteData = ByteArray(byteBuffer.remaining())
+                            byteBuffer.get(byteData)
+                            it.close()
+
+                            val bitmap = BitmapFactory.decodeByteArray(byteData, 0, byteData.size)
+                            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, FileOutputStream(takePhotoPath))
+//                            val bitmap = Bitmap.createBitmap(previewSize.width, previewSize.height,
+//                                    Bitmap.Config.ARGB_8888)
+//                            bitmap.copyPixelsFromBuffer(byteBuffer)
+
+                        }, workerHandler)
+                    }
+                }
                 startPreview()
             }
 
@@ -133,12 +150,6 @@ class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
             previewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture::class.java),
                     rotatedPreviewSize.width, rotatedPreviewSize.height,
                     maxPreviewSize.width, maxPreviewSize.height, largest, displayRotation)
-//                imageReader = ImageReader.newInstance(previewSize.width, previewSize.height
-//                        , ImageFormat.JPEG, 2).apply {
-//                    setOnImageAvailableListener({
-//
-//                    }, null)
-//                }
             flashSupported =
                     characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
             Log.d(TAG, "display rotation $displayRotation  sensor $sensorOrientation: ")
@@ -163,6 +174,8 @@ class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
                 val list = arrayListOf<Surface>()
                 val surface = Surface(previewST)
                 list.add(surface)
+                // session 需要这个surface，用于ImageReader
+                list.add(imageReader!!.surface)
                 builder?.addTarget(surface)
                 surfaceCompose.add(surface)
                 createCaptureSession2(list, {
@@ -185,18 +198,27 @@ class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
     }
 
     private fun stopPreview() {
+        cameraSession?.stopRepeating()
         cameraSession?.close()
         cameraSession = null
     }
 
     //------------TakePicture---------
 
-    fun takePhoto(path: String? = null) {
+    private var takePhotoPath = ""
+
+    fun takePhoto(path: String) {
         try {
-            builder?.apply {
-                set(CaptureRequest.CONTROL_AF_TRIGGER,
-                        CameraMetadata.CONTROL_AF_TRIGGER_START)
-//                cameraSession?.capture(build(),)
+            takePhotoPath = path
+            cameraDevice?.apply {
+                val builder = createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
+                builder.addTarget(imageReader!!.surface)
+                // 自动对焦
+                builder.set(CaptureRequest.CONTROL_AF_MODE,
+                        CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
+                builder.set(CaptureRequest.JPEG_ORIENTATION, sensorOrientation)      //根据摄像头方向对保存的照片进行旋转，使其为"自然方向"
+                cameraSession?.capture(builder.build(), null, Handler(Looper.getMainLooper()))
+                        ?: toastS("拍照异常")
             }
         } catch (e: CameraAccessException) {
 
@@ -248,7 +270,8 @@ class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
     }
 
     //-----------Destroy--------------
-    fun onDestory() {
+    fun onDestroy() {
+        Log.d(TAG, "camera2 mgr destroy")
         workerHandler?.removeCallbacksAndMessages(null)
         workerThread?.quitSafely()
         try {
@@ -258,6 +281,20 @@ class CameraMgr(private var activity: WeakReference<Activity>, size: Size) {
         } catch (e: InterruptedException) {
             Log.e(TAG, e.toString())
         }
+        imageReader?.close()
+        imageReader = null
+        cameraSession?.close()
+        cameraSession = null
+        cameraDevice?.close()
+        cameraDevice = null
         activity.clear()
+    }
+
+    fun onResume() {
+        startPreview()
+    }
+
+    fun onPause() {
+        stopPreview()
     }
 } 

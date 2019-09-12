@@ -2,7 +2,7 @@ package com.jadyn.mediakit.video.decode
 
 import android.graphics.Bitmap
 import android.os.Environment
-import android.support.v4.util.LruCache
+import androidx.collection.LruCache
 import android.text.TextUtils
 import android.util.Log
 import com.jadyn.mediakit.function.md5

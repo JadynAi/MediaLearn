@@ -2,7 +2,7 @@ package com.jadyn.ai.medialearn
 
 import android.Manifest
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import com.jadyn.ai.kotlind.function.start
 import com.jadyn.ai.kotlind.function.ui.click
 import com.jadyn.ai.medialearn.camera.Camera2Activity

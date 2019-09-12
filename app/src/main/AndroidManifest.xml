@@ -64,7 +64,14 @@
             android:name=".camera2.Camera2RecordActivity"
             android:screenOrientation="portrait"
             />
-        <activity android:name=".gles.GLTextureActivity"
+        <activity
+            android:name=".gles.GLTextureActivity"
+            android:screenOrientation="portrait"
+            />
+
+        <!--U Show Camera Code-->
+        <activity
+            android:name="com.jadyn.ai.ushow.UShowActivity"
             android:screenOrientation="portrait"
             />
 

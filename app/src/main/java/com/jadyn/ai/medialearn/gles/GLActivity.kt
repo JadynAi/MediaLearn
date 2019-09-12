@@ -2,7 +2,7 @@ package com.jadyn.ai.medialearn.gles
 
 import android.opengl.GLSurfaceView
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import com.jadyn.ai.medialearn.R
 import com.jadyn.ai.medialearn.gles.render.TextureRender
 import kotlinx.android.synthetic.main.activity_gles.*

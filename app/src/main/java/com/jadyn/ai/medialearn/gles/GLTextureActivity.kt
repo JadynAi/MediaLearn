@@ -2,7 +2,7 @@ package com.jadyn.ai.medialearn.gles
 
 import android.graphics.SurfaceTexture
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import android.view.Surface
 import android.view.TextureView
 import com.jadyn.ai.medialearn.R

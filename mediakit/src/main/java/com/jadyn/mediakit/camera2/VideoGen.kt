@@ -70,7 +70,7 @@ class VideoGen {
         // 执行音频录制，回调PCM数据
         recorderThread.execute(AudioRecorder(isRecoding = isRecording, dataCallBack = { size, data ->
             Log.d(TAG, "audio pcm size : $size data :${data.size}: ")
-            audioQueue.add(data)
+            audioQueue.offer(data)
         }))
         // 执行音频编码，将PCM数据编码为AAC数据
         recorderThread.execute(AudioEncoder(isRecording, createAACFormat(128000),

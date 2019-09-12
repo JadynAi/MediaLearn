@@ -68,10 +68,10 @@ class TextureRender : GLSurfaceView.Renderer {
     private val texBuffer by lazy {
         // 纹理坐标是左下角为原点[0,0].这个绘制顺序是原点开始逆时针绘制
         val data = floatArrayOf(
-                0f, 0f,
-                0f, 0.5f,
-                1f, 0.5f,
-                1f, 0f
+                0.2f, 0f,
+                0.2f, 1f,
+                0.8f, 1f,
+                0.8f, 0f
         )
         val floatBuffer = createFloatBuffer(data)
         floatBuffer.position(0)

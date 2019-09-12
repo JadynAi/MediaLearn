@@ -35,7 +35,7 @@ class YuvCore : DecodeCore() {
             val fileName = DecoderFormat.JPG.outputFrameFileName(outputDir,
                     outputFrameCount)
             val toJpgSuccess = DecoderFormat.JPG.compressCorrespondingFile(fileName, image)
-            image.close()
+            image?.close()
             decoder.releaseOutputBuffer(outputBufferId, true)
             return if (toJpgSuccess) outputFrameCount else -1
         }

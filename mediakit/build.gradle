@@ -13,7 +13,7 @@ android {
         versionCode 1
         versionName "1.0"
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
             stl "stlport_static"
@@ -49,12 +49,12 @@ androidExtensions {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation"org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    api "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
-    api "io.reactivex.rxjava2:rxjava:2.1.12"
-    api "io.reactivex.rxjava2:rxandroid:2.0.2"
+//    api "io.reactivex.rxjava2:rxjava:2.1.12"
+//    api "io.reactivex.rxjava2:rxandroid:2.0.2"
 
     api 'com.jadynai.ai.kotlind:KotlinD:1.0.5'
 
-    api 'com.android.support:appcompat-v7:27.1.1'
+    api 'androidx.appcompat:appcompat:1.0.2'
 }

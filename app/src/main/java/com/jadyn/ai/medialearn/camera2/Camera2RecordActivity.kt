@@ -6,7 +6,7 @@ import android.graphics.RectF
 import android.graphics.SurfaceTexture
 import android.os.Bundle
 import android.os.Environment
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import android.util.Size
 import android.view.Surface
 import android.view.TextureView
@@ -17,7 +17,7 @@ import com.jadyn.mediakit.camera2.CameraMgr
 import com.jadyn.mediakit.camera2.VideoGen
 import kotlinx.android.synthetic.main.activity_camera2_record.*
 import java.io.File
-import java.lang.ref.WeakReference
+import java.lang.ref.SoftReference
 import java.util.*
 
 /**
@@ -71,7 +71,7 @@ class Camera2RecordActivity : AppCompatActivity() {
                         "test${instance.get(Calendar.DAY_OF_MONTH)}" +
                                 ":${instance.get(Calendar.HOUR_OF_DAY)}" +
                                 ":${instance.get(Calendar.MINUTE)}.mp4")
-                
+
                 videoRecorder.start(1080, 1440, 8000000, surfaceCallback = {
                     // 录制的时候根据，定制的视频尺寸，重新调整PreviewSurface的数据
                     cameraMgr.startRecord(it)
@@ -85,6 +85,8 @@ class Camera2RecordActivity : AppCompatActivity() {
         }
 
         take_photo.setOnClickListener {
+            cameraMgr.takePhoto(Environment.getExternalStorageDirectory().path
+                    + "/photo/${System.currentTimeMillis()}.png")
         }
 
         stop_video.setOnClickListener {
@@ -106,13 +108,24 @@ class Camera2RecordActivity : AppCompatActivity() {
         if (camera2_record_texture.isAvailable) {
             openCamera2(camera2_record_texture.width, camera2_record_texture.height)
         } else {
-            camera2_record_texture.surfaceTextureListener = surfaceListener
+            if (camera2_record_texture.surfaceTextureListener == null) {
+                camera2_record_texture.surfaceTextureListener = surfaceListener
+            }
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (::cameraMgr.isInitialized)
+            cameraMgr.onPause()
     }
 
     private fun openCamera2(width: Int, height: Int) {
         if (!::cameraMgr.isInitialized) {
-            cameraMgr = CameraMgr(WeakReference(this@Camera2RecordActivity), Size(width, height))
+            cameraMgr = CameraMgr(SoftReference(this@Camera2RecordActivity), Size(width, height))
+        } else {
+            cameraMgr.onResume()
+            return
         }
         val texture = camera2_record_texture.surfaceTexture
         // texture view 自动配置宽高
@@ -152,6 +165,6 @@ class Camera2RecordActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        cameraMgr.onDestory()
+        cameraMgr.onDestroy()
     }
 }

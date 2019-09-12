@@ -4,7 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.ImageFormat
 import android.media.Image
 import android.media.MediaCodecInfo
-import android.support.annotation.IntRange
+import androidx.annotation.IntRange
 import android.util.Log
 import java.io.BufferedOutputStream
 import java.io.File

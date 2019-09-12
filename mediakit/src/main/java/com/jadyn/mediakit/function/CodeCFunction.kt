@@ -3,7 +3,7 @@ package com.jadyn.mediakit.function
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
-import android.support.annotation.IntRange
+import androidx.annotation.IntRange
 import android.util.Log
 import android.util.Size
 import java.nio.ByteBuffer
@@ -82,7 +82,12 @@ fun createVideoFormat(size: Size, colorFormat: Int = MediaCodecInfo.CodecCapabil
     return MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, size.width, size.height)
             .apply {
                 setInteger(MediaFormat.KEY_COLOR_FORMAT, colorFormat)
-//                setInteger(MediaFormat.KEY_BITRATE_MODE, BITRATE_MODE_CQ)
+
+                // 大部分机型无效
+//                setInteger(MediaFormat.KEY_PROFILE, MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline)
+//                setInteger(MediaFormat.KEY_LEVEL, MediaCodecInfo.CodecProfileLevel.AVCLevel11)
+//                setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CQ)
+
                 setInteger(MediaFormat.KEY_BIT_RATE, bitRate)
                 setInteger(MediaFormat.KEY_FRAME_RATE, frameRate)
                 setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, iFrameInterval)
@@ -111,6 +116,13 @@ fun MediaCodec.BufferInfo.copy(): MediaCodec.BufferInfo {
     val copy = MediaCodec.BufferInfo()
     copy.set(offset, size, presentationTimeUs, flags)
     return copy
+}
+
+/**
+ * 判断是否为关键帧
+ * */
+fun MediaCodec.BufferInfo.isKeyFrame(): Boolean {
+    return (flags and MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0
 }
 
 /**

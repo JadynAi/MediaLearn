@@ -196,7 +196,7 @@ class Camera2Draw(program: Int) {
         Matrix.translateM(stMatrix, 0, 1f, 1f, 0f)
         // 绕着z轴旋转
         Matrix.rotateM(stMatrix, 0, 180f, 0f, 0f, 1f)
-
+        
         enableVertexAttrib(posHandle)
         enableVertexAttrib(texCoordHandle)
 
@@ -207,17 +207,17 @@ class Camera2Draw(program: Int) {
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId)
-        
+
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
         GLES20.glUniform1i(textureHandle, 0)
-        
+
         GLES20.glUniformMatrix4fv(stMatrixHandle, 1, false, stMatrix, 0)
         GLES20.glDrawElements(GLES20.GL_TRIANGLES, 6,
                 GLES20.GL_UNSIGNED_SHORT, indexBuffer)
-        
+
         disableVertexAttrib(posHandle)
         disableVertexAttrib(texCoordHandle)
-        
+
         unBindTexture()
     }
 }

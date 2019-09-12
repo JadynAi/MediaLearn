@@ -2,7 +2,7 @@ package com.jadyn.ai.medialearn.cutout
 
 import android.os.Bundle
 import android.os.Environment
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import android.text.TextUtils
 import android.widget.ArrayAdapter
 import com.jadyn.ai.kotlind.function.ui.getResDrawable

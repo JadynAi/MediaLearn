@@ -5,7 +5,7 @@ import android.graphics.SurfaceTexture
 import android.hardware.Camera
 import android.os.Bundle
 import android.os.HandlerThread
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import android.util.Log
 import android.view.TextureView
 import com.jadyn.ai.medialearn.R
