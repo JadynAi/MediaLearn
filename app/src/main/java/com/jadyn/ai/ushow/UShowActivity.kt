@@ -15,10 +15,10 @@ import com.jadyn.ai.presenter.ushow.UShowViewModel
  */
 class UShowActivity : AppCompatActivity() {
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_ushow)
+        
         ViewModelProviders.of(this).get(UShowViewModel::class.java)
     }
 }
