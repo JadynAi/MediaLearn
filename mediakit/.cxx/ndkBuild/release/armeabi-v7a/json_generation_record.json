@@ -21,6 +21,10 @@
   },
   {
     "level": "INFO",
+    "message": "removing stale contents from \u0027/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/.cxx/ndkBuild/release/armeabi-v7a\u0027"
+  },
+  {
+    "level": "INFO",
     "message": "created folder \u0027/Users/jadynai/DevelopProjectStudy/AndroidStudy/MediaLearn/mediakit/.cxx/ndkBuild/release/armeabi-v7a\u0027"
   },
   {
