@@ -2,10 +2,10 @@ package com.jadyn.ai.medialearn.decode
 
 import android.os.Bundle
 import android.os.Environment
-import androidx.appcompat.app.AppCompatActivity
 import android.text.TextUtils
 import android.util.Log
-import androidx.core.widget.toast
+import androidx.appcompat.app.AppCompatActivity
+import com.jadyn.ai.kotlind.utils.toastS
 import com.jadyn.ai.medialearn.R
 import com.jadyn.mediakit.video.decode.VideoDecoder
 import kotlinx.android.synthetic.main.activity_decode.*
@@ -48,7 +48,7 @@ class DecodeActivity : AppCompatActivity() {
 
         switch_iv.setOnClickListener {
             if (videoDecoder != null) {
-                toast("正在解码中")
+                toastS("正在解码中")
                 return@setOnClickListener
             }
 
@@ -60,7 +60,7 @@ class DecodeActivity : AppCompatActivity() {
             checkFile()
             checkOutputPath()
             if (videoDecoder != null) {
-                toast("正在解码中")
+                toastS("正在解码中")
                 return@setOnClickListener
             }
 
@@ -82,7 +82,7 @@ class DecodeActivity : AppCompatActivity() {
     private fun checkOutputPath() {
         val f = output_et.text.toString()
         if (f.isBlank()) {
-            toast("不能为空")
+            toastS("不能为空")
             return
         }
         val file = File(f)
@@ -90,7 +90,7 @@ class DecodeActivity : AppCompatActivity() {
             file.mkdirs()
         }
         if (!file.isDirectory) {
-            toast("必须为文件夹")
+            toastS("必须为文件夹")
             resetOutputEt()
             return
         }
@@ -100,12 +100,12 @@ class DecodeActivity : AppCompatActivity() {
     private fun checkFile() {
         val f = file_et.text.toString()
         if (f.isBlank()) {
-            toast("不能为空")
+            toastS("不能为空")
             return
         }
         val file = File(f)
         if (!file.exists() || !file.isFile) {
-            toast("文件错误")
+            toastS("文件错误")
             file_et.setText("")
             return
         }

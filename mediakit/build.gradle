@@ -4,27 +4,36 @@ apply plugin: 'kotlin-android'
 
 apply plugin: 'kotlin-android-extensions'
 
+ext {
+    boolean isWindow = isWindowsOS();
+    if (isWindow) {
+        native_sdk_path = rootDir.getAbsolutePath().replace('\\', '/') + "/app"
+    } else {
+        native_sdk_path = file(rootDir.getAbsolutePath() + "/app")
+    }
+}
+
 android {
-    compileSdkVersion 27
+    compileSdkVersion 28
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 27
+        targetSdkVersion 28
         versionCode 1
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
-            stl "stlport_static"
-            moduleName "gljni"
-            abiFilters "armeabi-v7a", "x86"
+            abiFilters "armeabi-v7a"
         }
-        sourceSets.main {
-            jni.srcDirs = []
-            jniLibs.srcDir "src/main/jniLibs"
+
+        externalNativeBuild {
+            cmake {
+                cppFlags ""
+            }
         }
-        
+
     }
 
     buildTypes {
@@ -35,8 +44,8 @@ android {
     }
 
     externalNativeBuild {
-        ndkBuild {
-            path "src/main/jni/Android.mk"
+        cmake {
+            path "CMakeLists.txt"
         }
     }
 
@@ -51,10 +60,28 @@ dependencies {
 
     api "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
-//    api "io.reactivex.rxjava2:rxjava:2.1.12"
-//    api "io.reactivex.rxjava2:rxandroid:2.0.2"
+    api "io.reactivex.rxjava2:rxjava:2.1.12"
+    api "io.reactivex.rxjava2:rxandroid:2.0.2"
 
-    api 'com.jadynai.ai.kotlind:KotlinD:1.0.5'
+    api('com.jadynai.ai.kotlind:KotlinD:1.0.7')
 
-    api 'androidx.appcompat:appcompat:1.0.2'
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+}
+
+clean.doFirst {
+    delete "${projectDir}/.externalNativeBuild"
+}
+
+/** 判断是否为Windows操作系统 */
+boolean isWindowsOS() {
+    boolean isWindowsOS = false;
+    String osName = System.getProperty("os.name")
+    println("os.name=" + osName)
+    if (osName == null || "".equals(osName)) {
+        return false
+    }
+    if (osName.toLowerCase().indexOf("windows") > -1) {
+        isWindowsOS = true
+    }
+    return isWindowsOS
 }

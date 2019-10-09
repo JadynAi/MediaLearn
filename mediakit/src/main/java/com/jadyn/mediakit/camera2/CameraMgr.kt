@@ -6,7 +6,6 @@ import android.content.Context
 import android.graphics.*
 import android.hardware.camera2.*
 import android.media.ImageReader
-import android.media.MediaRecorder
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
@@ -28,7 +27,7 @@ import java.util.*
  *@Since:2019-05-07
  *@ChangeList:
  */
-class CameraMgr(private var activity: SoftReference<Activity>, size: Size) {
+class CameraMgr(private var activity: SoftReference<out Activity?>, size: Size) {
 
     private val TAG = "Camera2Ops"
 
@@ -154,8 +153,6 @@ class CameraMgr(private var activity: SoftReference<Activity>, size: Size) {
                     characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
             Log.d(TAG, "display rotation $displayRotation  sensor $sensorOrientation: ")
             Log.d(TAG, "preview size $previewSize  largest size is $largest")
-            Log.d(TAG, "all size ${Arrays.toString(map.getOutputSizes(SurfaceTexture::class.java))}")
-            Log.d(TAG, "all video size ${Arrays.toString(map.getOutputSizes(MediaRecorder::class.java))}")
         } catch (e: CameraAccessException) {
             e.printStackTrace()
         }

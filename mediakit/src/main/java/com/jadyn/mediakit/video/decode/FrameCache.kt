@@ -2,9 +2,9 @@ package com.jadyn.mediakit.video.decode
 
 import android.graphics.Bitmap
 import android.os.Environment
-import androidx.collection.LruCache
 import android.text.TextUtils
 import android.util.Log
+import androidx.collection.LruCache
 import com.jadyn.mediakit.function.md5
 
 /**
@@ -15,6 +15,7 @@ import com.jadyn.mediakit.function.md5
  *@ChangeList:
  */
 class FrameCache(dataSource: String) {
+
     private val TAG = "FrameCache"
     private val mainKey = md5(dataSource)
     private val lruCache by lazy {
@@ -23,11 +24,8 @@ class FrameCache(dataSource: String) {
         // Use 1/8th of the available memory for this memory cache.
         val cacheSize = maxMemory / 12
         object : LruCache<String, Bitmap>(cacheSize) {
-            override fun sizeOf(key: String?, value: Bitmap?): Int {
-                value?.apply {
-                    return byteCount
-                }
-                return super.sizeOf(key, value)
+            override fun sizeOf(key: String, value: Bitmap): Int {
+                return value.byteCount
             }
         }
     }
@@ -53,7 +51,8 @@ class FrameCache(dataSource: String) {
 //        diskCache.writeBitmap(getDiskKey(target), b)
     }
 
-    fun asyncGetTarget(target: Long, isNeedCache: Boolean = true, success: (time: Long, Bitmap) -> Unit, failed: (Throwable) -> Unit) {
+    fun asyncGetTarget(target: Long, isNeedCache: Boolean = true,
+                       success: (time: Long, Bitmap) -> Unit, failed: (Throwable) -> Unit) {
         if (!isNeedCache) {
             failed.invoke(Throwable("function set not need cache"))
             return

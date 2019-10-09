@@ -1,7 +1,7 @@
 package com.jadyn.ai.medialearn
 
-import com.jadyn.ai.kotlind.base.BaseApplication
-import com.squareup.leakcanary.LeakCanary
+import android.app.Application
+import com.jadyn.ai.kotlind.base.KD
 
 /**
  *@version:
@@ -10,10 +10,10 @@ import com.squareup.leakcanary.LeakCanary
  *@Since:2019-08-15
  *@ChangeList:
  */
-class AppApplication : BaseApplication() {
+class AppApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        LeakCanary.install(this)
+        KD.init(this)
     }
 }

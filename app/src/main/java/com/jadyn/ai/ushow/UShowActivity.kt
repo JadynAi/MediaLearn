@@ -2,9 +2,7 @@ package com.jadyn.ai.ushow
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.ViewModelProviders
 import com.jadyn.ai.medialearn.R
-import com.jadyn.ai.presenter.ushow.UShowViewModel
 
 /**
  *@version:
@@ -15,10 +13,11 @@ import com.jadyn.ai.presenter.ushow.UShowViewModel
  */
 class UShowActivity : AppCompatActivity() {
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_ushow)
-        ViewModelProviders.of(this).get(UShowViewModel::class.java)
+
+        val transaction = supportFragmentManager.beginTransaction()
+        transaction.add(R.id.container, UShowFragment(), UShowFragment::class.java.name)
     }
 }

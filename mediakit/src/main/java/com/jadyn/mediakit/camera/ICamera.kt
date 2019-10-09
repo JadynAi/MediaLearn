@@ -7,16 +7,17 @@ import java.lang.ref.SoftReference
 
 /**
  *@version:
- *@FileDescription: camera function
+ *@FileDescription: camera function。只单纯的提供Camera应该配置的功能，不提供功能
+ *                  间的业务协调
  *@Author:Jing
  *@Since:2019-09-06
  *@ChangeList:
  */
 interface ICamera {
 
-    fun openCamera(surfaceTexture: SurfaceTexture)
+    fun openCamera():Boolean
 
-    fun startPreview()
+    fun startPreview(surfaceTexture: SurfaceTexture)
 
     fun stopPreview()
 
@@ -25,7 +26,10 @@ interface ICamera {
     fun stopRecord()
 
     fun takePhoto()
+    
+    fun switchCamera()
 
+    fun release()
 }
 
 class CameraFactory {

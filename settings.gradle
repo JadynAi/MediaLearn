@@ -1,1 +1,1 @@
-include ':app', ':mediakit', ':presenter'
+include ':app', ':mediakit'
